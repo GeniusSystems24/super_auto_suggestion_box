@@ -17,11 +17,14 @@
 ///
 /// Shared, cross-feature code lives in `lib/src/core/`.
 ///
+/// The shared GeniusLink **core** foundation now lives in the `super_core`
+/// package, which this package depends on and re-exports.
+///
 /// Import this single barrel to get everything:
 ///   `import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';`
 library super_auto_suggestion_box;
 
-// ── Core (theme tokens, shared widgets, utils) ──────────────────────────────
+// ── Core (theme tokens, shared widgets, utils — from super_core) ─────────────
 export 'src/core/core.dart';
 
 // ── Feature ─────────────────────────────────────────────────────────────────

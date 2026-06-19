@@ -12,7 +12,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/super_tokens.dart';
+import 'package:super_core/super_core.dart';
 
 @immutable
 class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxThemeData> {
