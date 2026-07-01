@@ -18,7 +18,9 @@ import '../../../../core/core.dart';
 import '../../data/datasources/suggestion_sources.dart';
 import '../../domain/entities/auto_suggestion.dart';
 import '../../domain/entities/match_strategy.dart';
+import '../controllers/auto_suggestions_box_controller.dart';
 import '../widgets/auto_suggestions_box.dart';
+import '../widgets/auto_suggestions_box_theme.dart';
 
 class AutoSuggestionBoxDemo extends StatefulWidget {
   const AutoSuggestionBoxDemo({super.key});
@@ -70,6 +72,22 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
         if (name.toLowerCase().contains(q))
           AutoSuggestion(value: 'R-$name', label: name, description: 'Server · remote', icon: Icons.cloud_outlined),
     ];
+  }
+
+  // Live validity of the "Post To Account (required)" field, surfaced beneath it.
+  String? _accountError;
+
+  // A stable, pre-filled controller for the disabled-field example.
+  late final AutoSuggestionsBoxController<String> _lockedController =
+      AutoSuggestionsBoxController<String>(
+    source: SuggestionSources.list<String>(_accounts),
+    initialValue: _accounts.first,
+  );
+
+  @override
+  void dispose() {
+    _lockedController.dispose();
+    super.dispose();
   }
 
   @override
@@ -161,6 +179,73 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       items: _directory,
                       advancedSearch: true,
                       hintText: 'Search the directory…  (⌘F)',
+                      onSelected: (s) {},
+                    ),
+                  ),
+                  const SizedBox(height: SuperTokens.space8),
+
+                  // 6 — Required + validator (v0.6.0). Validity surfaces through
+                  // the suffix error badge; onValidity feeds a live status line.
+                  SectionCard(
+                    title: 'Post To Account',
+                    subtitle: 'Required field with a custom validator — leave it empty and tab away',
+                    marker: SuperMarker.identity,
+                    child: AutoSuggestionsBox<String>(
+                      
+                      items: _accounts,
+                      label: 'Debit Account',
+                      required: true,
+                      hint: 'Pick an asset, liability, equity, income or expense account',
+                      validator: (value) {
+                        if (value.trim().isEmpty) return null; // required handles empty
+                        final match = _accounts.any((a) => a.label == value);
+                        return match ? null : 'Pick an account from the list';
+                      },
+                      onValidity: (err) => setState(() => _accountError = err),
+                      hintText: 'e.g. Accounts Receivable',
+                      onSelected: (s) {},
+                    ),
+                  ),
+                  const SizedBox(height: SuperTokens.space2),
+                  Text(
+                    _accountError == null ? 'STATUS · VALID' : 'STATUS · ${_accountError!.toUpperCase()}',
+                    style: SuperText.label.copyWith(
+                      color: _accountError == null ? SuperTokens.success : SuperTokens.danger,
+                    ),
+                  ),
+                  const SizedBox(height: SuperTokens.space8),
+
+                  // 7 — Disabled (v0.6.0). Dimmed, non-interactive, no errors.
+                  SectionCard(
+                    title: 'Locked Account',
+                    subtitle: 'A disabled field blocks typing and opening the overlay',
+                    marker: SuperMarker.notes,
+                    child: AutoSuggestionsBox<String>(
+                      items: _accounts,
+                      label: 'Reconciliation Account',
+                      disabled: true,
+                      controller: _lockedController,
+                    ),
+                  ),
+                  const SizedBox(height: SuperTokens.space8),
+
+                  // 8 — Field-level custom theme + focusedStyle (v0.6.0).
+                  SectionCard(
+                    title: 'Themed Field',
+                    subtitle: 'A theme assigned directly to one box — green focused fill, border & bold text',
+                    marker: SuperMarker.ledger,
+                    child: AutoSuggestionsBox<String>(
+                      items: _accounts,
+                      label: 'Ledger Account',
+                      hintText: 'Focus me to see the custom focused style',
+                      theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
+                        focusedStyle: const AutoSuggestionsBoxFocusedStyle(
+                          fillColor: Color(0x141DB88A),
+                          border: BorderSide(color: SuperTokens.success, width: 1.6),
+                          fontStyle: TextStyle(fontWeight: FontWeight.w600),
+                          cursorColor: SuperTokens.success,
+                        ),
+                      ),
                       onSelected: (s) {},
                     ),
                   ),

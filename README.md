@@ -19,6 +19,15 @@ Light + dark themes, full LTR + RTL.
 
 - ✅ **Typeahead / combobox** — `AutoSuggestionsBox<T>` driven by an
   `AutoSuggestionsBoxController<T>`.
+- ✅ **Consistent field design** — same height, layout and states as the
+  `super_form_field` inputs (uppercase label, 42/36 px density, 4 px frame,
+  focused-fill + danger-halo).
+- ✅ **Validation** — `required` + a custom `validator`; errors surface through a
+  suffix **error badge** tooltip (never inline), gated on touch / `forceError`,
+  reported via `onValidity`.
+- ✅ **`disabled`** state and a per-field `theme` override.
+- ✅ **Themeable focused state** — `AutoSuggestionsBoxFocusedStyle` (`fillColor`,
+  `border`, `fontStyle`, `cursorColor`, `shadow`).
 - ✅ **Matching strategies** — prefix, contains, and fuzzy ranking.
 - ✅ **Single- & multi-select**, **free-text entry** (`allowFreeText`), grouped results.
 - ✅ **Suggestion sources** — `SuggestionSources.list / .strings / .fuzzy / .async /
@@ -77,6 +86,63 @@ AutoSuggestionsBox<String>(
   onSubmitted: (raw) => /* free-text Enter */,
 );
 ```
+
+### Validation (`required` · `validator`)
+
+Errors surface through a suffix **error badge** (hover / long-press for the
+tooltip) — never inline, matching `super_form_field`. Validation is silent until
+the field is first blurred (or `forceError: true`); `onValidity` reports the
+current error on every change.
+
+```dart
+AutoSuggestionsBox<String>(
+  items: accounts,
+  label: 'Debit Account',
+  required: true,                       // red * on the label + "required" rule
+  requiredMessage: 'Choose an account', // optional custom copy
+  hint: 'Pick an account from the chart',
+  validator: (value) {
+    if (value.trim().isEmpty) return null;        // `required` handles empty
+    final ok = accounts.any((a) => a.label == value);
+    return ok ? null : 'Pick an account from the list';
+  },
+  onValidity: (error) => setState(() => _error = error),
+);
+```
+
+### Disabled
+
+```dart
+AutoSuggestionsBox<String>(
+  controller: lockedController, // pre-filled
+  label: 'Reconciliation Account',
+  disabled: true, // dimmed, no typing, no overlay, no errors
+);
+```
+
+### Per-field theme + focused style
+
+Assign a theme directly to one box (overriding the ambient extension), and
+customise the focused state with `AutoSuggestionsBoxFocusedStyle` — any field you
+leave null falls back to the resting token.
+
+```dart
+AutoSuggestionsBox<String>(
+  items: accounts,
+  label: 'Ledger Account',
+  theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
+    focusedStyle: const AutoSuggestionsBoxFocusedStyle(
+      fillColor: Color(0x141DB88A),
+      border: BorderSide(color: Color(0xFF1DB88A), width: 1.6),
+      fontStyle: TextStyle(fontWeight: FontWeight.w600),
+      cursorColor: Color(0xFF1DB88A),
+    ),
+  ),
+);
+```
+
+Set the default focused style for **every** box by baking it into the theme
+extension you register on `ThemeData` (via `.copyWith(focusedStyle: …)`).
 
 ### Suggestion sources
 

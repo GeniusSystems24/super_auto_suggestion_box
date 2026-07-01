@@ -7,7 +7,7 @@ description: >
   a bare embedding mode), plus the shared GeniusLink core theme foundation.
   Light/dark + LTR/RTL.
 
-version: 0.5.0
+version: 0.6.0
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box
 repository: https://github.com/GeniusSystems24/super_auto_suggestion_box
 issue_tracker: https://github.com/GeniusSystems24/super_auto_suggestion_box/issues

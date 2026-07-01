@@ -5,7 +5,9 @@ description: >
   design-system typeahead / combobox inputs — AutoSuggestionsBox: local + remote
   suggestion sources, prefix/contains/fuzzy matching, single- and multi-select,
   free-text entry, a local-first progressive remoteFallback source, an
-  advanced-search overlay, and a bare embedding mode. Apply when a Flutter app
+  advanced-search overlay, a bare embedding mode, required + validator field
+  validation, a disabled state, and per-field theming with a focused-state
+  style. Apply when a Flutter app
   needs a themed (light/dark, LTR/RTL) typeahead/autocomplete field, or an
   embeddable pick-or-type combobox. This package also carries the shared
   GeniusLink core theme foundation; the super_table_field package depends on it.
@@ -32,7 +34,8 @@ data grid too, use `super_table_field` (which re-exports this package).
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^x.x.x # lastest version in pub.dev
+  super_auto_suggestion_box:
+    path: ../super_auto_suggestion_box
 ```
 
 ```dart
@@ -70,6 +73,43 @@ AutoSuggestionsBox<String>(
   hintText: 'Type or pick…',
   onSelected: (s) => /* s.value, s.label */,
   onSubmitted: (raw) => /* free-text Enter */,
+);
+```
+
+### Validation, disabled & theming (0.6.0)
+
+The field matches `super_form_field` (height, layout, states) and adds:
+
+- `required: true` — red `*` on the label + implicit required rule
+  (`requiredMessage` to customise; multi-select fails while nothing is chosen).
+- `validator: (String value) => error?` — custom rule. Errors surface through a
+  **suffix error badge tooltip** (never inline), silent until first blur or
+  `forceError: true`; `onValidity` reports the current error.
+- `disabled: true` — dims to 55 %, blocks typing / overlay, suppresses errors.
+- `theme:` — an `AutoSuggestionsBoxThemeData` assigned to one box, overriding the
+  ambient extension.
+- `focusedStyle` on `AutoSuggestionsBoxThemeData` — an
+  `AutoSuggestionsBoxFocusedStyle(fillColor, border, fontStyle, cursorColor,
+  shadow)`; each field is optional and falls back to the resting token.
+- `hint:` (helper line, hidden on error) and `density:`
+  (`FieldDensity.comfortable` / `.compact`).
+
+```dart
+AutoSuggestionsBox<String>(
+  items: accounts,
+  label: 'Debit Account',
+  required: true,
+  hint: 'Pick an account from the chart',
+  validator: (v) => v.isEmpty || accounts.any((a) => a.label == v)
+      ? null
+      : 'Pick an account from the list',
+  onValidity: (err) => setState(() => _error = err),
+  theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
+    focusedStyle: const AutoSuggestionsBoxFocusedStyle(
+      border: BorderSide(color: Color(0xFF1DB88A), width: 1.6),
+      fontStyle: TextStyle(fontWeight: FontWeight.w600),
+    ),
+  ),
 );
 ```
 
@@ -113,3 +153,7 @@ widget-free.
   show instantly.
 - Expecting free text with `allowFreeText: false` (pick-only) — set it `true` to
   accept typed values on Enter.
+- Surfacing validation as inline text — it only shows through the suffix error
+  badge tooltip; a `hint` is hidden while an error is present.
+- Recreating a controller inside `build` for a pre-filled `disabled` field —
+  hold it as a `late final` (or state) field and dispose it, or use `items`.

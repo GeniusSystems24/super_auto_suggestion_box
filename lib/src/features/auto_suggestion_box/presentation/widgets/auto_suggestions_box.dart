@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 
+import '../../../../core/core.dart';
 import '../../data/datasources/suggestion_sources.dart';
 import '../../domain/entities/auto_suggestion.dart';
 import '../../domain/entities/match_strategy.dart';
@@ -27,6 +28,13 @@ import '../../domain/repositories/suggestions_source.dart';
 import '../controllers/auto_suggestions_box_controller.dart';
 import 'auto_suggestions_box_theme.dart';
 import 'auto_suggestions_highlight.dart';
+
+/// A synchronous validator for the box: returns an error message, or null when
+/// valid. Receives the field's current committed / typed text.
+typedef AutoSuggestionsValidator = String? Function(String value);
+
+/// Reports the field's current error (null == valid) to a host on every change.
+typedef AutoSuggestionsValidityChanged = void Function(String? error);
 
 class AutoSuggestionsBox<T> extends StatefulWidget {
   /// Provide a [source] (or [items]) — or a fully-owned [controller].
@@ -89,6 +97,43 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   final double? width;
 
   final bool enabled;
+
+  /// Disable all interaction: dims the field to 55%, blocks typing / opening the
+  /// overlay, and suppresses validation errors. Consistent with
+  /// `super_form_field`'s `disabled`. Takes precedence over [enabled].
+  final bool disabled;
+
+  /// Marks the field mandatory: appends a red `*` to the [label] and adds an
+  /// implicit “this field is required” validator (fails while empty).
+  final bool required;
+
+  /// A custom validator run against the field text. Its message (or the
+  /// [required] message) surfaces through the suffix error badge — never inline,
+  /// matching the `super_form_field` rule.
+  final AutoSuggestionsValidator? validator;
+
+  /// Message used by the [required] validator.
+  final String requiredMessage;
+
+  /// Fired whenever the field's validity changes, with the current error (or
+  /// null when valid).
+  final AutoSuggestionsValidityChanged? onValidity;
+
+  /// Show the error before the field has been touched (e.g. on a submit sweep).
+  final bool forceError;
+
+  /// Helper text shown beneath the control. Hidden whenever an error shows.
+  final String? hint;
+
+  /// Vertical density — comfortable (42px) or compact (36px), matching
+  /// `super_form_field`.
+  final FieldDensity density;
+
+  /// A theme assigned directly to this field, overriding the ambient
+  /// [AutoSuggestionsBoxThemeData] from the enclosing `Theme`. Use it to restyle
+  /// one box (fill, border, focused style…) without touching app-wide theming.
+  final AutoSuggestionsBoxThemeData? theme;
+
   final bool autofocus;
   final FocusNode? focusNode;
 
@@ -163,6 +208,15 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.maxVisibleRows = 8,
     this.width,
     this.enabled = true,
+    this.disabled = false,
+    this.required = false,
+    this.validator,
+    this.requiredMessage = 'This field is required',
+    this.onValidity,
+    this.forceError = false,
+    this.hint,
+    this.density = FieldDensity.comfortable,
+    this.theme,
     this.autofocus = false,
     this.focusNode,
     this.bare = false,
@@ -202,6 +256,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   Timer? _blurTimer; // delays close-on-blur so a row tap can complete first
   bool _suppressReopen = false; // skip openOnFocus once (after a pick re-focuses)
   bool _advancedOpen = false; // the advanced-search dialog is showing
+  bool _touched = false; // has the field been blurred at least once
+  String? _lastReportedError; // last error handed to onValidity
 
   @override
   void initState() {
@@ -213,6 +269,13 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     _focus = widget.focusNode ?? FocusNode();
     _ownsFocus = widget.focusNode == null;
     _focus.addListener(_onFocus);
+
+    _c.text.addListener(_onTextForValidity);
+    // Report initial validity after the first frame (so a host onValidity that
+    // calls setState never runs during build).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _reportValidity();
+    });
   }
 
   AutoSuggestionsBoxController<T> _buildController() {
@@ -224,7 +287,37 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     );
   }
 
+  // ── validation ──
+  /// The raw error for the current value (independent of touched state).
+  String? get _error {
+    final text = _c.query;
+    if (widget.required) {
+      final empty = widget.multiSelect ? _c.selectedItems.isEmpty : text.trim().isEmpty;
+      if (empty) return widget.requiredMessage;
+    }
+    return widget.validator?.call(text);
+  }
+
+  /// The error to actually display — gated on touched / forceError, suppressed
+  /// while disabled.
+  String? get _visibleError {
+    if (widget.disabled) return null;
+    if (!_touched && !widget.forceError) return null;
+    return _error;
+  }
+
+  void _onTextForValidity() => _reportValidity();
+
+  void _reportValidity() {
+    final e = _error;
+    if (e != _lastReportedError) {
+      _lastReportedError = e;
+      widget.onValidity?.call(e);
+    }
+  }
+
   void _onFocus() {
+    if (mounted) setState(() {}); // repaint focused fill/border + touched error
     if (_focus.hasFocus) {
       _blurTimer?.cancel();
       if (_suppressReopen) {
@@ -234,6 +327,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       }
       if (widget.scrollOnFocus) _scrollIntoView();
     } else {
+      _touched = true; // first blur → validation may now surface
       if (_advancedOpen) return; // focus moved into the advanced dialog — ignore
       // Delay the close so a mouse click on a row (which blurs the field on
       // pointer-down) still lands its tap on pointer-up. A row tap calls
@@ -278,6 +372,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       _overlay.hide();
     }
     if (_c.isOpen) _ensureHighlightVisible();
+    _reportValidity();
     if (mounted) setState(() {});
   }
 
@@ -337,16 +432,19 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller && widget.controller != null) {
       _c.removeListener(_onModel);
+      _c.text.removeListener(_onTextForValidity);
       if (_ownsController) _c.dispose();
       _c = widget.controller!;
       _ownsController = false;
       _c.addListener(_onModel);
+      _c.text.addListener(_onTextForValidity);
     }
   }
 
   @override
   void dispose() {
     _blurTimer?.cancel();
+    _c.text.removeListener(_onTextForValidity);
     _c.removeListener(_onModel);
     if (_ownsController) _c.dispose();
     _focus.removeListener(_onFocus);
@@ -418,7 +516,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     if (_advancedOpen) return;
     _advancedOpen = true;
     _c.open();
-    final t = AutoSuggestionsBoxThemeData.of(context);
+    final t = _resolveTheme(context);
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.55),
@@ -469,10 +567,16 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     }
   }
 
+  /// Resolve the effective theme: a directly-assigned [AutoSuggestionsBox.theme]
+  /// wins over the ambient extension (which falls back to the dark preset).
+  AutoSuggestionsBoxThemeData _resolveTheme(BuildContext context) =>
+      widget.theme ?? AutoSuggestionsBoxThemeData.of(context);
+
   @override
   Widget build(BuildContext context) {
-    final t = AutoSuggestionsBoxThemeData.of(context);
-    final field = _buildField(t);
+    final t = _resolveTheme(context);
+    final error = _visibleError;
+    final field = _buildField(t, error);
     return SizedBox(
       width: widget.width,
       child: Column(
@@ -480,11 +584,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.label != null) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6, left: 2),
-              child: Text(widget.label!,
-                  style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 12.5, fontWeight: FontWeight.w600, color: t.fg2)),
-            ),
+            _FieldLabel(text: widget.label!, required: widget.required, color: t.fg2),
+            const SizedBox(height: 8),
           ],
           CompositedTransformTarget(
             link: _link,
@@ -494,65 +595,133 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
               child: field,
             ),
           ),
+          // Hint sits beneath the control and is hidden whenever an error shows
+          // (errors surface only through the suffix badge — never inline).
+          if (widget.hint != null && error == null) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 2),
+              child: Text(widget.hint!,
+                  style: TextStyle(
+                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 12, height: 1.35, color: t.fg3)),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildField(AutoSuggestionsBoxThemeData t) {
+  Widget _buildField(AutoSuggestionsBoxThemeData t, String? error) {
     final focused = _focus.hasFocus;
     final bare = widget.bare;
+    final disabled = widget.disabled;
+    final interactive = widget.enabled && !disabled;
+    final hasError = error != null;
+    final fs = t.focusedStyle;
+
     final leading = widget.leading ??
         (bare
             ? const SizedBox.shrink()
             : Icon(Icons.search_rounded, size: 18, color: focused ? AutoSuggestionsBoxThemeData.accent : t.fg3));
     final hasLeading = !(leading is SizedBox && leading.width == 0 && leading.height == 0);
     final hasText = _c.query.isNotEmpty;
-    final minH = widget.fieldHeight ?? AutoSuggestionsBoxThemeData.fieldHeight;
-    final baseStyle = (widget.textStyle ??
+
+    final minH = widget.fieldHeight ??
+        (widget.density == FieldDensity.compact
+            ? AutoSuggestionsBoxThemeData.fieldCompact
+            : AutoSuggestionsBoxThemeData.fieldHeight);
+
+    // Resting typed-value style, with the focused fontStyle merged in on focus.
+    var baseStyle = (widget.textStyle ??
             TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 14, color: t.fg1, height: 1.2))
         .copyWith(color: t.fg1);
-    return Focus(
+    if (focused && fs.fontStyle != null) baseStyle = baseStyle.merge(fs.fontStyle);
+
+    // Frame color: danger on error, focused override / borderFocus on focus,
+    // resting border otherwise. Width matches super_form_field's FieldBox (1.4).
+    final Color borderColor = hasError
+        ? AutoSuggestionsBoxThemeData.danger
+        : focused
+            ? (fs.border?.color ?? t.borderFocus)
+            : t.border;
+    final double borderWidth = !hasError && focused
+        ? (fs.border?.width ?? AutoSuggestionsBoxThemeData.fieldBorderWidth)
+        : AutoSuggestionsBoxThemeData.fieldBorderWidth;
+
+    final Color fill = (bare || disabled)
+        ? Colors.transparent
+        : focused
+            ? (fs.fillColor ?? t.fieldBgFocus)
+            : t.fieldBg;
+
+    final List<BoxShadow>? shadow = hasError
+        ? [BoxShadow(color: AutoSuggestionsBoxThemeData.danger.withOpacity(0.14), spreadRadius: 3)]
+        : (focused && !bare ? fs.shadow : null);
+
+    final content = Focus(
       onKeyEvent: _onKey,
       child: TextField(
-        key: _fieldKey,
         controller: _c.text,
         focusNode: _focus,
-        enabled: widget.enabled,
+        enabled: interactive,
         autofocus: widget.autofocus,
         onChanged: (v) {
           widget.onChanged?.call(v);
           if (!_c.isOpen) _c.open();
         },
-        onTap: () => _c.open(),
+        onTap: interactive ? () => _c.open() : null,
         style: baseStyle,
-        cursorColor: AutoSuggestionsBoxThemeData.accent,
+        cursorColor: fs.cursorColor ?? AutoSuggestionsBoxThemeData.accent,
         decoration: InputDecoration(
+          isCollapsed: true,
           isDense: true,
-          filled: true,
-          fillColor: bare ? Colors.transparent : (focused ? t.fieldBgFocus : t.fieldBg),
+          contentPadding: EdgeInsets.zero,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
           hintText: widget.hintText,
           hintStyle: baseStyle.copyWith(color: t.fg3, fontWeight: FontWeight.w400),
-          constraints: BoxConstraints(minHeight: minH),
-          contentPadding: bare
-              ? const EdgeInsets.symmetric(horizontal: 9, vertical: 9)
-              : const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          prefixIcon: hasLeading
-              ? Padding(padding: const EdgeInsetsDirectional.only(start: 11, end: 8), child: leading)
-              : null,
-          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-          suffixIcon: _buildSuffix(t, hasText),
-          suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-          border: bare ? InputBorder.none : _border(t.border),
-          enabledBorder: bare ? InputBorder.none : _border(t.border),
-          focusedBorder: bare ? InputBorder.none : _border(t.borderFocus, width: 1.6),
-          disabledBorder: bare ? InputBorder.none : _border(t.border.withOpacity(0.5)),
         ),
       ),
     );
+
+    final field = AnimatedContainer(
+      key: _fieldKey,
+      duration: AutoSuggestionsBoxThemeData.durBase,
+      curve: AutoSuggestionsBoxThemeData.curveStandard,
+      constraints: BoxConstraints(minHeight: minH),
+      padding: bare
+          ? const EdgeInsetsDirectional.only(start: 9, end: 9, top: 6, bottom: 6)
+          : const EdgeInsetsDirectional.only(start: 12, end: 6),
+      decoration: BoxDecoration(
+        color: fill,
+        border: bare ? null : Border.all(color: borderColor, width: borderWidth),
+        borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
+        boxShadow: shadow,
+      ),
+      child: Row(
+        children: [
+          if (hasLeading) ...[
+            leading,
+            const SizedBox(width: 8),
+          ],
+          Expanded(child: content),
+          ..._suffixChildren(t, hasText, interactive),
+          if (hasError) ...[
+            const SizedBox(width: 4),
+            _ErrorBadge(error: error),
+          ],
+        ],
+      ),
+    );
+
+    return Opacity(opacity: disabled ? 0.55 : 1, child: field);
   }
 
-  Widget? _buildSuffix(AutoSuggestionsBoxThemeData t, bool hasText) {
+  /// The trailing adornments (count pill · spinner · clear / chevron) spliced
+  /// into the field row. Taps are inert while the field is non-interactive.
+  List<Widget> _suffixChildren(AutoSuggestionsBoxThemeData t, bool hasText, bool interactive) {
     final children = <Widget>[];
     // Multi-select: a count pill of how many rows are chosen.
     if (widget.multiSelect && _c.selectedItems.isNotEmpty) {
@@ -577,7 +746,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         child: SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent)),
       ));
     }
-    if (widget.clearButton && hasText) {
+    if (widget.clearButton && hasText && interactive) {
       children.add(_IconBtn(
         icon: Icons.close_rounded,
         color: t.fg3,
@@ -592,22 +761,16 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         icon: _c.isOpen ? Icons.expand_less_rounded : Icons.expand_more_rounded,
         color: t.fg3,
         hoverColor: t.fg1,
-        onTap: () {
-          _c.toggle();
-          _focus.requestFocus();
-        },
+        onTap: interactive
+            ? () {
+                _c.toggle();
+                _focus.requestFocus();
+              }
+            : () {},
       ));
     }
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 6, start: 4),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
-    );
+    return children;
   }
-
-  OutlineInputBorder _border(Color c, {double width = 1.2}) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusMd),
-        borderSide: BorderSide(color: c, width: width),
-      );
 
   // ── overlay ──
   Widget _buildOverlay(BuildContext ctx, AutoSuggestionsBoxThemeData t) {
@@ -988,6 +1151,73 @@ class _IconBtnState extends State<_IconBtn> {
   }
 }
 
+// ── uppercase field label with optional required asterisk ──
+// Matches super_form_field's FieldShell label: ALL CAPS, 11/700, ~0.05em
+// tracking, with a danger-red `*` when required.
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel({required this.text, required this.required, required this.color});
+
+  final String text;
+  final bool required;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.55,
+      color: color,
+    );
+    if (!required) return Text(text.toUpperCase(), style: style);
+    return Text.rich(
+      TextSpan(
+        text: text.toUpperCase(),
+        style: style,
+        children: [
+          TextSpan(text: ' *', style: style.copyWith(color: AutoSuggestionsBoxThemeData.danger)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── validator-error affordance ──
+// A danger alert icon whose hover / long-press tooltip carries the full error
+// text. This is the ONLY way the box surfaces validation — never inline text
+// under the control (matching the super_form_field rule).
+class _ErrorBadge extends StatelessWidget {
+  const _ErrorBadge({required this.error});
+
+  final String error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: error,
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 120),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AutoSuggestionsBoxThemeData.danger,
+        borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusMd),
+      ),
+      textStyle: const TextStyle(
+        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+        fontSize: 12,
+        height: 1.45,
+        fontWeight: FontWeight.w500,
+        color: Colors.white,
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(4),
+        child: Icon(Icons.error_outline_rounded, size: 18, color: AutoSuggestionsBoxThemeData.danger),
+      ),
+    );
+  }
+}
+
 // ============================================================
 // Advanced Search View (Ctrl/⌘+F)
 // ------------------------------------------------------------
@@ -1093,7 +1323,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                   child: Row(children: [
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text('ADVANCED SEARCH',
+                        Text('ADVANCED SEARCH',
                             style: TextStyle(
                                 fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                                 fontSize: 10.5,

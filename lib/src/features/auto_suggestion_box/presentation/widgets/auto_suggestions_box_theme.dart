@@ -14,6 +14,80 @@ import 'package:flutter/material.dart';
 
 import 'package:super_core/super_core.dart';
 
+/// Focused-state overrides for an [AutoSuggestionsBoxThemeData].
+///
+/// Every field is optional: a null field falls back to the theme's resting
+/// token (so you can override just the fill, or just the border, and leave the
+/// rest alone). Applied only while the field has focus.
+///
+/// ```dart
+/// AutoSuggestionsBoxThemeData.dark.copyWith(
+///   focusedStyle: const AutoSuggestionsBoxFocusedStyle(
+///     fillColor: Color(0xFF23262C),
+///     border: BorderSide(color: Color(0xFF4A7CFF), width: 1.6),
+///     fontStyle: TextStyle(fontWeight: FontWeight.w600),
+///   ),
+/// );
+/// ```
+@immutable
+class AutoSuggestionsBoxFocusedStyle {
+  const AutoSuggestionsBoxFocusedStyle({
+    this.fillColor,
+    this.border,
+    this.fontStyle,
+    this.cursorColor,
+    this.shadow,
+  });
+
+  /// Input fill painted while focused. Falls back to [AutoSuggestionsBoxThemeData.fieldBgFocus].
+  final Color? fillColor;
+
+  /// Field border (color + width) while focused. Falls back to a 1.4px
+  /// [AutoSuggestionsBoxThemeData.borderFocus] side.
+  final BorderSide? border;
+
+  /// Merged onto the typed-value text style while focused (weight / color /
+  /// letter-spacing…). Null leaves the resting text style untouched.
+  final TextStyle? fontStyle;
+
+  /// Caret color while focused. Falls back to the brand accent.
+  final Color? cursorColor;
+
+  /// Elevation halo painted behind the field while focused (e.g. a focus ring).
+  final List<BoxShadow>? shadow;
+
+  AutoSuggestionsBoxFocusedStyle copyWith({
+    Color? fillColor,
+    BorderSide? border,
+    TextStyle? fontStyle,
+    Color? cursorColor,
+    List<BoxShadow>? shadow,
+  }) =>
+      AutoSuggestionsBoxFocusedStyle(
+        fillColor: fillColor ?? this.fillColor,
+        border: border ?? this.border,
+        fontStyle: fontStyle ?? this.fontStyle,
+        cursorColor: cursorColor ?? this.cursorColor,
+        shadow: shadow ?? this.shadow,
+      );
+
+  static AutoSuggestionsBoxFocusedStyle? lerp(
+      AutoSuggestionsBoxFocusedStyle? a, AutoSuggestionsBoxFocusedStyle? b, double t) {
+    if (a == null && b == null) return null;
+    return AutoSuggestionsBoxFocusedStyle(
+      fillColor: Color.lerp(a?.fillColor, b?.fillColor, t),
+      border: BorderSide.lerp(
+        a?.border ?? BorderSide.none,
+        b?.border ?? BorderSide.none,
+        t,
+      ),
+      fontStyle: TextStyle.lerp(a?.fontStyle, b?.fontStyle, t),
+      cursorColor: Color.lerp(a?.cursorColor, b?.cursorColor, t),
+      shadow: BoxShadow.lerpList(a?.shadow, b?.shadow, t),
+    );
+  }
+}
+
 @immutable
 class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxThemeData> {
   // ── swappable surfaces (dark <-> light) ──
@@ -28,6 +102,9 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
   final Color fg3; //          hint / leading icon
   final Color groupFg; //      group header text
 
+  /// Focused-state visual overrides (fill / border / font / cursor / halo).
+  final AutoSuggestionsBoxFocusedStyle focusedStyle;
+
   const AutoSuggestionsBoxThemeData({
     required this.fieldBg,
     required this.fieldBgFocus,
@@ -39,6 +116,7 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     required this.fg2,
     required this.fg3,
     required this.groupFg,
+    this.focusedStyle = const AutoSuggestionsBoxFocusedStyle(),
   });
 
   // ── brand + semantic palette (const, re-exported from SuperTokens) ──
@@ -54,8 +132,15 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
   static const double radiusMd = 6;
   static const double radiusLg = 8;
 
-  // ── metrics ──
-  static const double fieldHeight = 40;
+  // ── metrics (aligned with super_form_field's field foundation) ──
+  /// Comfortable field height (default density).
+  static const double fieldHeight = 42;
+
+  /// Compact field height (dense density).
+  static const double fieldCompact = 36;
+
+  /// Resting field border width (matches super_form_field's FieldBox).
+  static const double fieldBorderWidth = 1.4;
   static const double rowHeight = 38;
   static const double overlayGap = 4; //   space between field and panel
   static const double overlayMaxWidth = 560;
@@ -83,6 +168,10 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     fg2: Color(0xFF9DA1B0),
     fg3: Color(0xFF6E7280),
     groupFg: Color(0xFF7E8290),
+    focusedStyle: AutoSuggestionsBoxFocusedStyle(
+      fillColor: Color(0xFF23262C),
+      border: BorderSide(color: accent, width: fieldBorderWidth),
+    ),
   );
 
   static const AutoSuggestionsBoxThemeData light = AutoSuggestionsBoxThemeData(
@@ -96,6 +185,10 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     fg2: Color(0xFF64748B),
     fg3: Color(0xFF94A0B4),
     groupFg: Color(0xFF8A92A4),
+    focusedStyle: AutoSuggestionsBoxFocusedStyle(
+      fillColor: Color(0xFFFFFFFF),
+      border: BorderSide(color: accent, width: fieldBorderWidth),
+    ),
   );
 
   /// Reads the registered extension, or falls back to [dark].
@@ -117,6 +210,7 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     Color? fg2,
     Color? fg3,
     Color? groupFg,
+    AutoSuggestionsBoxFocusedStyle? focusedStyle,
   }) =>
       AutoSuggestionsBoxThemeData(
         fieldBg: fieldBg ?? this.fieldBg,
@@ -129,6 +223,7 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
         fg2: fg2 ?? this.fg2,
         fg3: fg3 ?? this.fg3,
         groupFg: groupFg ?? this.groupFg,
+        focusedStyle: focusedStyle ?? this.focusedStyle,
       );
 
   @override
@@ -145,6 +240,8 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
       fg2: Color.lerp(fg2, other.fg2, t)!,
       fg3: Color.lerp(fg3, other.fg3, t)!,
       groupFg: Color.lerp(groupFg, other.groupFg, t)!,
+      focusedStyle: AutoSuggestionsBoxFocusedStyle.lerp(focusedStyle, other.focusedStyle, t) ??
+          focusedStyle,
     );
   }
 }
