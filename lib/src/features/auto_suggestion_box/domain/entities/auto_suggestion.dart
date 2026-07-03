@@ -23,6 +23,11 @@ class AutoSuggestion<T> {
   /// Optional secondary line (e.g. a code, email, or hint).
   final String? description;
 
+  /// Optional right-aligned trailing meta — a balance, on-hand quantity, unit
+  /// price, status, etc. Rendered in tabular mono figures at the row's end so a
+  /// lookup reads like a mini-table (code · name · amount). Not matched against.
+  final String? trailing;
+
   /// Optional leading glyph.
   final IconData? icon;
 
@@ -41,6 +46,7 @@ class AutoSuggestion<T> {
     required this.value,
     required this.label,
     this.description,
+    this.trailing,
     this.icon,
     this.group,
     this.keywords = const [],
@@ -54,6 +60,7 @@ class AutoSuggestion<T> {
     T? value,
     String? label,
     String? description,
+    String? trailing,
     IconData? icon,
     String? group,
     List<String>? keywords,
@@ -63,6 +70,7 @@ class AutoSuggestion<T> {
         value: value ?? this.value,
         label: label ?? this.label,
         description: description ?? this.description,
+        trailing: trailing ?? this.trailing,
         icon: icon ?? this.icon,
         group: group ?? this.group,
         keywords: keywords ?? this.keywords,

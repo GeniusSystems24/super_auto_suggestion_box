@@ -51,6 +51,53 @@ class AutoSuggestionMatching {
     return i == needle.length;
   }
 
+  /// A relevance score for ranking matches (higher = better; 0 = no match).
+  /// Both arguments are already-cased. For prefix/contains/words it rewards an
+  /// earlier, tighter hit; for fuzzy it rewards consecutive runs and matches at
+  /// word boundaries — so `SuggestionSources.fuzzy` orders by match *quality*,
+  /// not just insertion order.
+  static double score(String haystack, String query, AutoSuggestionMatch mode) {
+    if (query.isEmpty) return 1;
+    if (!test(haystack, query, mode)) return 0;
+    switch (mode) {
+      case AutoSuggestionMatch.prefix:
+        // Shorter haystacks rank first (the query is a larger fraction of them).
+        return (1000 - (haystack.length - query.length).clamp(0, 999)).toDouble();
+      case AutoSuggestionMatch.contains:
+      case AutoSuggestionMatch.words:
+        final at = haystack.indexOf(query);
+        final idx = at < 0 ? 500 : at; // words: fall back to a mid rank
+        return (1000 - idx * 2 - (haystack.length - query.length).clamp(0, 400) * 0.25).toDouble();
+      case AutoSuggestionMatch.fuzzy:
+        return _fuzzyScore(query, haystack);
+    }
+  }
+
+  /// Subsequence score: +base per matched char, a bonus for consecutive runs and
+  /// for hits at a word boundary (start / after a space, `_`, `-`, `.` or `/`),
+  /// and a small penalty per gap. Normalised so a perfect prefix run scores high.
+  static double _fuzzyScore(String needle, String hay) {
+    const boundary = {' ', '_', '-', '.', '/', ':'};
+    var score = 0.0;
+    var i = 0, run = 0;
+    for (var j = 0; j < hay.length && i < needle.length; j++) {
+      if (hay[j] == needle[i]) {
+        score += 8;
+        run += 1;
+        score += run * 4; // reward longer consecutive runs
+        final atBoundary = j == 0 || boundary.contains(hay[j - 1]);
+        if (atBoundary) score += 10;
+        i++;
+      } else {
+        run = 0;
+        score -= 1; // small penalty per skipped char
+      }
+    }
+    if (i < needle.length) return 0; // not a full subsequence
+    // Nudge shorter haystacks ahead when scores otherwise tie.
+    return score + (100 - hay.length).clamp(0, 100) * 0.1;
+  }
+
   /// Compute highlight spans of [query] within [label] for bolding. Returns the
   /// contiguous match for contains/prefix/words tokens, or per-character spans
   /// for fuzzy. Empty when nothing lines up.

@@ -3,13 +3,14 @@ name: super-auto-suggestion-box
 description: >
   Use the super_auto_suggestion_box Flutter package to build GeniusLink
   design-system typeahead / combobox inputs — AutoSuggestionsBox: local + remote
-  suggestion sources, prefix/contains/fuzzy matching, single- and multi-select,
-  free-text entry, a local-first progressive remoteFallback source, an
-  advanced-search overlay, a bare embedding mode, required + validator field
-  validation, a disabled state, and per-field theming with a focused-state
-  style. Apply when a Flutter app
-  needs a themed (light/dark, LTR/RTL) typeahead/autocomplete field, or an
-  embeddable pick-or-type combobox. This package also carries the shared
+  suggestion sources, prefix/contains/words/fuzzy-ranked matching, single- and
+  multi-select, free-text entry, a local-first progressive remoteFallback source,
+  server-side paged infinite-scroll, recently-used suggestions, inline create, a
+  trailing meta column, record binding + a read-only view mode, an advanced-search
+  overlay, a bare embedding mode, required + validator field validation, a
+  disabled state, and per-field theming with a focused-state style. Apply when a
+  Flutter app needs a themed (light/dark, LTR/RTL) typeahead/autocomplete field,
+  or an embeddable pick-or-type combobox. This package also carries the shared
   GeniusLink core theme foundation; the super_table_field package depends on it.
 ---
 
@@ -116,11 +117,35 @@ AutoSuggestionsBox<String>(
 ### Suggestion sources
 
 `SuggestionSources.list(...)` / `.strings(...)` (static), `.fuzzy(...)`
-(fuzzy-ranked), `.async(...)` (debounced remote), and `.remoteFallback(...)`
-(local-first progressive). Prefer **`remoteFallback`** for “mostly local,
-occasionally remote” data: it shows local matches instantly and only calls `fetch`
-when local matches ≤ `remoteThreshold`, merging remote rows in behind a *loading
-more* indicator (`controller.isLoadingMore`). Use `.async` for purely-remote search.
+(fuzzy-ranked by match quality), `.async(...)` (debounced remote),
+`.hybrid(...)` (single-phase local-first merge), `.remoteFallback(...)`
+(local-first progressive), and `.paged(fetch)` (infinite scroll). Prefer
+**`remoteFallback`** for “mostly local, occasionally remote” data: it shows local
+matches instantly and only calls `fetch` when local matches ≤ `remoteThreshold`,
+merging remote rows in behind a *loading more* indicator (`controller.isLoadingMore`).
+Use `.async` for purely-remote search, and **`.paged`** when a single response
+would be too large — it serves one `SuggestionsPage(items, hasMore)` per
+`(query, page)` and the overlay auto-appends the next page on scroll
+(`controller.hasMore` / `isLoadingPage` / `loadNextPage()`).
+
+### ERP features (0.7.0)
+
+- **Recents** — build the controller with `showRecents: true` (+ `maxRecents`,
+  `initialRecents`, `onRecentsChanged`) so recent picks pin to a *Recent* section
+  on the empty field. The single biggest data-entry accelerator; persist the list
+  via `onRecentsChanged` and restore it with `initialRecents`.
+- **Inline create** — `onCreate: (query) => FutureOr<AutoSuggestion?>` shows a
+  “＋ Create …” action when nothing matches (Enter triggers it before a free-text
+  submit; a spinner shows while it resolves). Return the new row to commit it.
+- **Trailing meta** — set `AutoSuggestion.trailing` for a right-aligned mono value
+  (balance / on-hand qty / price) so rows read as code · name · amount.
+- **Record binding** — `controller.selectByValue(id)` resolves a stored id back to
+  its full row (via the source’s `resolve`) and commits it — for a form bound to a
+  record. Works for `list` / `hybrid` / `remoteFallback` sources and `paged`
+  (pass `resolveFrom:` the already-loaded rows).
+- **Read-only** — `readOnly: true` shows the value at full contrast but blocks
+  typing / overlay / clear (the “posted / review” state). Distinct from `disabled`,
+  which dims to 55 %.
 
 ### Behaviour to know
 
@@ -157,3 +182,10 @@ widget-free.
   badge tooltip; a `hint` is hidden while an error is present.
 - Recreating a controller inside `build` for a pre-filled `disabled` field —
   hold it as a `late final` (or state) field and dispose it, or use `items`.
+- Enabling **recents** via the `items`/`source` shorthand → recents live on the
+  controller, so build an `AutoSuggestionsBoxController(showRecents: true, …)` and
+  pass it as `controller:`.
+- Using `.async` (or a huge `items` list) for very large master data → prefer
+  `.paged` so rows stream in a page at a time as the user scrolls.
+- Confusing `readOnly` with `disabled` — `readOnly` is a full-contrast view state
+  (blocks editing only); `disabled` dims to 55 % and suppresses validation.

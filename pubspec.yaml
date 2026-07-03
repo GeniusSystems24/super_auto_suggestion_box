@@ -1,13 +1,14 @@
 name: super_auto_suggestion_box
 description: >
-  Super Auto Suggestion Box — a GeniusLink design-system Flutter package
-  shipping the AutoSuggestionsBox typeahead / combobox (local + remote sources,
-  prefix/contains/fuzzy matching, single- and multi-select, free-text entry, a
-  local-first progressive remoteFallback source, an advanced-search overlay, and
-  a bare embedding mode), plus the shared GeniusLink core theme foundation.
-  Light/dark + LTR/RTL.
+  Super Auto Suggestion Box is a GeniusLink Flutter package providing a
+  typeahead/combobox with local and remote sources, fuzzy matching, single or
+  multi-select, free-text entry, progressive fallback, infinite scroll, recent
+  suggestions, inline creation, record binding, read-only mode, advanced
+  search, bare embedding, and shared core theming. Supports light/dark themes,
+  LTR, and RTL.
 
-version: 0.6.0
+version: 0.7.0
+
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box
 repository: https://github.com/GeniusSystems24/super_auto_suggestion_box
 issue_tracker: https://github.com/GeniusSystems24/super_auto_suggestion_box/issues

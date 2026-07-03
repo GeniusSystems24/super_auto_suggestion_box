@@ -81,7 +81,7 @@ class _Launcher extends StatelessWidget {
   final VoidCallback onToggleDir;
 
   static final List<_Demo> _demos = [
-    _Demo('Auto Suggestion Box', 'Typeahead · groups · multi-select · fuzzy',
+    _Demo('Auto Suggestion Box', 'Typeahead · recents · create · paged · multi-select · fuzzy',
         Icons.manage_search_outlined, (_) => const AutoSuggestionBoxDemo()),
   ];
 

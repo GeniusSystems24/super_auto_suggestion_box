@@ -12,6 +12,7 @@
 import 'dart:async';
 
 import '../entities/auto_suggestion.dart';
+import '../entities/suggestions_page.dart';
 import '../entities/suggestions_query_result.dart';
 
 /// Produces suggestions for a query. Implement in the data layer (or subclass
@@ -31,4 +32,21 @@ abstract class AutoSuggestionsSource<T> {
   /// null (the default) to use the single-phase [query] instead. Sources that
   /// want "show local instantly, fetch remote when local is thin" override this.
   SuggestionsQueryResult<T>? progressive(String query) => null;
+
+  /// Whether this source serves results one **page** at a time (infinite
+  /// scroll). When true the controller loads page 0 via [fetchPage] on each
+  /// query and appends [fetchPage] `page + 1` as the user scrolls near the end.
+  bool get isPaged => false;
+
+  /// Fetch one [page] (0-based) of matches for [query]. Only called when
+  /// [isPaged] is true; the default throws to catch a mis-wired source.
+  Future<SuggestionsPage<T>> fetchPage(String query, int page) =>
+      throw UnsupportedError('This source is not paged; override fetchPage or set isPaged.');
+
+  /// Resolve a stored [value] back to its full suggestion (label, description,
+  /// icon, …) so a form bound to a record's id can display it. Returns null when
+  /// the source can't resolve synchronously (e.g. a purely-remote search); local
+  /// sources override this to look the value up in their in-memory set. Used by
+  /// `AutoSuggestionsBoxController.selectByValue`.
+  AutoSuggestion<T>? resolve(T value) => null;
 }

@@ -17,6 +17,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../../domain/entities/auto_suggestion.dart';
+import '../../domain/entities/suggestions_query_result.dart';
 import '../../domain/repositories/suggestions_source.dart';
 
 class AutoSuggestionsBoxController<T> extends ChangeNotifier {
@@ -31,6 +32,11 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     this.allowFreeText = true,
     this.multiSelect = false,
     List<AutoSuggestion<T>>? initialSelected,
+    this.showRecents = false,
+    this.maxRecents = 5,
+    List<AutoSuggestion<T>>? initialRecents,
+    this.recentsGroupLabel = 'Recent',
+    this.onRecentsChanged,
   })  : _source = source,
         _ownsText = textController == null,
         text = textController ?? TextEditingController(text: initialValue?.label ?? initialText ?? '') {
@@ -38,6 +44,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _committed = initialValue;
     _committedText = initialValue?.label ?? initialText;
     if (initialSelected != null) _selectedItems.addAll(initialSelected);
+    if (initialRecents != null) _recents.addAll(initialRecents.take(maxRecents));
     text.addListener(_onTextChanged);
     _lastText = text.text;
     // Seed the initial (empty-query) result set so opening shows everything.
@@ -67,6 +74,21 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// value and closing). Read the chosen rows from [selectedItems].
   final bool multiSelect;
 
+  /// Surface a **Recent** section of the most-recently-committed rows at the top
+  /// of the overlay while the query is empty — the single biggest data-entry
+  /// accelerator in an ERP (the same accounts / vendors / items get re-picked).
+  final bool showRecents;
+
+  /// How many recents to retain (most-recent-first). 0 disables tracking.
+  final int maxRecents;
+
+  /// The group header shown above the recents section.
+  final String recentsGroupLabel;
+
+  /// Fired whenever the recents list changes — persist it (e.g. to disk) and pass
+  /// it back as `initialRecents` next time.
+  final ValueChanged<List<AutoSuggestion<T>>>? onRecentsChanged;
+
   // ── state ──────────────────────────────────────────────────
   List<AutoSuggestion<T>> _results = const [];
   int _highlighted = -1;
@@ -84,6 +106,14 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   String _lastText = '';
   bool _muteText = false; // suppress _onTextChanged during programmatic writes
   final List<AutoSuggestion<T>> _selectedItems = []; // multi-select set (ordered)
+  final List<AutoSuggestion<T>> _recents = []; // most-recent-first, capped
+
+  // ── pagination (paged sources) ─────────────────────────────
+  String _pagedQuery = '';
+  int _page = 0;
+  bool _hasMore = false;
+  bool _isLoadingPage = false;
+  List<AutoSuggestion<T>> _pagedItems = const [];
 
   // ── reads ──────────────────────────────────────────────────
   String get query => text.text;
@@ -104,6 +134,18 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// rows are already shown). Drives the "loading more" indicator above the list.
   bool get isLoadingMore => _loadingMore;
   Object? get error => _error;
+
+  /// The recently-committed rows (most-recent-first), when [showRecents] is on.
+  List<AutoSuggestion<T>> get recents => List.unmodifiable(_recents);
+
+  /// Whether the backing source paginates (infinite scroll).
+  bool get isPaged => _source.isPaged;
+
+  /// Whether at least one more page can be loaded for the current query.
+  bool get hasMore => _hasMore;
+
+  /// True while the next page is being fetched (drives the bottom spinner row).
+  bool get isLoadingPage => _isLoadingPage;
 
   /// The field text from the start to the current caret position.
   String _queryString() {
@@ -147,6 +189,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     final nowSelected = i < 0;
     if (nowSelected) {
       _selectedItems.add(item);
+      _pushRecent(item);
     } else {
       _selectedItems.removeAt(i);
     }
@@ -174,6 +217,87 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     if (_selectedItems.isEmpty) return;
     _selectedItems.clear();
     notifyListeners();
+  }
+
+  // ── recents ────────────────────────────────────────────────
+  /// Record [item] as the most-recent pick (deduped by value, capped at
+  /// [maxRecents]). No-op unless [showRecents] and [maxRecents] > 0.
+  void _pushRecent(AutoSuggestion<T> item) {
+    if (!showRecents || maxRecents <= 0) return;
+    _recents.removeWhere((s) => s.value == item.value);
+    _recents.insert(0, item);
+    while (_recents.length > maxRecents) {
+      _recents.removeLast();
+    }
+    onRecentsChanged?.call(recents);
+  }
+
+  /// Replace the recents list (e.g. after loading a persisted set).
+  void setRecents(List<AutoSuggestion<T>> items) {
+    _recents
+      ..clear()
+      ..addAll(items.take(maxRecents));
+    onRecentsChanged?.call(recents);
+    if (_activeQuery.trim().isEmpty) refresh();
+  }
+
+  /// Clear the recents list.
+  void clearRecents() {
+    if (_recents.isEmpty) return;
+    _recents.clear();
+    onRecentsChanged?.call(recents);
+    if (_activeQuery.trim().isEmpty) refresh();
+  }
+
+  // ── record binding ─────────────────────────────────────────
+  /// Resolve a stored [value] back to its full suggestion via the source and
+  /// commit it — so a form bound to a record's id can display the right label
+  /// without the user re-picking. Falls back to the current results / recents
+  /// when the source can't resolve. Returns the committed row, or null when the
+  /// value is unknown (a purely-remote source with nothing cached).
+  AutoSuggestion<T>? selectByValue(T value, {bool addToRecents = false}) {
+    AutoSuggestion<T>? found = _source.resolve(value);
+    found ??= _firstByValue(_results, value) ?? _firstByValue(_recents, value);
+    if (found == null) return null;
+    if (multiSelect) {
+      if (!isSelectedValue(value)) {
+        _selectedItems.add(found);
+        notifyListeners();
+      }
+    } else {
+      select(found);
+    }
+    if (addToRecents) _pushRecent(found);
+    return found;
+  }
+
+  AutoSuggestion<T>? _firstByValue(List<AutoSuggestion<T>> list, T value) {
+    for (final s in list) {
+      if (s.value == value) return s;
+    }
+    return null;
+  }
+
+  /// Prepend the recents section (as a `recentsGroupLabel` group) when the field
+  /// is empty and recents exist; the rest of [base] follows, de-duplicated and
+  /// tagged so it reads as a separate section.
+  List<AutoSuggestion<T>> _decorateRecents(List<AutoSuggestion<T>> base) {
+    if (!showRecents || _recents.isEmpty || _activeQuery.trim().isNotEmpty) return base;
+    final recentVals = <T>{for (final r in _recents) r.value};
+    return [
+      for (final r in _recents) r.copyWith(group: recentsGroupLabel),
+      for (final s in base)
+        if (!recentVals.contains(s.value)) s.copyWith(group: s.group ?? 'All'),
+    ];
+  }
+
+  /// Apply recents decoration + the [maxResults] cap (paged sources are never
+  /// capped — the page size is the backend's concern) and store the list.
+  void _setResults(List<AutoSuggestion<T>> list) {
+    final composed = _decorateRecents(list);
+    _results = (!_source.isPaged && composed.length > maxResults)
+        ? composed.sublist(0, maxResults)
+        : composed;
   }
 
   /// Swap the data source at runtime (e.g. switching match strategy) and re-run.
@@ -230,8 +354,11 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _activeQuery = raw;
     final q = raw.trim();
     if (q.length < minChars) {
-      _results = const [];
-      _highlighted = -1;
+      // Below minChars: show nothing while typing, but still surface recents on
+      // an empty field (a quick-pick shortcut that ignores the min-chars gate).
+      final composed = _decorateRecents(const []);
+      _results = composed;
+      _highlighted = composed.isEmpty ? -1 : 0;
       _loading = false;
       _loadingMore = false;
       notifyListeners();
@@ -241,11 +368,17 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
     void deliver(List<AutoSuggestion<T>> list) {
       if (mySeq != _seq) return; // a newer query superseded us
-      _results = list.length > maxResults ? list.sublist(0, maxResults) : list;
+      _setResults(list);
       _highlighted = _results.isEmpty ? -1 : 0;
       _loading = false;
       _error = null;
       notifyListeners();
+    }
+
+    // Paged source: load page 0, then append further pages on scroll.
+    if (_source.isPaged) {
+      _startPaged(raw, mySeq, immediate: immediate);
+      return;
     }
 
     // Two-phase (progressive) source: show local rows now, stream remote in.
@@ -259,7 +392,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
         void fire() {
           loadMore().then((list) {
             if (mySeq != _seq) return;
-            _results = list.length > maxResults ? list.sublist(0, maxResults) : list;
+            _setResults(list);
             if (_highlighted >= _results.length) _highlighted = _results.isEmpty ? -1 : 0;
             _loadingMore = false;
             _error = null;
@@ -309,6 +442,74 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     }
   }
 
+  /// Load page 0 for [raw] from a paged source (debounced like an async query),
+  /// resetting the pagination cursor. Subsequent pages come via [loadNextPage].
+  void _startPaged(String raw, int mySeq, {bool immediate = false}) {
+    _pagedQuery = raw;
+    _page = 0;
+    _hasMore = false;
+    _pagedItems = const [];
+    _isLoadingPage = false;
+    _loading = true;
+    _loadingMore = false;
+    notifyListeners();
+    void fire() {
+      _source.fetchPage(raw, 0).then((page) {
+        if (mySeq != _seq) return;
+        _pagedItems = List<AutoSuggestion<T>>.of(page.items);
+        _hasMore = page.hasMore;
+        _loading = false;
+        _error = null;
+        _setResults(_pagedItems);
+        _highlighted = _results.isEmpty ? -1 : 0;
+        notifyListeners();
+      }).catchError((Object e) {
+        if (mySeq != _seq) return;
+        _error = e;
+        _loading = false;
+        _hasMore = false;
+        _pagedItems = const [];
+        _setResults(const []);
+        _highlighted = -1;
+        notifyListeners();
+      });
+    }
+
+    if (immediate || debounce == Duration.zero) {
+      fire();
+    } else {
+      _debounceTimer = Timer(debounce, fire);
+    }
+  }
+
+  /// Fetch and append the next page from a paged source. Safe to call on every
+  /// scroll tick — it no-ops unless there is another page and none is in flight.
+  /// The view calls this as the overlay nears its bottom.
+  void loadNextPage() {
+    if (!_source.isPaged || !_hasMore || _isLoadingPage || _loading) return;
+    final next = _page + 1;
+    final mySeq = _seq; // stay bound to the current query
+    _isLoadingPage = true;
+    notifyListeners();
+    _source.fetchPage(_pagedQuery, next).then((page) {
+      if (mySeq != _seq) return;
+      _page = next;
+      final seen = <T>{for (final s in _pagedItems) s.value};
+      for (final s in page.items) {
+        if (seen.add(s.value)) _pagedItems.add(s);
+      }
+      _hasMore = page.hasMore;
+      _isLoadingPage = false;
+      _setResults(_pagedItems);
+      notifyListeners();
+    }).catchError((Object _) {
+      if (mySeq != _seq) return;
+      _isLoadingPage = false;
+      _hasMore = false; // stop paging on error; keep what we have
+      notifyListeners();
+    });
+  }
+
   /// Force a re-query of the current text (e.g. after the source changed).
   void refresh() => _run(_queryString(), immediate: true);
 
@@ -348,6 +549,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     setText(item.label);
     _open = false;
     _highlighted = -1;
+    _pushRecent(item);
     notifyListeners();
     return item;
   }

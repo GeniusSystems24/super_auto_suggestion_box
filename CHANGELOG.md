@@ -4,6 +4,49 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.7.0] — 2026-07-04
+
+Five ERP-focused capabilities, plus source/ranking fixes. All additions are
+backwards-compatible — existing call sites (and the `super_table_field` combo
+embedding) compile unchanged.
+
+### Added
+- **Recently-used suggestions.** With `showRecents: true` on the controller the
+  most-recently-committed rows pin to a **Recent** section at the top of the
+  overlay while the field is empty — the biggest data-entry accelerator in an ERP
+  (the same accounts / vendors / items get re-picked). Tunables: `maxRecents`,
+  `initialRecents`, `recentsGroupLabel`, `onRecentsChanged` (persist & restore),
+  plus `controller.recents` / `setRecents` / `clearRecents`.
+- **Inline create.** `onCreate: (query) => FutureOr<AutoSuggestion?>` surfaces a
+  **“＋ Create …”** action at the foot of the overlay (and takes Enter ahead of a
+  free-text submit) when the typed value matches no row — add a missing vendor /
+  item / account without leaving the field. Async-aware (a spinner shows while it
+  resolves); `createLabelBuilder` customises the label.
+- **Server-side pagination / infinite scroll.** `SuggestionSources.paged(fetch)`
+  serves one `SuggestionsPage(items, hasMore)` per `(query, page)`; the overlay
+  loads page 0 and appends the next page as you scroll near the bottom, behind a
+  *loading more…* row. Drives huge master data (thousands of SKUs). Controller
+  adds `isPaged` / `hasMore` / `isLoadingPage` / `loadNextPage()`.
+- **Trailing meta column.** `AutoSuggestion.trailing` renders a right-aligned,
+  tabular-mono value (balance / on-hand qty / unit price / status) so a lookup
+  reads like a mini-table: code · name · amount.
+- **Record binding + read-only view mode.** `controller.selectByValue(value)`
+  resolves a stored id back to its full row (via the source’s new `resolve`) and
+  commits it — for a form bound to a record. `readOnly: true` shows the committed
+  value at full contrast but blocks typing, the overlay and the clear/chevron
+  affordances (the “posted / review” state; unlike `disabled` it isn’t dimmed).
+
+### Fixed
+- **`SuggestionSources.fuzzy(...)`** now exists (it was documented but missing);
+  it is the ranked shorthand for `list(items, match: fuzzy)`.
+- **Fuzzy results are ranked by match quality** — a new subsequence scorer
+  rewards consecutive runs and word-boundary hits, so loose queries surface the
+  best match first (previously fuzzy hits kept arbitrary order).
+- **`SuggestionSources.hybrid(...)`** now returns the single-phase
+  `HybridSuggestionsSource` it documents (it previously constructed the
+  progressive fallback source, leaving `HybridSuggestionsSource` as dead code).
+  `remoteFallback` remains the progressive variant.
+
 ## [0.6.0] — 2026-07-01
 
 ### Added

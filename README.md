@@ -3,9 +3,12 @@
 [![style: flutter_lints](https://img.shields.io/badge/style-flutter__lints-blue)](https://pub.dev/packages/flutter_lints)
 
 A **GeniusLink design-system** Flutter package shipping the **`AutoSuggestionsBox`** —
-a typeahead / combobox field with local + remote sources, prefix / contains / fuzzy
-matching, single- and multi-select, free-text entry, a local-first progressive
-`remoteFallback` source, an advanced-search overlay, and a `bare` embedding mode.
+a typeahead / combobox field with local + remote sources, prefix / contains / words /
+fuzzy-ranked matching, single- and multi-select, free-text entry, a local-first
+progressive `remoteFallback` source, **server-side paged infinite-scroll**,
+**recently-used** suggestions, **inline create**, a **trailing meta column**,
+**record binding + read-only** mode, an advanced-search overlay, and a `bare`
+embedding mode.
 
 It also carries the shared GeniusLink **core** foundation (theme tokens,
 `ThemeExtension`s, text styles, and a few design-system widgets) the box is built on.
@@ -28,10 +31,18 @@ Light + dark themes, full LTR + RTL.
 - ✅ **`disabled`** state and a per-field `theme` override.
 - ✅ **Themeable focused state** — `AutoSuggestionsBoxFocusedStyle` (`fillColor`,
   `border`, `fontStyle`, `cursorColor`, `shadow`).
-- ✅ **Matching strategies** — prefix, contains, and fuzzy ranking.
+- ✅ **Matching strategies** — prefix, contains, words, and **fuzzy (ranked by
+  match quality)**.
 - ✅ **Single- & multi-select**, **free-text entry** (`allowFreeText`), grouped results.
+- ✅ **Recently-used** — recent picks pin to a *Recent* section when the field is
+  empty (`showRecents`, `maxRecents`, `initialRecents`, `onRecentsChanged`).
+- ✅ **Inline create** — a *＋ Create “…”* action for missing master data (`onCreate`).
+- ✅ **Trailing meta column** — `AutoSuggestion.trailing` shows a right-aligned
+  mono value (balance / qty / price) so rows read as code · name · amount.
+- ✅ **Record binding + read-only** — `controller.selectByValue(id)` and a
+  `readOnly` view state.
 - ✅ **Suggestion sources** — `SuggestionSources.list / .strings / .fuzzy / .async /
-  .remoteFallback` (local-first progressive).
+  .hybrid / .remoteFallback / .paged` (paged = infinite scroll for large data).
 - ✅ **Advanced-search overlay** — opens on `Ctrl`/`⌘`+`F` (`advancedSearch: true`).
 - ✅ **Restore-on-blur** and **caret-anchored query** matching.
 - ✅ **`bare` embedding mode** — drop the box into a cell or compact toolbar.
@@ -147,12 +158,61 @@ extension you register on `ThemeData` (via `.copyWith(focusedStyle: …)`).
 ### Suggestion sources
 
 - `SuggestionSources.list(...)` / `.strings(...)` — static, in-memory.
-- `SuggestionSources.fuzzy(...)` — fuzzy-ranked matching.
+- `SuggestionSources.fuzzy(...)` — fuzzy-ranked matching (ordered by match quality).
 - `SuggestionSources.async(...)` — debounced purely-remote search.
-- `SuggestionSources.remoteFallback(...)` — local-first progressive: shows local
+- `SuggestionSources.hybrid(...)` — single-phase local-first: filters the local
+  set and, when matches are thin, fetches once and merges (behind the field spinner).
+- `SuggestionSources.remoteFallback(...)` — local-first **progressive**: shows local
   matches instantly and only calls `fetch` when local matches are
   `remoteThreshold` or fewer, merging remote rows (de-duplicated) behind a
   *loading more* indicator (`controller.isLoadingMore`).
+- `SuggestionSources.paged(fetch)` — **infinite scroll** for large master data:
+  returns one `SuggestionsPage(items, hasMore)` per `(query, page)`; the overlay
+  loads page 0 and appends the next page as you scroll near the bottom
+  (`controller.hasMore` / `isLoadingPage` / `loadNextPage()`).
+
+### ERP features (0.7.0)
+
+**Recently-used** — pin recent picks to a *Recent* section on the empty field
+(build the controller yourself to enable it):
+
+```dart
+final box = AutoSuggestionsBoxController<String>(
+  source: SuggestionSources.list<String>(accounts),
+  showRecents: true,
+  maxRecents: 5,
+  initialRecents: savedRecents,               // restore from disk
+  onRecentsChanged: (r) => persist(r),        // persist on change
+);
+AutoSuggestionsBox<String>(controller: box, label: 'Account');
+```
+
+**Inline create** — offer a *＋ Create “…”* action for missing master data
+(Enter triggers it before a free-text submit; async-aware):
+
+```dart
+AutoSuggestionsBox<String>(
+  items: vendors,
+  onCreate: (query) async {
+    final created = await api.createVendor(query);   // POST
+    return AutoSuggestion(value: created.id, label: created.name);
+  },
+);
+```
+
+**Trailing meta column** — a right-aligned tabular-mono value (code · name · amount):
+
+```dart
+AutoSuggestion(value: '1020', label: 'Bank — Operating',
+    description: '1020 · Assets', trailing: '285,120.50');
+```
+
+**Record binding + read-only** — resolve a stored id to its row, and a view state:
+
+```dart
+box.selectByValue('4000');                    // bind a record's stored code
+AutoSuggestionsBox<String>(controller: box, readOnly: posted); // view mode
+```
 
 ### Behaviour to know
 

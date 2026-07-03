@@ -103,6 +103,12 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// `super_form_field`'s `disabled`. Takes precedence over [enabled].
   final bool disabled;
 
+  /// Read-only **view mode**: shows the committed value in normal (non-dimmed)
+  /// styling but blocks typing, the overlay, and the clear / chevron affordances
+  /// — the ERP "review / posted" state for a bound field. Unlike [disabled] it
+  /// keeps full contrast (not greyed). [disabled] takes precedence over it.
+  final bool readOnly;
+
   /// Marks the field mandatory: appends a red `*` to the [label] and adds an
   /// implicit “this field is required” validator (fails while empty).
   final bool required;
@@ -187,6 +193,18 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// (A small spinner also always appears in the field's suffix while loading.)
   final Widget Function(BuildContext, String query)? loadingBuilder;
 
+  /// Inline **create**: when set and the typed query matches no existing row, a
+  /// “＋ Create …” action appears at the foot of the overlay (and Enter triggers
+  /// it instead of a free-text submit). Return the new [AutoSuggestion] to commit
+  /// it — synchronously or as a `Future` (a spinner shows while awaiting) — or
+  /// null to cancel. Lets users add missing master data (a new vendor / item /
+  /// account) without leaving the field.
+  final FutureOr<AutoSuggestion<T>?> Function(String query)? onCreate;
+
+  /// Builds the create action's trailing label from the query (defaults to the
+  /// query itself, rendered as `Create “…”`).
+  final String Function(String query)? createLabelBuilder;
+
   const AutoSuggestionsBox({
     super.key,
     this.source,
@@ -209,6 +227,7 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.width,
     this.enabled = true,
     this.disabled = false,
+    this.readOnly = false,
     this.required = false,
     this.validator,
     this.requiredMessage = 'This field is required',
@@ -232,6 +251,8 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.itemBuilder,
     this.emptyBuilder,
     this.loadingBuilder,
+    this.onCreate,
+    this.createLabelBuilder,
   }) : assert(source != null || items != null || controller != null,
             'Provide one of: source, items, or controller');
 
@@ -258,6 +279,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   bool _advancedOpen = false; // the advanced-search dialog is showing
   bool _touched = false; // has the field been blurred at least once
   String? _lastReportedError; // last error handed to onValidity
+  bool _creating = false; // an onCreate call is in flight
 
   @override
   void initState() {
@@ -322,7 +344,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       _blurTimer?.cancel();
       if (_suppressReopen) {
         _suppressReopen = false; // consume: don't reopen right after a pick
-      } else if (widget.openOnFocus) {
+      } else if (widget.openOnFocus && !widget.disabled && !widget.readOnly) {
         _c.open();
       }
       if (widget.scrollOnFocus) _scrollIntoView();
@@ -456,6 +478,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   // ── keyboard ──
   KeyEventResult _onKey(FocusNode node, KeyEvent e) {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (widget.disabled || widget.readOnly) return KeyEventResult.ignored;
     // Ctrl/⌘+F → open the advanced search surface.
     if (e.logicalKey == LogicalKeyboardKey.keyF &&
         (HardwareKeyboard.instance.isControlPressed || HardwareKeyboard.instance.isMetaPressed)) {
@@ -477,6 +500,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         final h = _c.highlighted;
         if (h != null && h.enabled) {
           _choose(h);
+        } else if (_canCreate) {
+          _startCreate(); // “＋ Create …” takes Enter before free-text submit
         } else if (_c.allowFreeText && !widget.multiSelect) {
           _c.acceptFreeText(); // make the typed text the committed baseline
           widget.onSubmitted?.call(_c.query);
@@ -567,6 +592,41 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     }
   }
 
+  // ── inline create ──
+  /// Whether a "＋ Create" action should be offered: an `onCreate` is wired, the
+  /// query is non-empty, and no existing row matches it exactly (case-insensitive).
+  bool get _canCreate {
+    if (widget.onCreate == null) return false;
+    final q = _c.query.trim();
+    if (q.isEmpty) return false;
+    final lower = q.toLowerCase();
+    for (final s in _c.results) {
+      if (s.label.toLowerCase() == lower) return false;
+    }
+    return true;
+  }
+
+  /// The label shown in the create action (`createLabelBuilder` or the query).
+  String get _createLabel => widget.createLabelBuilder?.call(_c.query.trim()) ?? _c.query.trim();
+
+  /// Invoke `onCreate`, showing a spinner while it resolves; commit the returned
+  /// suggestion (if any) exactly as a normal pick.
+  Future<void> _startCreate() async {
+    final create = widget.onCreate;
+    final q = _c.query.trim();
+    if (create == null || q.isEmpty || _creating) return;
+    _blurTimer?.cancel();
+    setState(() => _creating = true);
+    AutoSuggestion<T>? created;
+    try {
+      created = await create(q);
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
+    if (!mounted || created == null) return;
+    _choose(created);
+  }
+
   /// Resolve the effective theme: a directly-assigned [AutoSuggestionsBox.theme]
   /// wins over the ambient extension (which falls back to the dark preset).
   AutoSuggestionsBoxThemeData _resolveTheme(BuildContext context) =>
@@ -615,7 +675,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final focused = _focus.hasFocus;
     final bare = widget.bare;
     final disabled = widget.disabled;
-    final interactive = widget.enabled && !disabled;
+    final readOnly = widget.readOnly && !disabled;
+    final interactive = widget.enabled && !disabled && !readOnly;
     final hasError = error != null;
     final fs = t.focusedStyle;
 
@@ -663,7 +724,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       child: TextField(
         controller: _c.text,
         focusNode: _focus,
-        enabled: interactive,
+        enabled: widget.enabled && !disabled,
+        readOnly: readOnly,
         autofocus: widget.autofocus,
         onChanged: (v) {
           widget.onChanged?.call(v);
@@ -707,7 +769,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
             const SizedBox(width: 8),
           ],
           Expanded(child: content),
-          ..._suffixChildren(t, hasText, interactive),
+          if (!readOnly) ..._suffixChildren(t, hasText, interactive),
           if (hasError) ...[
             const SizedBox(width: 4),
             _ErrorBadge(error: error),
@@ -820,6 +882,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
             multiSelect: widget.multiSelect,
             onPick: _pick,
             onHover: _c.highlightAt,
+            createLabel: _canCreate ? _createLabel : null,
+            creating: _creating,
+            onCreate: _startCreate,
           ),
         ),
       ),
@@ -849,6 +914,15 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
   final ValueChanged<AutoSuggestion<T>> onPick;
   final ValueChanged<int> onHover;
 
+  /// When non-null, a “＋ Create …” footer for this text is shown under the list.
+  final String? createLabel;
+
+  /// True while the `onCreate` call is in flight (footer shows a spinner).
+  final bool creating;
+
+  /// Invoked when the create footer is tapped.
+  final VoidCallback? onCreate;
+
   const AutoSuggestionsPanel({
     super.key,
     required this.width,
@@ -865,6 +939,9 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
     required this.multiSelect,
     required this.onPick,
     required this.onHover,
+    this.createLabel,
+    this.creating = false,
+    this.onCreate,
   });
 
   @override
@@ -935,15 +1012,27 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                 ]),
               ),
             Flexible(
-              child: Scrollbar(
-                controller: scroll,
-                child: ListView.builder(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (n) {
+                  // Infinite scroll: pull the next page as the list nears bottom.
+                  if (controller.isPaged && controller.hasMore && !controller.isLoadingPage) {
+                    final m = n.metrics;
+                    if (m.axis == Axis.vertical && m.pixels >= m.maxScrollExtent - 120) {
+                      controller.loadNextPage();
+                    }
+                  }
+                  return false;
+                },
+                child: Scrollbar(
                   controller: scroll,
-                  padding: const EdgeInsets.symmetric(vertical: 5),
-                  shrinkWrap: true,
-                  itemCount: results.length,
-                  itemBuilder: (ctx, i) {
-                    final s = results[i];
+                  child: ListView.builder(
+                    controller: scroll,
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    shrinkWrap: true,
+                    itemCount: results.length + (controller.isLoadingPage ? 1 : 0),
+                    itemBuilder: (ctx, i) {
+                      if (i >= results.length) return _PageLoadingRow(theme: t);
+                      final s = results[i];
                     final isHl = controller.isHighlighted(i);
                     final showGroup = s.group != null && (i == 0 || results[i - 1].group != s.group);
                     final row = _Row<T>(
@@ -973,9 +1062,10 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                       row,
                     ]);
                   },
+                    ),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       );
@@ -992,7 +1082,20 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
           boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
         ),
         clipBehavior: Clip.antiAlias,
-        child: body,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            body,
+            if (createLabel != null)
+              _CreateFooter(
+                theme: t,
+                label: createLabel!,
+                creating: creating,
+                showEnterHint: controller.results.isEmpty,
+                onTap: onCreate,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1078,6 +1181,19 @@ class _Row<T> extends StatelessWidget {
               ],
             ),
           ),
+          if (s.trailing != null) ...[
+            const SizedBox(width: 10),
+            Text(
+              s.trailing!,
+              style: TextStyle(
+                fontFamily: SuperTokens.monoFont,
+                fontSize: 12,
+                height: 1.2,
+                color: enabled ? t.fg2 : t.fg3,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
           if (highlighted && enabled) ...[
             const SizedBox(width: 8),
             Icon(Icons.subdirectory_arrow_left_rounded, size: 14, color: t.fg3),
@@ -1117,6 +1233,113 @@ class _Row<T> extends StatelessWidget {
           child: content,
         ),
       ),
+    );
+  }
+}
+
+// ── the "＋ Create …" footer (inline create; see AutoSuggestionsBox.onCreate) ──
+class _CreateFooter extends StatefulWidget {
+  final AutoSuggestionsBoxThemeData theme;
+  final String label;
+  final bool creating;
+  final bool showEnterHint;
+  final VoidCallback? onTap;
+  const _CreateFooter(
+      {required this.theme,
+      required this.label,
+      required this.creating,
+      this.showEnterHint = true,
+      this.onTap});
+
+  @override
+  State<_CreateFooter> createState() => _CreateFooterState();
+}
+
+class _CreateFooterState extends State<_CreateFooter> {
+  bool _h = false;
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.theme;
+    return MouseRegion(
+      cursor: widget.creating ? SystemMouseCursors.wait : SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _h = true),
+      onExit: (_) => setState(() => _h = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.creating ? null : widget.onTap,
+        child: AnimatedContainer(
+          duration: AutoSuggestionsBoxThemeData.durFast,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _h ? t.accentWash(0.12) : t.accentWash(0.05),
+            border: Border(top: BorderSide(color: t.border)),
+          ),
+          child: Row(children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: widget.creating
+                  ? const CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent)
+                  : const Icon(Icons.add_rounded, size: 18, color: AutoSuggestionsBoxThemeData.accent),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: 'Create ',
+                  style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 13, color: t.fg2),
+                  children: [
+                    TextSpan(
+                      text: '“${widget.label}”',
+                      style: TextStyle(
+                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: t.fg1),
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (widget.showEnterHint)
+              Text('ENTER',
+                  style: TextStyle(
+                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      color: t.fg3)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ── bottom "loading more…" row appended while a paged source fetches ──
+class _PageLoadingRow extends StatelessWidget {
+  final AutoSuggestionsBoxThemeData theme;
+  const _PageLoadingRow({required this.theme});
+  @override
+  Widget build(BuildContext context) {
+    final t = theme;
+    return Container(
+      height: AutoSuggestionsBoxThemeData.rowHeight,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const SizedBox(
+          width: 13,
+          height: 13,
+          child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent),
+        ),
+        const SizedBox(width: 9),
+        Text('Loading more…',
+            style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 11.5, color: t.fg2)),
+      ]),
     );
   }
 }
