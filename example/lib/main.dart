@@ -23,7 +23,10 @@ class _ExampleAppState extends State<ExampleApp> {
   ThemeMode _mode = ThemeMode.dark;
   TextDirection _dir = TextDirection.ltr;
 
-  ThemeData _theme(SuperThemeData s) => ThemeData(
+  ThemeData _theme(SuperThemeData s) => (s.brightness == Brightness.dark
+              ? SuperMaterialThemeData.dark()
+              : SuperMaterialThemeData.light())
+          .copyWith(
         brightness: s.brightness,
         scaffoldBackgroundColor: s.bg,
         extensions: [
@@ -36,8 +39,8 @@ class _ExampleAppState extends State<ExampleApp> {
 
   void _toggleTheme() => setState(
       () => _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
-  void _toggleDir() => setState(
-      () => _dir = _dir == TextDirection.ltr ? TextDirection.rtl : TextDirection.ltr);
+  void _toggleDir() => setState(() =>
+      _dir = _dir == TextDirection.ltr ? TextDirection.rtl : TextDirection.ltr);
 
   @override
   Widget build(BuildContext context) {
@@ -81,13 +84,17 @@ class _Launcher extends StatelessWidget {
   final VoidCallback onToggleDir;
 
   static final List<_Demo> _demos = [
-    _Demo('Auto Suggestion Box', 'Typeahead · recents · create · paged · multi-select · fuzzy',
-        Icons.manage_search_outlined, (_) => const AutoSuggestionBoxDemo()),
+    _Demo(
+        'Auto Suggestion Box',
+        'Typeahead · recents · create · paged · multi-select · fuzzy',
+        Icons.manage_search_outlined,
+        (_) => const AutoSuggestionBoxDemo()),
   ];
 
   @override
   Widget build(BuildContext context) {
     final t = context.superTheme;
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: t.bg,
       body: SafeArea(
@@ -95,12 +102,14 @@ class _Launcher extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(SuperTokens.space10),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: SuperTokens.contentColumn),
+              constraints:
+                  const BoxConstraints(maxWidth: SuperTokens.contentColumn),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('SUPER AUTO SUGGESTION BOX \u2022 GALLERY',
-                      style: SuperText.eyebrow.copyWith(color: SuperTokens.accent)),
+                      style: SuperText.eyebrow.copyWith(
+                          color: Theme.of(context).colorScheme.primary)),
                   const SizedBox(height: SuperTokens.space2),
                   Text('Component Demos مكتبة المكونات',
                       style: SuperText.h1.copyWith(color: t.fg1)),
@@ -114,13 +123,17 @@ class _Launcher extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SuperButton(
-                        label: mode == ThemeMode.dark ? 'Light Theme' : 'Dark Theme',
+                        label: mode == ThemeMode.dark
+                            ? 'Light Theme'
+                            : 'Dark Theme',
                         variant: SuperButtonVariant.secondary,
                         onPressed: onToggleTheme,
                       ),
                       const SizedBox(width: SuperTokens.space3),
                       SuperButton(
-                        label: dir == TextDirection.ltr ? 'العربية (RTL)' : 'English (LTR)',
+                        label: dir == TextDirection.ltr
+                            ? 'العربية (RTL)'
+                            : 'English (LTR)',
                         variant: SuperButtonVariant.secondary,
                         onPressed: onToggleDir,
                       ),
@@ -143,6 +156,7 @@ class _DemoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.superTheme;
+    final cs = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -164,19 +178,24 @@ class _DemoCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: Color.alphaBlend(
-                      SuperTokens.accent.withOpacity(0.14), t.surface),
-                  borderRadius: BorderRadius.circular(SuperTokens.radiusControl),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.14),
+                      t.surface),
+                  borderRadius:
+                      BorderRadius.circular(SuperTokens.radiusControl),
                 ),
-                child: Icon(demo.icon, size: 22, color: SuperTokens.accent),
+                child: Icon(demo.icon,
+                    size: 22, color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(width: SuperTokens.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(demo.title, style: SuperText.heading.copyWith(color: t.fg1)),
+                    Text(demo.title,
+                        style: SuperText.heading.copyWith(color: t.fg1)),
                     const SizedBox(height: 2),
-                    Text(demo.subtitle, style: SuperText.caption.copyWith(color: t.fg3)),
+                    Text(demo.subtitle,
+                        style: SuperText.caption.copyWith(color: t.fg3)),
                   ],
                 ),
               ),

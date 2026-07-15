@@ -4,6 +4,30 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.7.1] — 2026-07-14
+
+### Changed
+
+- Upgraded to **super_core 1.0.0**. No source changes required — all
+  `AutoSuggestionsBoxThemeData` surfaces are read via `SuperThemeData.of(context)`,
+  which is now registered automatically by `SuperMaterialThemeData`. Palette
+  switching and light/dark mode work without any extra wiring:
+
+  ```dart
+  MaterialApp(
+    theme:     SuperMaterialThemeData.light(palette: SuperPalette.purplePalette),
+    darkTheme: SuperMaterialThemeData.dark(palette: SuperPalette.purplePalette),
+    // AutoSuggestionsBox adapts automatically — no extra setup needed.
+  );
+  ```
+
+- The `AutoSuggestionsBoxThemeData.of(context)` fallback chain now benefits from
+  the richer palette-derived `SuperThemeData` registered by `SuperMaterialThemeData`,
+  so the suggestion overlay and field chrome inherit the active palette's primary
+  color via `Theme.of(context).colorScheme.primary`.
+
+---
+
 ## [0.7.0] — 2026-07-04
 
 Five ERP-focused capabilities, plus source/ranking fixes. All additions are

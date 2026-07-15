@@ -180,10 +180,12 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
 
   /// Custom builder for the advanced-search surface (defaults to a built-in
   /// dialog). Receives the live controller; commit via `controller.select(...)`.
-  final Widget Function(BuildContext, AutoSuggestionsBoxController<T>)? advancedSearchBuilder;
+  final Widget Function(BuildContext, AutoSuggestionsBoxController<T>)?
+      advancedSearchBuilder;
 
   /// Custom row renderer (overrides the default label/description/icon row).
-  final Widget Function(BuildContext, AutoSuggestion<T>, bool highlighted)? itemBuilder;
+  final Widget Function(BuildContext, AutoSuggestion<T>, bool highlighted)?
+      itemBuilder;
 
   /// Shown inside the overlay when a non-empty query has no matches.
   final Widget Function(BuildContext, String query)? emptyBuilder;
@@ -275,7 +277,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   // it into view using real geometry (group headers / variable heights included).
   final GlobalKey _hlRowKey = GlobalKey();
   Timer? _blurTimer; // delays close-on-blur so a row tap can complete first
-  bool _suppressReopen = false; // skip openOnFocus once (after a pick re-focuses)
+  bool _suppressReopen =
+      false; // skip openOnFocus once (after a pick re-focuses)
   bool _advancedOpen = false; // the advanced-search dialog is showing
   bool _touched = false; // has the field been blurred at least once
   String? _lastReportedError; // last error handed to onValidity
@@ -301,7 +304,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   }
 
   AutoSuggestionsBoxController<T> _buildController() {
-    final src = widget.source ?? SuggestionSources.list<T>(widget.items ?? const []);
+    final src =
+        widget.source ?? SuggestionSources.list<T>(widget.items ?? const []);
     return AutoSuggestionsBoxController<T>(
       source: src,
       multiSelect: widget.multiSelect,
@@ -314,7 +318,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   String? get _error {
     final text = _c.query;
     if (widget.required) {
-      final empty = widget.multiSelect ? _c.selectedItems.isEmpty : text.trim().isEmpty;
+      final empty =
+          widget.multiSelect ? _c.selectedItems.isEmpty : text.trim().isEmpty;
       if (empty) return widget.requiredMessage;
     }
     return widget.validator?.call(text);
@@ -350,7 +355,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       if (widget.scrollOnFocus) _scrollIntoView();
     } else {
       _touched = true; // first blur → validation may now surface
-      if (_advancedOpen) return; // focus moved into the advanced dialog — ignore
+      if (_advancedOpen)
+        return; // focus moved into the advanced dialog — ignore
       // Delay the close so a mouse click on a row (which blurs the field on
       // pointer-down) still lands its tap on pointer-up. A row tap calls
       // _pick → requestFocus, which cancels this timer.
@@ -452,7 +458,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   @override
   void didUpdateWidget(covariant AutoSuggestionsBox<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller && widget.controller != null) {
+    if (widget.controller != oldWidget.controller &&
+        widget.controller != null) {
       _c.removeListener(_onModel);
       _c.text.removeListener(_onTextForValidity);
       if (_ownsController) _c.dispose();
@@ -477,11 +484,13 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
 
   // ── keyboard ──
   KeyEventResult _onKey(FocusNode node, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
     if (widget.disabled || widget.readOnly) return KeyEventResult.ignored;
     // Ctrl/⌘+F → open the advanced search surface.
     if (e.logicalKey == LogicalKeyboardKey.keyF &&
-        (HardwareKeyboard.instance.isControlPressed || HardwareKeyboard.instance.isMetaPressed)) {
+        (HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed)) {
       if (widget.advancedSearch) {
         _openAdvanced();
         return KeyEventResult.handled;
@@ -587,7 +596,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     } else {
       _c.select(s); // writes the label + closes the overlay
       widget.onSelected?.call(s);
-      if (!_focus.hasFocus) _suppressReopen = true; // a mouse pick will re-focus
+      if (!_focus.hasFocus)
+        _suppressReopen = true; // a mouse pick will re-focus
       _focus.requestFocus();
     }
   }
@@ -607,7 +617,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   }
 
   /// The label shown in the create action (`createLabelBuilder` or the query).
-  String get _createLabel => widget.createLabelBuilder?.call(_c.query.trim()) ?? _c.query.trim();
+  String get _createLabel =>
+      widget.createLabelBuilder?.call(_c.query.trim()) ?? _c.query.trim();
 
   /// Invoke `onCreate`, showing a spinner while it resolves; commit the returned
   /// suggestion (if any) exactly as a normal pick.
@@ -644,7 +655,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.label != null) ...[
-            _FieldLabel(text: widget.label!, required: widget.required, color: t.fg2),
+            _FieldLabel(
+                text: widget.label!, required: widget.required, color: t.fg2),
             const SizedBox(height: 8),
           ],
           CompositedTransformTarget(
@@ -663,7 +675,10 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
               padding: const EdgeInsetsDirectional.only(start: 2),
               child: Text(widget.hint!,
                   style: TextStyle(
-                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 12, height: 1.35, color: t.fg3)),
+                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontSize: 12,
+                      height: 1.35,
+                      color: t.fg3)),
             ),
           ],
         ],
@@ -679,111 +694,133 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final interactive = widget.enabled && !disabled && !readOnly;
     final hasError = error != null;
     final fs = t.focusedStyle;
-
-    final leading = widget.leading ??
-        (bare
-            ? const SizedBox.shrink()
-            : Icon(Icons.search_rounded, size: 18, color: focused ? AutoSuggestionsBoxThemeData.accent : t.fg3));
-    final hasLeading = !(leading is SizedBox && leading.width == 0 && leading.height == 0);
-    final hasText = _c.query.isNotEmpty;
+    final cs = Theme.of(context).colorScheme;
 
     final minH = widget.fieldHeight ??
         (widget.density == FieldDensity.compact
             ? AutoSuggestionsBoxThemeData.fieldCompact
             : AutoSuggestionsBoxThemeData.fieldHeight);
 
-    // Resting typed-value style, with the focused fontStyle merged in on focus.
+    // Text style — merge focused fontStyle override when focused.
     var baseStyle = (widget.textStyle ??
-            TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 14, color: t.fg1, height: 1.2))
+            TextStyle(
+                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                fontSize: 14,
+                color: t.fg1,
+                height: 1.2))
         .copyWith(color: t.fg1);
-    if (focused && fs.fontStyle != null) baseStyle = baseStyle.merge(fs.fontStyle);
+    if (focused && fs.fontStyle != null)
+      baseStyle = baseStyle.merge(fs.fontStyle);
 
-    // Frame color: danger on error, focused override / borderFocus on focus,
-    // resting border otherwise. Width matches super_form_field's FieldBox (1.4).
-    final Color borderColor = hasError
-        ? AutoSuggestionsBoxThemeData.danger
-        : focused
-            ? (fs.border?.color ?? t.borderFocus)
-            : t.border;
-    final double borderWidth = !hasError && focused
-        ? (fs.border?.width ?? AutoSuggestionsBoxThemeData.fieldBorderWidth)
-        : AutoSuggestionsBoxThemeData.fieldBorderWidth;
+    // ── Border helpers ──
+    const double bw = AutoSuggestionsBoxThemeData.fieldBorderWidth;
+    OutlineInputBorder _ob(Color c) => bare
+        ? const OutlineInputBorder(borderSide: BorderSide.none)
+        : OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
+            borderSide: BorderSide(color: c, width: bw),
+          );
 
-    final Color fill = (bare || disabled)
+    final Color enabledBorderColor = hasError ? cs.error : t.border;
+    final Color focusedBorderColor =
+        hasError ? cs.error : (fs.border?.color ?? t.borderFocus);
+    final Color disabledBorderColor = t.border;
+
+    // ── Fill ──
+    final Color fillColor = (bare || disabled)
         ? Colors.transparent
         : focused
             ? (fs.fillColor ?? t.fieldBgFocus)
             : t.fieldBg;
 
-    final List<BoxShadow>? shadow = hasError
-        ? [BoxShadow(color: AutoSuggestionsBoxThemeData.danger.withOpacity(0.14), spreadRadius: 3)]
-        : (focused && !bare ? fs.shadow : null);
+    // ── Leading (prefixIcon) ──
+    final Widget leadingWidget = widget.leading ??
+        (bare
+            ? const SizedBox.shrink()
+            : Icon(Icons.search_rounded,
+                size: 18, color: focused ? t.borderFocus : t.fg3));
+    final bool hasLeading = !(leadingWidget is SizedBox &&
+        leadingWidget.width == 0 &&
+        leadingWidget.height == 0);
 
-    final content = Focus(
-      onKeyEvent: _onKey,
-      child: TextField(
-        controller: _c.text,
-        focusNode: _focus,
-        enabled: widget.enabled && !disabled,
-        readOnly: readOnly,
-        autofocus: widget.autofocus,
-        onChanged: (v) {
-          widget.onChanged?.call(v);
-          if (!_c.isOpen) _c.open();
-        },
-        onTap: interactive ? () => _c.open() : null,
-        style: baseStyle,
-        cursorColor: fs.cursorColor ?? AutoSuggestionsBoxThemeData.accent,
-        decoration: InputDecoration(
-          isCollapsed: true,
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          hintText: widget.hintText,
-          hintStyle: baseStyle.copyWith(color: t.fg3, fontWeight: FontWeight.w400),
+    // ── Suffix row ──
+    final suffixWidgets = <Widget>[
+      ..._suffixChildren(t, _c.query.isNotEmpty, interactive),
+      if (hasError) ...[
+        const SizedBox(width: 4),
+        _ErrorBadge(error: error, cs: cs),
+      ],
+      const SizedBox(width: 4),
+    ];
+
+    final decoration = InputDecoration(
+      hintText: widget.hintText,
+      hintStyle: baseStyle.copyWith(color: t.fg3, fontWeight: FontWeight.w400),
+      // Leading icon
+      prefixIcon: hasLeading
+          ? Padding(
+              padding: const EdgeInsetsDirectional.only(start: 10, end: 6),
+              child: leadingWidget,
+            )
+          : null,
+      prefixIconConstraints:
+          hasLeading ? const BoxConstraints(minWidth: 0, minHeight: 0) : null,
+      // Suffix row
+      suffixIcon: Padding(
+        padding: const EdgeInsetsDirectional.only(end: 2),
+        child: Row(mainAxisSize: MainAxisSize.min, children: suffixWidgets),
+      ),
+      suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+      // Fill
+      filled: !bare && !disabled,
+      fillColor: fillColor,
+      // Sizing
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: bare ? 9 : 12,
+        vertical: 0,
+      ),
+      // Borders — fully specified; overrides the ambient inputDecorationTheme.
+      border: _ob(enabledBorderColor),
+      enabledBorder: _ob(enabledBorderColor),
+      focusedBorder: _ob(focusedBorderColor),
+      disabledBorder: _ob(disabledBorderColor),
+      errorBorder: _ob(cs.error),
+      focusedErrorBorder: _ob(cs.error),
+    );
+
+    final field = KeyedSubtree(
+      key: _fieldKey,
+      child: Focus(
+        onKeyEvent: _onKey,
+        child: TextField(
+          controller: _c.text,
+          focusNode: _focus,
+          enabled: widget.enabled && !disabled,
+          readOnly: readOnly,
+          autofocus: widget.autofocus,
+          onChanged: (v) {
+            widget.onChanged?.call(v);
+            if (!_c.isOpen) _c.open();
+          },
+          onTap: interactive ? () => _c.open() : null,
+          style: baseStyle,
+          cursorColor: fs.cursorColor ?? t.borderFocus,
+          decoration: decoration,
         ),
       ),
     );
 
-    final field = AnimatedContainer(
-      key: _fieldKey,
-      duration: AutoSuggestionsBoxThemeData.durBase,
-      curve: AutoSuggestionsBoxThemeData.curveStandard,
-      constraints: BoxConstraints(minHeight: minH),
-      padding: bare
-          ? const EdgeInsetsDirectional.only(start: 9, end: 9, top: 6, bottom: 6)
-          : const EdgeInsetsDirectional.only(start: 12, end: 6),
-      decoration: BoxDecoration(
-        color: fill,
-        border: bare ? null : Border.all(color: borderColor, width: borderWidth),
-        borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
-        boxShadow: shadow,
-      ),
-      child: Row(
-        children: [
-          if (hasLeading) ...[
-            leading,
-            const SizedBox(width: 8),
-          ],
-          Expanded(child: content),
-          if (!readOnly) ..._suffixChildren(t, hasText, interactive),
-          if (hasError) ...[
-            const SizedBox(width: 4),
-            _ErrorBadge(error: error),
-          ],
-        ],
-      ),
+    return Opacity(
+      opacity: disabled ? 0.55 : 1.0,
+      child: SizedBox(height: minH, child: field),
     );
-
-    return Opacity(opacity: disabled ? 0.55 : 1, child: field);
   }
 
   /// The trailing adornments (count pill · spinner · clear / chevron) spliced
   /// into the field row. Taps are inert while the field is non-interactive.
-  List<Widget> _suffixChildren(AutoSuggestionsBoxThemeData t, bool hasText, bool interactive) {
+  List<Widget> _suffixChildren(
+      AutoSuggestionsBoxThemeData t, bool hasText, bool interactive) {
     final children = <Widget>[];
     // Multi-select: a count pill of how many rows are chosen.
     if (widget.multiSelect && _c.selectedItems.isNotEmpty) {
@@ -792,20 +829,28 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-            color: AutoSuggestionsBoxThemeData.accent,
+            color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             '${_c.selectedItems.length}',
-            style: const TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 11.5, fontWeight: FontWeight.w700, color: Colors.white),
+            style: const TextStyle(
+                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: Colors.white),
           ),
         ),
       ));
     }
     if (_c.isLoading) {
-      children.add(const Padding(
+      children.add(Padding(
         padding: EdgeInsetsDirectional.only(end: 4),
-        child: SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent)),
+        child: SizedBox(
+            width: 15,
+            height: 15,
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Theme.of(context).colorScheme.primary)),
       ));
     }
     if (widget.clearButton && hasText && interactive) {
@@ -837,13 +882,16 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   // ── overlay ──
   Widget _buildOverlay(BuildContext ctx, AutoSuggestionsBoxThemeData t) {
     final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    final fieldSize = box?.size ?? const Size(280, AutoSuggestionsBoxThemeData.fieldHeight);
+    final fieldSize =
+        box?.size ?? const Size(280, AutoSuggestionsBoxThemeData.fieldHeight);
     final fieldW = widget.width ?? fieldSize.width;
 
     // Decide flip: place above when there isn't room below.
     final media = MediaQuery.of(ctx);
     final fieldTopLeft = box?.localToGlobal(Offset.zero) ?? Offset.zero;
-    final spaceBelow = media.size.height - (fieldTopLeft.dy + fieldSize.height) - media.viewInsets.bottom;
+    final spaceBelow = media.size.height -
+        (fieldTopLeft.dy + fieldSize.height) -
+        media.viewInsets.bottom;
     final desired = _overlayHeight(t);
     final flipUp = spaceBelow < desired + 16 && fieldTopLeft.dy > spaceBelow;
 
@@ -868,7 +916,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         child: Align(
           alignment: flipUp ? Alignment.bottomLeft : Alignment.topLeft,
           child: AutoSuggestionsPanel<T>(
-            width: fieldW.clamp(180.0, AutoSuggestionsBoxThemeData.overlayMaxWidth),
+            width: fieldW.clamp(
+                180.0, AutoSuggestionsBoxThemeData.overlayMaxWidth),
             theme: t,
             controller: _c,
             scroll: _scroll,
@@ -893,7 +942,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
 
   double _overlayHeight(AutoSuggestionsBoxThemeData t) {
     final rows = _c.results.length.clamp(0, widget.maxVisibleRows);
-    return (rows == 0 ? 56 : rows * AutoSuggestionsBoxThemeData.rowHeight + 10).toDouble();
+    return (rows == 0 ? 56 : rows * AutoSuggestionsBoxThemeData.rowHeight + 10)
+        .toDouble();
   }
 }
 
@@ -958,15 +1008,20 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(children: [
-              const SizedBox(
+              SizedBox(
                 width: 15,
                 height: 15,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(width: 10),
               Text(
                 q.trim().isEmpty ? 'Loading…' : 'Searching “$q”…',
-                style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 13, color: t.fg2),
+                style: TextStyle(
+                    fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                    fontSize: 13,
+                    color: t.fg2),
               ),
             ]),
           );
@@ -980,7 +1035,10 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
               Flexible(
                 child: Text(
                   q.trim().isEmpty ? 'Type to search' : 'No matches for “$q”',
-                  style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 13, color: t.fg2),
+                  style: TextStyle(
+                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontSize: 13,
+                      color: t.fg2),
                 ),
               ),
             ]),
@@ -995,29 +1053,38 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
             // already-visible local rows.
             if (controller.isLoadingMore)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: t.accentWash(0.06),
                   border: Border(bottom: BorderSide(color: t.border)),
                 ),
                 child: Row(children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 13,
                     height: 13,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary),
                   ),
                   const SizedBox(width: 9),
                   Text('Loading more from server…',
-                      style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 11.5, color: t.fg2)),
+                      style: TextStyle(
+                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                          fontSize: 11.5,
+                          color: t.fg2)),
                 ]),
               ),
             Flexible(
               child: NotificationListener<ScrollNotification>(
                 onNotification: (n) {
                   // Infinite scroll: pull the next page as the list nears bottom.
-                  if (controller.isPaged && controller.hasMore && !controller.isLoadingPage) {
+                  if (controller.isPaged &&
+                      controller.hasMore &&
+                      !controller.isLoadingPage) {
                     final m = n.metrics;
-                    if (m.axis == Axis.vertical && m.pixels >= m.maxScrollExtent - 120) {
+                    if (m.axis == Axis.vertical &&
+                        m.pixels >= m.maxScrollExtent - 120) {
                       controller.loadNextPage();
                     }
                   }
@@ -1029,43 +1096,54 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                     controller: scroll,
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     shrinkWrap: true,
-                    itemCount: results.length + (controller.isLoadingPage ? 1 : 0),
+                    itemCount:
+                        results.length + (controller.isLoadingPage ? 1 : 0),
                     itemBuilder: (ctx, i) {
                       if (i >= results.length) return _PageLoadingRow(theme: t);
                       final s = results[i];
-                    final isHl = controller.isHighlighted(i);
-                    final showGroup = s.group != null && (i == 0 || results[i - 1].group != s.group);
-                    final row = _Row<T>(
-                      key: isHl ? hlKey : null,
-                      theme: t,
-                      suggestion: s,
-                      query: q,
-                      highlighted: isHl,
-                      highlightMatch: highlightMatch,
-                      highlightMatches: highlightMatches,
-                      custom: itemBuilder,
-                      multiSelect: multiSelect,
-                      selected: multiSelect && controller.isSelectedValue(s.value),
-                      onTap: () => onPick(s),
-                      onHover: () => onHover(i),
-                    );
-                    if (!showGroup) return row;
-                    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(14, i == 0 ? 4 : 9, 14, 5),
-                        child: Text(
-                          s.group!.toUpperCase(),
-                          style: TextStyle(
-                              fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 10.5, fontWeight: FontWeight.w700, letterSpacing: 0.7, color: t.groupFg),
-                        ),
-                      ),
-                      row,
-                    ]);
-                  },
-                    ),
+                      final isHl = controller.isHighlighted(i);
+                      final showGroup = s.group != null &&
+                          (i == 0 || results[i - 1].group != s.group);
+                      final row = _Row<T>(
+                        key: isHl ? hlKey : null,
+                        theme: t,
+                        suggestion: s,
+                        query: q,
+                        highlighted: isHl,
+                        highlightMatch: highlightMatch,
+                        highlightMatches: highlightMatches,
+                        custom: itemBuilder,
+                        multiSelect: multiSelect,
+                        selected:
+                            multiSelect && controller.isSelectedValue(s.value),
+                        onTap: () => onPick(s),
+                        onHover: () => onHover(i),
+                      );
+                      if (!showGroup) return row;
+                      return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(
+                                  14, i == 0 ? 4 : 9, 14, 5),
+                              child: Text(
+                                s.group!.toUpperCase(),
+                                style: TextStyle(
+                                    fontFamily:
+                                        AutoSuggestionsBoxThemeData.bodyFont,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.7,
+                                    color: t.groupFg),
+                              ),
+                            ),
+                            row,
+                          ]);
+                    },
                   ),
                 ),
               ),
+            ),
           ],
         ),
       );
@@ -1077,7 +1155,8 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
         width: width,
         decoration: BoxDecoration(
           color: t.overlayBg,
-          borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusLg),
+          borderRadius:
+              BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusLg),
           border: Border.all(color: t.border),
           boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
         ),
@@ -1130,17 +1209,23 @@ class _Row<T> extends StatelessWidget {
     required this.onHover,
   });
 
-  Widget _checkbox(AutoSuggestionsBoxThemeData t) => Container(
-        width: 18,
-        height: 18,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? AutoSuggestionsBoxThemeData.accent : Colors.transparent,
-          border: Border.all(color: selected ? AutoSuggestionsBoxThemeData.accent : t.fg3, width: 1.6),
-          borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
-        ),
-        child: selected ? const Icon(Icons.check_rounded, size: 13, color: Colors.white) : null,
-      );
+  Widget _checkbox(AutoSuggestionsBoxThemeData t, BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Container(
+      width: 18,
+      height: 18,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: selected ? accent : Colors.transparent,
+        border: Border.all(color: selected ? accent : t.fg3, width: 1.6),
+        borderRadius:
+            BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
+      ),
+      child: selected
+          ? const Icon(Icons.check_rounded, size: 13, color: Colors.white)
+          : null,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1151,7 +1236,11 @@ class _Row<T> extends StatelessWidget {
     final inner = custom?.call(context, s, highlighted) ??
         Row(children: [
           if (s.icon != null) ...[
-            Icon(s.icon, size: 17, color: highlighted ? AutoSuggestionsBoxThemeData.accent : t.fg3),
+            Icon(s.icon,
+                size: 17,
+                color: highlighted
+                    ? Theme.of(context).colorScheme.primary
+                    : t.fg3),
             const SizedBox(width: 10),
           ],
           Expanded(
@@ -1176,7 +1265,11 @@ class _Row<T> extends StatelessWidget {
                   Text(s.description!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 11.5, height: 1.2, color: t.fg2)),
+                      style: TextStyle(
+                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                          fontSize: 11.5,
+                          height: 1.2,
+                          color: t.fg2)),
                 ],
               ],
             ),
@@ -1203,7 +1296,7 @@ class _Row<T> extends StatelessWidget {
     // In multi-select prepend a checkbox so the chosen state is explicit.
     final content = multiSelect
         ? Row(children: [
-            _checkbox(t),
+            _checkbox(t, context),
             const SizedBox(width: 11),
             Expanded(child: inner),
           ])
@@ -1225,7 +1318,9 @@ class _Row<T> extends StatelessWidget {
                 : (selected ? t.accentWash(0.06) : Colors.transparent),
             border: BorderDirectional(
               start: BorderSide(
-                color: (highlighted || selected) && enabled ? AutoSuggestionsBoxThemeData.accent : Colors.transparent,
+                color: (highlighted || selected) && enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.transparent,
                 width: 2.5,
               ),
             ),
@@ -1261,7 +1356,8 @@ class _CreateFooterState extends State<_CreateFooter> {
   Widget build(BuildContext context) {
     final t = widget.theme;
     return MouseRegion(
-      cursor: widget.creating ? SystemMouseCursors.wait : SystemMouseCursors.click,
+      cursor:
+          widget.creating ? SystemMouseCursors.wait : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _h = true),
       onExit: (_) => setState(() => _h = false),
       child: GestureDetector(
@@ -1279,15 +1375,21 @@ class _CreateFooterState extends State<_CreateFooter> {
               width: 18,
               height: 18,
               child: widget.creating
-                  ? const CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent)
-                  : const Icon(Icons.add_rounded, size: 18, color: AutoSuggestionsBoxThemeData.accent),
+                  ? CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.primary)
+                  : Icon(Icons.add_rounded,
+                      size: 18, color: Theme.of(context).colorScheme.primary),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text.rich(
                 TextSpan(
                   text: 'Create ',
-                  style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 13, color: t.fg2),
+                  style: TextStyle(
+                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontSize: 13,
+                      color: t.fg2),
                   children: [
                     TextSpan(
                       text: '“${widget.label}”',
@@ -1331,14 +1433,18 @@ class _PageLoadingRow extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const SizedBox(
+        SizedBox(
           width: 13,
           height: 13,
-          child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent),
+          child: CircularProgressIndicator(
+              strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
         ),
         const SizedBox(width: 9),
         Text('Loading more…',
-            style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 11.5, color: t.fg2)),
+            style: TextStyle(
+                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                fontSize: 11.5,
+                color: t.fg2)),
       ]),
     );
   }
@@ -1350,7 +1456,11 @@ class _IconBtn extends StatefulWidget {
   final Color color;
   final Color hoverColor;
   final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.color, required this.hoverColor, required this.onTap});
+  const _IconBtn(
+      {required this.icon,
+      required this.color,
+      required this.hoverColor,
+      required this.onTap});
   @override
   State<_IconBtn> createState() => _IconBtnState();
 }
@@ -1367,7 +1477,8 @@ class _IconBtnState extends State<_IconBtn> {
         onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: Icon(widget.icon, size: 17, color: _h ? widget.hoverColor : widget.color),
+          child: Icon(widget.icon,
+              size: 17, color: _h ? widget.hoverColor : widget.color),
         ),
       ),
     );
@@ -1378,7 +1489,8 @@ class _IconBtnState extends State<_IconBtn> {
 // Matches super_form_field's FieldShell label: ALL CAPS, 11/700, ~0.05em
 // tracking, with a danger-red `*` when required.
 class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({required this.text, required this.required, required this.color});
+  const _FieldLabel(
+      {required this.text, required this.required, required this.color});
 
   final String text;
   final bool required;
@@ -1399,7 +1511,10 @@ class _FieldLabel extends StatelessWidget {
         text: text.toUpperCase(),
         style: style,
         children: [
-          TextSpan(text: ' *', style: style.copyWith(color: AutoSuggestionsBoxThemeData.danger)),
+          TextSpan(
+              text: ' *',
+              style:
+                  style.copyWith(color: Theme.of(context).colorScheme.error)),
         ],
       ),
     );
@@ -1411,9 +1526,10 @@ class _FieldLabel extends StatelessWidget {
 // text. This is the ONLY way the box surfaces validation — never inline text
 // under the control (matching the super_form_field rule).
 class _ErrorBadge extends StatelessWidget {
-  const _ErrorBadge({required this.error});
+  const _ErrorBadge({required this.error, required this.cs});
 
   final String error;
+  final ColorScheme cs;
 
   @override
   Widget build(BuildContext context) {
@@ -1423,8 +1539,9 @@ class _ErrorBadge extends StatelessWidget {
       waitDuration: const Duration(milliseconds: 120),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AutoSuggestionsBoxThemeData.danger,
-        borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusMd),
+        color: cs.error,
+        borderRadius:
+            BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusMd),
       ),
       textStyle: const TextStyle(
         fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
@@ -1433,9 +1550,9 @@ class _ErrorBadge extends StatelessWidget {
         fontWeight: FontWeight.w500,
         color: Colors.white,
       ),
-      child: const Padding(
-        padding: EdgeInsets.all(4),
-        child: Icon(Icons.error_outline_rounded, size: 18, color: AutoSuggestionsBoxThemeData.danger),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(Icons.error_outline_rounded, size: 18, color: cs.error),
       ),
     );
   }
@@ -1466,7 +1583,8 @@ class _AdvancedSearchDialog<T> extends StatefulWidget {
   });
 
   @override
-  State<_AdvancedSearchDialog<T>> createState() => _AdvancedSearchDialogState<T>();
+  State<_AdvancedSearchDialog<T>> createState() =>
+      _AdvancedSearchDialogState<T>();
 }
 
 class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
@@ -1482,7 +1600,8 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
     _c.addListener(_onModel);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focus.requestFocus();
-      _text.selection = TextSelection(baseOffset: 0, extentOffset: _text.text.length);
+      _text.selection =
+          TextSelection(baseOffset: 0, extentOffset: _text.text.length);
     });
   }
 
@@ -1499,7 +1618,8 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
   }
 
   KeyEventResult _onKey(FocusNode n, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
     switch (e.logicalKey) {
       case LogicalKeyboardKey.arrowDown:
         _c.moveHighlight(1);
@@ -1534,7 +1654,8 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
             child: Container(
               decoration: BoxDecoration(
                 color: t.overlayBg,
-                borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusLg),
+                borderRadius:
+                    BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusLg),
                 border: Border.all(color: t.border),
                 boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
               ),
@@ -1545,23 +1666,28 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                   padding: const EdgeInsets.fromLTRB(20, 18, 14, 14),
                   child: Row(children: [
                     Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('ADVANCED SEARCH',
-                            style: TextStyle(
-                                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.0,
-                                color: AutoSuggestionsBoxThemeData.accent)),
-                        const SizedBox(height: 3),
-                        Text(widget.title,
-                            style: TextStyle(
-                                fontFamily: AutoSuggestionsBoxThemeData.displayFont,
-                                fontSize: 19,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.4,
-                                color: t.fg1)),
-                      ]),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('ADVANCED SEARCH',
+                                style: TextStyle(
+                                    fontFamily:
+                                        AutoSuggestionsBoxThemeData.bodyFont,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.0,
+                                    color:
+                                        Theme.of(context).colorScheme.primary)),
+                            const SizedBox(height: 3),
+                            Text(widget.title,
+                                style: TextStyle(
+                                    fontFamily:
+                                        AutoSuggestionsBoxThemeData.displayFont,
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.4,
+                                    color: t.fg1)),
+                          ]),
                     ),
                     _IconBtn(
                       icon: Icons.close_rounded,
@@ -1578,11 +1704,15 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                     onKeyEvent: _onKey,
                     child: Container(
                       height: 48,
-                      padding: const EdgeInsetsDirectional.only(start: 14, end: 8),
+                      padding:
+                          const EdgeInsetsDirectional.only(start: 14, end: 8),
                       decoration: BoxDecoration(
                         color: t.fieldBg,
-                        borderRadius: BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusMd),
-                        border: Border.all(color: AutoSuggestionsBoxThemeData.accent, width: 1.5),
+                        borderRadius: BorderRadius.circular(
+                            AutoSuggestionsBoxThemeData.radiusMd),
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1.5),
                       ),
                       child: Row(children: [
                         Icon(Icons.search_rounded, size: 19, color: t.fg3),
@@ -1593,8 +1723,11 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                             focusNode: _focus,
                             onChanged: _c.setText,
                             style: TextStyle(
-                                fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 15, color: t.fg1),
-                            cursorColor: AutoSuggestionsBoxThemeData.accent,
+                                fontFamily:
+                                    AutoSuggestionsBoxThemeData.bodyFont,
+                                fontSize: 15,
+                                color: t.fg1),
+                            cursorColor: Theme.of(context).colorScheme.primary,
                             decoration: InputDecoration(
                               isCollapsed: true,
                               border: InputBorder.none,
@@ -1604,10 +1737,13 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                           ),
                         ),
                         if (_c.isLoading)
-                          const SizedBox(
+                          SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent)),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color:
+                                      Theme.of(context).colorScheme.primary)),
                       ]),
                     ),
                   ),
@@ -1615,16 +1751,22 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                 if (_c.isLoadingMore)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     color: t.accentWash(0.06),
                     child: Row(children: [
-                      const SizedBox(
+                      SizedBox(
                           width: 13,
                           height: 13,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AutoSuggestionsBoxThemeData.accent)),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.primary)),
                       const SizedBox(width: 9),
                       Text('Loading more from server…',
-                          style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 11.5, color: t.fg2)),
+                          style: TextStyle(
+                              fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                              fontSize: 11.5,
+                              color: t.fg2)),
                     ]),
                   ),
                 Divider(height: 1, color: t.border),
@@ -1633,8 +1775,13 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                   child: results.isEmpty
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 48),
-                          child: Text(_c.isLoading ? 'Searching…' : 'No matches',
-                              style: TextStyle(fontFamily: AutoSuggestionsBoxThemeData.bodyFont, fontSize: 13, color: t.fg3)),
+                          child: Text(
+                              _c.isLoading ? 'Searching…' : 'No matches',
+                              style: TextStyle(
+                                  fontFamily:
+                                      AutoSuggestionsBoxThemeData.bodyFont,
+                                  fontSize: 13,
+                                  color: t.fg3)),
                         )
                       : Scrollbar(
                           controller: _scroll,
@@ -1653,7 +1800,8 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                                 highlightMatches: true,
                                 custom: null,
                                 multiSelect: widget.multiSelect,
-                                selected: widget.multiSelect && _c.isSelectedValue(s.value),
+                                selected: widget.multiSelect &&
+                                    _c.isSelectedValue(s.value),
                                 onTap: () => widget.onPick(s),
                                 onHover: () => _c.highlightAt(i),
                               );
@@ -1664,7 +1812,8 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                 // footer hint
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: t.fieldBg,
                     border: Border(top: BorderSide(color: t.border)),

@@ -191,9 +191,50 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     ),
   );
 
-  /// Reads the registered extension, or falls back to [dark].
-  static AutoSuggestionsBoxThemeData of(BuildContext context) =>
-      Theme.of(context).extension<AutoSuggestionsBoxThemeData>() ?? dark;
+  /// Derives an [AutoSuggestionsBoxThemeData] from a Material [ColorScheme].
+  ///
+  /// Called automatically by [of] when no explicit extension is registered,
+  /// enabling seamless use with [SuperMaterialThemeData]:
+  ///
+  /// ```dart
+  /// MaterialApp(
+  ///   theme:     SuperMaterialThemeData.light(palette: SuperPalette.bluePalette),
+  ///   darkTheme: SuperMaterialThemeData.dark(palette: SuperPalette.bluePalette),
+  ///   // AutoSuggestionsBox adapts automatically — no extra registration needed.
+  /// );
+  /// ```
+  factory AutoSuggestionsBoxThemeData.fromColorScheme(ColorScheme cs) {
+    final isDark = cs.brightness == Brightness.dark;
+    final primary = cs.primary;
+    final focBorder = BorderSide(color: primary, width: fieldBorderWidth);
+    return AutoSuggestionsBoxThemeData(
+      fieldBg:       isDark ? const Color(0xFF1E2025) : cs.surface,
+      fieldBgFocus:  isDark ? const Color(0xFF23262C) : cs.surface,
+      overlayBg:     isDark ? const Color(0xFF202329) : cs.surface,
+      hover:         isDark ? const Color(0xFF2C313B) : cs.surfaceVariant,
+      border:        isDark ? const Color(0xFF3A3D47) : cs.outline,
+      borderFocus:   primary,
+      fg1:           cs.onSurface,
+      fg2:           cs.onSurfaceVariant,
+      fg3:           isDark ? const Color(0xFF6E7280) : cs.onSurfaceVariant,
+      groupFg:       isDark ? const Color(0xFF7E8290) : cs.onSurfaceVariant,
+      focusedStyle:  AutoSuggestionsBoxFocusedStyle(
+        fillColor: isDark ? const Color(0xFF23262C) : cs.surface,
+        border: focBorder,
+        cursorColor: primary,
+      ),
+    );
+  }
+
+  /// Reads the registered [ThemeExtension], or bridges from the current
+  /// Material [ColorScheme] (enables [SuperMaterialThemeData] compatibility),
+  /// or falls back to [dark] when no Material theme is available.
+  static AutoSuggestionsBoxThemeData of(BuildContext context) {
+    final ext = Theme.of(context).extension<AutoSuggestionsBoxThemeData>();
+    if (ext != null) return ext;
+    return AutoSuggestionsBoxThemeData.fromColorScheme(
+        Theme.of(context).colorScheme);
+  }
 
   /// A tint of the accent over the overlay surface (selected-row fill).
   Color accentWash([double pct = 0.12]) => Color.alphaBlend(accent.withOpacity(pct), overlayBg);

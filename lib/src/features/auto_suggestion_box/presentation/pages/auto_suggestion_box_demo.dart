@@ -164,7 +164,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('AUTO SUGGESTION BOX',
-                      style: SuperText.eyebrow.copyWith(color: SuperTokens.accent)),
+                      style: SuperText.eyebrow.copyWith(color: Theme.of(context).colorScheme.primary)),
                   const SizedBox(height: SuperTokens.space2),
                   Text('Account Lookup', style: SuperText.h1.copyWith(color: t.fg1)),
                   const SizedBox(height: SuperTokens.space8),
@@ -276,7 +276,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   Text(
                     _accountError == null ? 'STATUS · VALID' : 'STATUS · ${_accountError!.toUpperCase()}',
                     style: SuperText.label.copyWith(
-                      color: _accountError == null ? SuperTokens.success : SuperTokens.danger,
+                      color: _accountError == null ? SuperTokens.success : Theme.of(context).colorScheme.error,
                     ),
                   ),
                   const SizedBox(height: SuperTokens.space8),
