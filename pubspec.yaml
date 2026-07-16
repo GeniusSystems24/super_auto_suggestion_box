@@ -7,7 +7,10 @@ description: >
   search, bare embedding, and shared core theming. Supports light/dark themes,
   LTR, and RTL.
 
-version: 0.7.1
+# package version
+version: 0.8.0
+
+# package homepage, repository, and issue tracker URLs
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box
 repository: https://github.com/GeniusSystems24/super_auto_suggestion_box
 issue_tracker: https://github.com/GeniusSystems24/super_auto_suggestion_box/issues
@@ -20,14 +23,14 @@ topics:
   - combobox
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
-  flutter: ">=3.10.0"
+  sdk: ">=3.8.0 <4.0.0"
+  flutter: ">=3.32.0"
 
 dependencies:
   flutter:
     sdk: flutter
   # Shared GeniusLink design-system foundation (theme, tokens, type, widgets).
-  super_core: ^1.0.0
+  super_core: ">=1.2.0 <2.0.0"
 
 dev_dependencies:
   flutter_test:

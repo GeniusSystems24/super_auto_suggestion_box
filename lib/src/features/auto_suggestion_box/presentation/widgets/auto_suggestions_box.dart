@@ -246,7 +246,7 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.onEscape,
     this.onTabNext,
     this.onTabPrev,
-    this.scrollOnFocus = true,
+    this.scrollOnFocus = false,
     this.restoreOnBlur = true,
     this.advancedSearch = false,
     this.advancedSearchBuilder,
@@ -355,8 +355,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       if (widget.scrollOnFocus) _scrollIntoView();
     } else {
       _touched = true; // first blur → validation may now surface
-      if (_advancedOpen)
+      if (_advancedOpen) {
         return; // focus moved into the advanced dialog — ignore
+      }
       // Delay the close so a mouse click on a row (which blurs the field on
       // pointer-down) still lands its tap on pointer-up. A row tap calls
       // _pick → requestFocus, which cancels this timer.
@@ -484,8 +485,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
 
   // ── keyboard ──
   KeyEventResult _onKey(FocusNode node, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent)
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
+    }
     if (widget.disabled || widget.readOnly) return KeyEventResult.ignored;
     // Ctrl/⌘+F → open the advanced search surface.
     if (e.logicalKey == LogicalKeyboardKey.keyF &&
@@ -596,8 +598,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     } else {
       _c.select(s); // writes the label + closes the overlay
       widget.onSelected?.call(s);
-      if (!_focus.hasFocus)
+      if (!_focus.hasFocus) {
         _suppressReopen = true; // a mouse pick will re-focus
+      }
       _focus.requestFocus();
     }
   }
@@ -709,12 +712,13 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
                 color: t.fg1,
                 height: 1.2))
         .copyWith(color: t.fg1);
-    if (focused && fs.fontStyle != null)
+    if (focused && fs.fontStyle != null) {
       baseStyle = baseStyle.merge(fs.fontStyle);
+    }
 
     // ── Border helpers ──
     const double bw = AutoSuggestionsBoxThemeData.fieldBorderWidth;
-    OutlineInputBorder _ob(Color c) => bare
+    OutlineInputBorder ob(Color c) => bare
         ? const OutlineInputBorder(borderSide: BorderSide.none)
         : OutlineInputBorder(
             borderRadius:
@@ -781,12 +785,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         vertical: 0,
       ),
       // Borders — fully specified; overrides the ambient inputDecorationTheme.
-      border: _ob(enabledBorderColor),
-      enabledBorder: _ob(enabledBorderColor),
-      focusedBorder: _ob(focusedBorderColor),
-      disabledBorder: _ob(disabledBorderColor),
-      errorBorder: _ob(cs.error),
-      focusedErrorBorder: _ob(cs.error),
+      border: ob(enabledBorderColor),
+      enabledBorder: ob(enabledBorderColor),
+      focusedBorder: ob(focusedBorderColor),
+      disabledBorder: ob(disabledBorderColor),
+      errorBorder: ob(cs.error),
+      focusedErrorBorder: ob(cs.error),
     );
 
     final field = KeyedSubtree(
@@ -845,7 +849,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     }
     if (_c.isLoading) {
       children.add(Padding(
-        padding: EdgeInsetsDirectional.only(end: 4),
+        padding: const EdgeInsetsDirectional.only(end: 4),
         child: SizedBox(
             width: 15,
             height: 15,
@@ -1618,8 +1622,9 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
   }
 
   KeyEventResult _onKey(FocusNode n, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent)
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
+    }
     switch (e.logicalKey) {
       case LogicalKeyboardKey.arrowDown:
         _c.moveHighlight(1);

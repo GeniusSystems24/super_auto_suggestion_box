@@ -76,7 +76,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
         if (q.isEmpty || s.label.toLowerCase().contains(q) || s.value.toLowerCase().contains(q)) s,
     ];
     final start = page * pageSize;
-    if (start >= all.length) return SuggestionsPage<String>.empty();
+    if (start >= all.length) return const SuggestionsPage<String>.empty();
     final end = (start + pageSize).clamp(0, all.length);
     return SuggestionsPage<String>(items: all.sublist(start, end), hasMore: end < all.length);
   }

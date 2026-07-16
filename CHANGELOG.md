@@ -4,6 +4,27 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## [0.8.0] — 2026-07-16
+
+### Added
+
+- **`AutoSuggestionsBoxThemeData.fromMaterialTheme(SuperMaterialThemeData)`** — derives the
+  component theme directly from a `SuperMaterialThemeData`, reading palette-,
+  brightness- and device-mode-aware tokens from its registered
+  `SuperThemeData` instead of duplicating hard-coded light/dark hex.
+- ``AutoSuggestionsBoxThemeData.of(context)`` now prefers this bridge: it returns an explicitly registered
+  `AutoSuggestionsBoxThemeData` extension when present, otherwise derives from the ambient
+  `SuperMaterialThemeData`, and only falls back to the built-in preset when
+  neither is available.
+
+### Changed
+
+- Upgraded to **super_core 1.1.0** (`SuperMaterialThemeData` is now a
+  `ThemeData` subclass with responsive `SuperDeviceMode` tokens). Minimum
+  raised to `dart >=3.8.0`, `flutter >=3.32.0`.
+
+---
+
 ## [0.7.1] — 2026-07-14
 
 ### Changed
@@ -35,6 +56,7 @@ backwards-compatible — existing call sites (and the `super_table_field` combo
 embedding) compile unchanged.
 
 ### Added
+
 - **Recently-used suggestions.** With `showRecents: true` on the controller the
   most-recently-committed rows pin to a **Recent** section at the top of the
   overlay while the field is empty — the biggest data-entry accelerator in an ERP
@@ -61,6 +83,7 @@ embedding) compile unchanged.
   affordances (the “posted / review” state; unlike `disabled` it isn’t dimmed).
 
 ### Fixed
+
 - **`SuggestionSources.fuzzy(...)`** now exists (it was documented but missing);
   it is the ranked shorthand for `list(items, match: fuzzy)`.
 - **Fuzzy results are ranked by match quality** — a new subsequence scorer
@@ -74,6 +97,7 @@ embedding) compile unchanged.
 ## [0.6.0] — 2026-07-01
 
 ### Added
+
 - **`required`** — marks the field mandatory: appends a red `*` to the `label`
   and adds an implicit *“this field is required”* validator (customise the copy
   with `requiredMessage`). In multi-select it fails while nothing is chosen.
@@ -94,6 +118,7 @@ embedding) compile unchanged.
   beneath the control (hidden whenever an error shows).
 
 ### Changed
+
 - **Field design now matches `super_form_field`.** The control is rebuilt on the
   shared field foundation: 42 px comfortable / 36 px compact height, 4 px radius,
   a 1.4 px animated frame, uppercase label with required asterisk, focused-fill +
@@ -103,6 +128,7 @@ embedding) compile unchanged.
 ## [0.5.0] — 2026-06-18
 
 ### Changed
+
 - **Split out of `super_table_field` into its own package.** The
   `AutoSuggestionsBox` typeahead — together with the shared GeniusLink **core**
   foundation (theme tokens, `ThemeExtension`s, text styles, design-system
@@ -120,6 +146,7 @@ below for what shipped while it was part of that package.
 ## [0.3.0] — 2026-06-17
 
 ### Added
+
 - **`SuggestionSources.remoteFallback(...)`** — local-first progressive source:
   shows local matches instantly and fetches from a remote backend only when the
   local match count is `remoteThreshold` or fewer, merging results (de-duplicated)
@@ -136,6 +163,7 @@ below for what shipped while it was part of that package.
 ## [0.1.0] — 2026-06-16
 
 ### Added
+
 - **`AutoSuggestionsBox`** — typeahead/combobox with grouped results, prefix/
   contains/fuzzy matching, single- and multi-select, free-text entry, async +
   list + fuzzy suggestion sources, and a `bare` embedding mode.

@@ -17,7 +17,6 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../../domain/entities/auto_suggestion.dart';
-import '../../domain/entities/suggestions_query_result.dart';
 import '../../domain/repositories/suggestions_source.dart';
 
 class AutoSuggestionsBoxController<T> extends ChangeNotifier {

@@ -211,7 +211,7 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
       fieldBg:       isDark ? const Color(0xFF1E2025) : cs.surface,
       fieldBgFocus:  isDark ? const Color(0xFF23262C) : cs.surface,
       overlayBg:     isDark ? const Color(0xFF202329) : cs.surface,
-      hover:         isDark ? const Color(0xFF2C313B) : cs.surfaceVariant,
+      hover:         isDark ? const Color(0xFF2C313B) : cs.surfaceContainerHighest,
       border:        isDark ? const Color(0xFF3A3D47) : cs.outline,
       borderFocus:   primary,
       fg1:           cs.onSurface,
@@ -226,12 +226,46 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     );
   }
 
+  /// Derives an [AutoSuggestionsBoxThemeData] from a [SuperMaterialThemeData].
+  ///
+  /// Preferred bridge (v0.8.0): reads palette-, brightness- and device-mode-
+  /// aware tokens from `theme.superTheme` so the box stays in lock-step with the
+  /// rest of the toolkit instead of duplicating hard-coded hex. Explicit
+  /// extensions still win in [of].
+  factory AutoSuggestionsBoxThemeData.fromMaterialTheme(
+      SuperMaterialThemeData theme) {
+    final s = theme.superTheme;
+    final primary = theme.colorScheme.primary;
+    final focBorder = BorderSide(color: primary, width: fieldBorderWidth);
+    return AutoSuggestionsBoxThemeData(
+      fieldBg: s.inputBg,
+      fieldBgFocus: s.surface,
+      overlayBg: s.surface,
+      hover: s.hover,
+      border: s.border,
+      borderFocus: primary,
+      fg1: s.fg1,
+      fg2: s.fg2,
+      fg3: s.fg3,
+      groupFg: s.fg3,
+      focusedStyle: AutoSuggestionsBoxFocusedStyle(
+        fillColor: s.surface,
+        border: focBorder,
+        cursorColor: primary,
+      ),
+    );
+  }
+
   /// Reads the registered [ThemeExtension], or bridges from the current
   /// Material [ColorScheme] (enables [SuperMaterialThemeData] compatibility),
   /// or falls back to [dark] when no Material theme is available.
   static AutoSuggestionsBoxThemeData of(BuildContext context) {
     final ext = Theme.of(context).extension<AutoSuggestionsBoxThemeData>();
     if (ext != null) return ext;
+    final superTheme = SuperMaterialThemeData.maybeOf(context);
+    if (superTheme != null) {
+      return AutoSuggestionsBoxThemeData.fromMaterialTheme(superTheme);
+    }
     return AutoSuggestionsBoxThemeData.fromColorScheme(
         Theme.of(context).colorScheme);
   }

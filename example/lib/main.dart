@@ -23,19 +23,25 @@ class _ExampleAppState extends State<ExampleApp> {
   ThemeMode _mode = ThemeMode.dark;
   TextDirection _dir = TextDirection.ltr;
 
-  ThemeData _theme(SuperThemeData s) => (s.brightness == Brightness.dark
-              ? SuperMaterialThemeData.dark()
-              : SuperMaterialThemeData.light())
-          .copyWith(
-        brightness: s.brightness,
-        scaffoldBackgroundColor: s.bg,
+  ThemeData _theme(SuperThemeData s) {
+    if (s.brightness == Brightness.dark) {
+      final theme = SuperMaterialThemeData.dark();
+      return theme.copyWith(
         extensions: [
           s,
-          s.brightness == Brightness.dark
-              ? AutoSuggestionsBoxThemeData.dark
-              : AutoSuggestionsBoxThemeData.light,
+          AutoSuggestionsBoxThemeData.fromMaterialTheme(theme),
         ],
       );
+    } else {
+      final theme = SuperMaterialThemeData.light();
+      return theme.copyWith(
+        extensions: [
+          s,
+          AutoSuggestionsBoxThemeData.fromMaterialTheme(theme),
+        ],
+      );
+    }
+  }
 
   void _toggleTheme() => setState(
       () => _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
@@ -94,7 +100,6 @@ class _Launcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.superTheme;
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: t.bg,
       body: SafeArea(
@@ -156,7 +161,6 @@ class _DemoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.superTheme;
-    final cs = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(

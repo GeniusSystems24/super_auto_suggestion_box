@@ -35,8 +35,7 @@ data grid too, use `super_table_field` (which re-exports this package).
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box:
-    path: ../super_auto_suggestion_box
+  super_auto_suggestion_box: ^0.8.0
 ```
 
 ```dart
