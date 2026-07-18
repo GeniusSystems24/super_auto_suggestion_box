@@ -1234,6 +1234,7 @@ class _Row<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
+    final superTheme = SuperMaterialThemeData.of(context);
     final s = suggestion;
     final enabled = s.enabled;
 
@@ -1283,7 +1284,7 @@ class _Row<T> extends StatelessWidget {
             Text(
               s.trailing!,
               style: TextStyle(
-                fontFamily: SuperTokens.monoFont,
+                fontFamily:superTheme.tokens.monoFont,
                 fontSize: 12,
                 height: 1.2,
                 color: enabled ? t.fg2 : t.fg3,

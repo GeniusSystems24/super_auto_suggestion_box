@@ -157,17 +157,17 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(SuperTokens.space10),
+            padding: const EdgeInsets.all(SuperTokensData.defaultSpace10),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: SuperTokens.contentColumn),
+              constraints: const BoxConstraints(maxWidth: SuperTokensData.defaultContentColumn),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text('AUTO SUGGESTION BOX',
                       style: SuperText.eyebrow.copyWith(color: Theme.of(context).colorScheme.primary)),
-                  const SizedBox(height: SuperTokens.space2),
+                  const SizedBox(height: SuperTokensData.defaultSpace2),
                   Text('Account Lookup', style: SuperText.h1.copyWith(color: t.fg1)),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 1 — Single-select, grouped, with highlight.
                   SectionCard(
@@ -180,7 +180,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 2 — Multi-select.
                   SectionCard(
@@ -193,7 +193,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       hintText: 'Select cost centers…',
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 3 — Fuzzy strategy over plain strings.
                   SectionCard(
@@ -217,7 +217,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       hintText: 'e.g. rdh',
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 4 — Progressive remote fallback.
                   SectionCard(
@@ -235,7 +235,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 5 — Advanced search (Ctrl/⌘+F).
                   SectionCard(
@@ -249,7 +249,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 6 — Required + validator (v0.6.0). Validity surfaces through
                   // the suffix error badge; onValidity feeds a live status line.
@@ -272,14 +272,14 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space2),
+                  const SizedBox(height: SuperTokensData.defaultSpace2),
                   Text(
                     _accountError == null ? 'STATUS · VALID' : 'STATUS · ${_accountError!.toUpperCase()}',
                     style: SuperText.label.copyWith(
-                      color: _accountError == null ? SuperTokens.success : Theme.of(context).colorScheme.error,
+                      color: _accountError == null ? SuperTokensData.defaultSuccess : Theme.of(context).colorScheme.error,
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 7 — Disabled (v0.6.0). Dimmed, non-interactive, no errors.
                   SectionCard(
@@ -293,7 +293,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       controller: _lockedController,
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 8 — Field-level custom theme + focusedStyle (v0.6.0).
                   SectionCard(
@@ -307,15 +307,15 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
                         focusedStyle: const AutoSuggestionsBoxFocusedStyle(
                           fillColor: Color(0x141DB88A),
-                          border: BorderSide(color: SuperTokens.success, width: 1.6),
+                          border: BorderSide(color: SuperTokensData.defaultSuccess, width: 1.6),
                           fontStyle: TextStyle(fontWeight: FontWeight.w600),
-                          cursorColor: SuperTokens.success,
+                          cursorColor: SuperTokensData.defaultSuccess,
                         ),
                       ),
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 9 — Recently-used (recents pin to the top on the empty field).
                   SectionCard(
@@ -329,7 +329,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 10 — Inline create (add missing master data without leaving).
                   SectionCard(
@@ -352,7 +352,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 11 — Server-side pagination / infinite scroll over a big catalog.
                   SectionCard(
@@ -367,7 +367,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       onSelected: (s) {},
                     ),
                   ),
-                  const SizedBox(height: SuperTokens.space8),
+                  const SizedBox(height: SuperTokensData.defaultSpace8),
 
                   // 12 — Record binding (selectByValue) + read-only view mode.
                   SectionCard(
@@ -384,10 +384,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                           hintText: 'Pick or bind by code',
                           onSelected: (s) {},
                         ),
-                        const SizedBox(height: SuperTokens.space3),
+                        const SizedBox(height: SuperTokensData.defaultSpace3),
                         Wrap(
-                          spacing: SuperTokens.space2,
-                          runSpacing: SuperTokens.space2,
+                          spacing: SuperTokensData.defaultSpace2,
+                          runSpacing: SuperTokensData.defaultSpace2,
                           children: [
                             SuperButton(
                               label: 'Bind 1020',

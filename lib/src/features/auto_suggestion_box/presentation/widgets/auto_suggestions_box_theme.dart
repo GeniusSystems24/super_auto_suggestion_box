@@ -1,7 +1,7 @@
 // ============================================================
 // features/auto_suggestion_box/presentation/widgets/auto_suggestions_box_theme.dart
 // ------------------------------------------------------------
-// The box's own ThemeExtension, aligned with the core SuperTokens / SuperTheme
+// The box's own ThemeExtension, aligned with the core SuperTokensData / SuperTheme
 // surfaces so the box drops into the same console as the table and tree.
 // Instance fields swap dark <-> light (lerped); static consts re-expose the
 // shared brand constants for terse local use.
@@ -119,13 +119,13 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     this.focusedStyle = const AutoSuggestionsBoxFocusedStyle(),
   });
 
-  // ── brand + semantic palette (const, re-exported from SuperTokens) ──
-  static const Color accent = SuperTokens.accent;
-  static const Color danger = SuperTokens.danger;
+  // ── brand + semantic palette (const, re-exported from SuperTokensData) ──
+  static const Color accent = SuperTokensData.defaultAccent;
+  static const Color danger = SuperTokensData.defaultDanger;
 
   // ── typography ──
-  static const String displayFont = SuperTokens.displayFont;
-  static const String bodyFont = SuperTokens.bodyFont;
+  static const String displayFont = SuperTokensData.defaultDisplayFont;
+  static const String bodyFont = SuperTokensData.defaultBodyFont;
 
   // ── radii ──
   static const double radiusSm = 4;
