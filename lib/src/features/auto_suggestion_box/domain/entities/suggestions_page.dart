@@ -26,7 +26,5 @@ class SuggestionsPage<T> {
   const SuggestionsPage.last(this.items) : hasMore = false;
 
   /// An empty page (no rows, nothing more to load).
-  const SuggestionsPage.empty()
-      : items = const [],
-        hasMore = false;
+  const SuggestionsPage.empty() : items = const [], hasMore = false;
 }

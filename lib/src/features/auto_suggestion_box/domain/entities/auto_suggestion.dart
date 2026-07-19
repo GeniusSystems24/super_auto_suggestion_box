@@ -65,21 +65,22 @@ class AutoSuggestion<T> {
     String? group,
     List<String>? keywords,
     bool? enabled,
-  }) =>
-      AutoSuggestion<T>(
-        value: value ?? this.value,
-        label: label ?? this.label,
-        description: description ?? this.description,
-        trailing: trailing ?? this.trailing,
-        icon: icon ?? this.icon,
-        group: group ?? this.group,
-        keywords: keywords ?? this.keywords,
-        enabled: enabled ?? this.enabled,
-      );
+  }) => AutoSuggestion<T>(
+    value: value ?? this.value,
+    label: label ?? this.label,
+    description: description ?? this.description,
+    trailing: trailing ?? this.trailing,
+    icon: icon ?? this.icon,
+    group: group ?? this.group,
+    keywords: keywords ?? this.keywords,
+    enabled: enabled ?? this.enabled,
+  );
 
   @override
   bool operator ==(Object other) =>
-      other is AutoSuggestion<T> && other.value == value && other.label == label;
+      other is AutoSuggestion<T> &&
+      other.value == value &&
+      other.label == label;
 
   @override
   int get hashCode => Object.hash(value, label);

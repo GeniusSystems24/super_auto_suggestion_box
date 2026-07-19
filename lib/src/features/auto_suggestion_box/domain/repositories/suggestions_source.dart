@@ -41,7 +41,9 @@ abstract class AutoSuggestionsSource<T> {
   /// Fetch one [page] (0-based) of matches for [query]. Only called when
   /// [isPaged] is true; the default throws to catch a mis-wired source.
   Future<SuggestionsPage<T>> fetchPage(String query, int page) =>
-      throw UnsupportedError('This source is not paged; override fetchPage or set isPaged.');
+      throw UnsupportedError(
+        'This source is not paged; override fetchPage or set isPaged.',
+      );
 
   /// Resolve a stored [value] back to its full suggestion (label, description,
   /// icon, …) so a form bound to a record's id can display it. Returns null when

@@ -62,17 +62,19 @@ class AutoSuggestionsBoxFocusedStyle {
     TextStyle? fontStyle,
     Color? cursorColor,
     List<BoxShadow>? shadow,
-  }) =>
-      AutoSuggestionsBoxFocusedStyle(
-        fillColor: fillColor ?? this.fillColor,
-        border: border ?? this.border,
-        fontStyle: fontStyle ?? this.fontStyle,
-        cursorColor: cursorColor ?? this.cursorColor,
-        shadow: shadow ?? this.shadow,
-      );
+  }) => AutoSuggestionsBoxFocusedStyle(
+    fillColor: fillColor ?? this.fillColor,
+    border: border ?? this.border,
+    fontStyle: fontStyle ?? this.fontStyle,
+    cursorColor: cursorColor ?? this.cursorColor,
+    shadow: shadow ?? this.shadow,
+  );
 
   static AutoSuggestionsBoxFocusedStyle? lerp(
-      AutoSuggestionsBoxFocusedStyle? a, AutoSuggestionsBoxFocusedStyle? b, double t) {
+    AutoSuggestionsBoxFocusedStyle? a,
+    AutoSuggestionsBoxFocusedStyle? b,
+    double t,
+  ) {
     if (a == null && b == null) return null;
     return AutoSuggestionsBoxFocusedStyle(
       fillColor: Color.lerp(a?.fillColor, b?.fillColor, t),
@@ -89,7 +91,8 @@ class AutoSuggestionsBoxFocusedStyle {
 }
 
 @immutable
-class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxThemeData> {
+class AutoSuggestionsBoxThemeData
+    extends ThemeExtension<AutoSuggestionsBoxThemeData> {
   // ── swappable surfaces (dark <-> light) ──
   final Color fieldBg; //      input fill (resting)
   final Color fieldBgFocus; // input fill (focused)
@@ -119,13 +122,15 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     this.focusedStyle = const AutoSuggestionsBoxFocusedStyle(),
   });
 
-  // ── brand + semantic palette (const, re-exported from SuperTokensData) ──
-  static const Color accent = SuperTokensData.defaultAccent;
-  static const Color danger = SuperTokensData.defaultDanger;
+  // ── brand + semantic palette (local const literals for the const presets +
+  //    const TextStyles below; the DYNAMIC path is fromMaterialTheme, which
+  //    reads palette-aware tokens from SuperMaterialThemeData) ──
+  static const Color accent = Color(0xFF4A7CFF);
+  static const Color danger = Color(0xFFEF4444);
 
   // ── typography ──
-  static const String displayFont = SuperTokensData.defaultDisplayFont;
-  static const String bodyFont = SuperTokensData.defaultBodyFont;
+  static const String displayFont = 'Manrope';
+  static const String bodyFont = 'Inter';
 
   // ── radii ──
   static const double radiusSm = 4;
@@ -152,8 +157,18 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
 
   // ── elevation ──
   static const List<BoxShadow> overlayShadow = [
-    BoxShadow(color: Color(0x2E0B1220), blurRadius: 24, spreadRadius: -4, offset: Offset(0, 12)),
-    BoxShadow(color: Color(0x140B1220), blurRadius: 6, spreadRadius: -2, offset: Offset(0, 2)),
+    BoxShadow(
+      color: Color(0x2E0B1220),
+      blurRadius: 24,
+      spreadRadius: -4,
+      offset: Offset(0, 12),
+    ),
+    BoxShadow(
+      color: Color(0x140B1220),
+      blurRadius: 6,
+      spreadRadius: -2,
+      offset: Offset(0, 2),
+    ),
   ];
 
   // ── presets ──
@@ -208,17 +223,17 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     final primary = cs.primary;
     final focBorder = BorderSide(color: primary, width: fieldBorderWidth);
     return AutoSuggestionsBoxThemeData(
-      fieldBg:       isDark ? const Color(0xFF1E2025) : cs.surface,
-      fieldBgFocus:  isDark ? const Color(0xFF23262C) : cs.surface,
-      overlayBg:     isDark ? const Color(0xFF202329) : cs.surface,
-      hover:         isDark ? const Color(0xFF2C313B) : cs.surfaceContainerHighest,
-      border:        isDark ? const Color(0xFF3A3D47) : cs.outline,
-      borderFocus:   primary,
-      fg1:           cs.onSurface,
-      fg2:           cs.onSurfaceVariant,
-      fg3:           isDark ? const Color(0xFF6E7280) : cs.onSurfaceVariant,
-      groupFg:       isDark ? const Color(0xFF7E8290) : cs.onSurfaceVariant,
-      focusedStyle:  AutoSuggestionsBoxFocusedStyle(
+      fieldBg: isDark ? const Color(0xFF1E2025) : cs.surface,
+      fieldBgFocus: isDark ? const Color(0xFF23262C) : cs.surface,
+      overlayBg: isDark ? const Color(0xFF202329) : cs.surface,
+      hover: isDark ? const Color(0xFF2C313B) : cs.surfaceContainerHighest,
+      border: isDark ? const Color(0xFF3A3D47) : cs.outline,
+      borderFocus: primary,
+      fg1: cs.onSurface,
+      fg2: cs.onSurfaceVariant,
+      fg3: isDark ? const Color(0xFF6E7280) : cs.onSurfaceVariant,
+      groupFg: isDark ? const Color(0xFF7E8290) : cs.onSurfaceVariant,
+      focusedStyle: AutoSuggestionsBoxFocusedStyle(
         fillColor: isDark ? const Color(0xFF23262C) : cs.surface,
         border: focBorder,
         cursorColor: primary,
@@ -233,7 +248,8 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
   /// rest of the toolkit instead of duplicating hard-coded hex. Explicit
   /// extensions still win in [of].
   factory AutoSuggestionsBoxThemeData.fromMaterialTheme(
-      SuperMaterialThemeData theme) {
+    SuperMaterialThemeData theme,
+  ) {
     final s = theme.superTheme;
     final primary = theme.colorScheme.primary;
     final focBorder = BorderSide(color: primary, width: fieldBorderWidth);
@@ -267,11 +283,13 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
       return AutoSuggestionsBoxThemeData.fromMaterialTheme(superTheme);
     }
     return AutoSuggestionsBoxThemeData.fromColorScheme(
-        Theme.of(context).colorScheme);
+      Theme.of(context).colorScheme,
+    );
   }
 
   /// A tint of the accent over the overlay surface (selected-row fill).
-  Color accentWash([double pct = 0.12]) => Color.alphaBlend(accent.withOpacity(pct), overlayBg);
+  Color accentWash([double pct = 0.12]) =>
+      Color.alphaBlend(accent.withOpacity(pct), overlayBg);
 
   @override
   AutoSuggestionsBoxThemeData copyWith({
@@ -286,23 +304,25 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
     Color? fg3,
     Color? groupFg,
     AutoSuggestionsBoxFocusedStyle? focusedStyle,
-  }) =>
-      AutoSuggestionsBoxThemeData(
-        fieldBg: fieldBg ?? this.fieldBg,
-        fieldBgFocus: fieldBgFocus ?? this.fieldBgFocus,
-        overlayBg: overlayBg ?? this.overlayBg,
-        hover: hover ?? this.hover,
-        border: border ?? this.border,
-        borderFocus: borderFocus ?? this.borderFocus,
-        fg1: fg1 ?? this.fg1,
-        fg2: fg2 ?? this.fg2,
-        fg3: fg3 ?? this.fg3,
-        groupFg: groupFg ?? this.groupFg,
-        focusedStyle: focusedStyle ?? this.focusedStyle,
-      );
+  }) => AutoSuggestionsBoxThemeData(
+    fieldBg: fieldBg ?? this.fieldBg,
+    fieldBgFocus: fieldBgFocus ?? this.fieldBgFocus,
+    overlayBg: overlayBg ?? this.overlayBg,
+    hover: hover ?? this.hover,
+    border: border ?? this.border,
+    borderFocus: borderFocus ?? this.borderFocus,
+    fg1: fg1 ?? this.fg1,
+    fg2: fg2 ?? this.fg2,
+    fg3: fg3 ?? this.fg3,
+    groupFg: groupFg ?? this.groupFg,
+    focusedStyle: focusedStyle ?? this.focusedStyle,
+  );
 
   @override
-  AutoSuggestionsBoxThemeData lerp(ThemeExtension<AutoSuggestionsBoxThemeData>? other, double t) {
+  AutoSuggestionsBoxThemeData lerp(
+    ThemeExtension<AutoSuggestionsBoxThemeData>? other,
+    double t,
+  ) {
     if (other is! AutoSuggestionsBoxThemeData) return this;
     return AutoSuggestionsBoxThemeData(
       fieldBg: Color.lerp(fieldBg, other.fieldBg, t)!,
@@ -315,7 +335,12 @@ class AutoSuggestionsBoxThemeData extends ThemeExtension<AutoSuggestionsBoxTheme
       fg2: Color.lerp(fg2, other.fg2, t)!,
       fg3: Color.lerp(fg3, other.fg3, t)!,
       groupFg: Color.lerp(groupFg, other.groupFg, t)!,
-      focusedStyle: AutoSuggestionsBoxFocusedStyle.lerp(focusedStyle, other.focusedStyle, t) ??
+      focusedStyle:
+          AutoSuggestionsBoxFocusedStyle.lerp(
+            focusedStyle,
+            other.focusedStyle,
+            t,
+          ) ??
           focusedStyle,
     );
   }

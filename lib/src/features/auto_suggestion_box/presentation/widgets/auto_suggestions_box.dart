@@ -181,11 +181,11 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// Custom builder for the advanced-search surface (defaults to a built-in
   /// dialog). Receives the live controller; commit via `controller.select(...)`.
   final Widget Function(BuildContext, AutoSuggestionsBoxController<T>)?
-      advancedSearchBuilder;
+  advancedSearchBuilder;
 
   /// Custom row renderer (overrides the default label/description/icon row).
   final Widget Function(BuildContext, AutoSuggestion<T>, bool highlighted)?
-      itemBuilder;
+  itemBuilder;
 
   /// Shown inside the overlay when a non-empty query has no matches.
   final Widget Function(BuildContext, String query)? emptyBuilder;
@@ -255,8 +255,10 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.loadingBuilder,
     this.onCreate,
     this.createLabelBuilder,
-  }) : assert(source != null || items != null || controller != null,
-            'Provide one of: source, items, or controller');
+  }) : assert(
+         source != null || items != null || controller != null,
+         'Provide one of: source, items, or controller',
+       );
 
   @override
   State<AutoSuggestionsBox<T>> createState() => _AutoSuggestionsBoxState<T>();
@@ -318,8 +320,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   String? get _error {
     final text = _c.query;
     if (widget.required) {
-      final empty =
-          widget.multiSelect ? _c.selectedItems.isEmpty : text.trim().isEmpty;
+      final empty = widget.multiSelect
+          ? _c.selectedItems.isEmpty
+          : text.trim().isEmpty;
       if (empty) return widget.requiredMessage;
     }
     return widget.validator?.call(text);
@@ -659,7 +662,10 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         children: [
           if (widget.label != null) ...[
             _FieldLabel(
-                text: widget.label!, required: widget.required, color: t.fg2),
+              text: widget.label!,
+              required: widget.required,
+              color: t.fg2,
+            ),
             const SizedBox(height: 8),
           ],
           CompositedTransformTarget(
@@ -676,12 +682,15 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
             const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsetsDirectional.only(start: 2),
-              child: Text(widget.hint!,
-                  style: TextStyle(
-                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                      fontSize: 12,
-                      height: 1.35,
-                      color: t.fg3)),
+              child: Text(
+                widget.hint!,
+                style: TextStyle(
+                  fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                  fontSize: 12,
+                  height: 1.35,
+                  color: t.fg3,
+                ),
+              ),
             ),
           ],
         ],
@@ -699,19 +708,22 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final fs = t.focusedStyle;
     final cs = Theme.of(context).colorScheme;
 
-    final minH = widget.fieldHeight ??
+    final minH =
+        widget.fieldHeight ??
         (widget.density == FieldDensity.compact
             ? AutoSuggestionsBoxThemeData.fieldCompact
             : AutoSuggestionsBoxThemeData.fieldHeight);
 
     // Text style — merge focused fontStyle override when focused.
-    var baseStyle = (widget.textStyle ??
-            TextStyle(
-                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                fontSize: 14,
-                color: t.fg1,
-                height: 1.2))
-        .copyWith(color: t.fg1);
+    var baseStyle =
+        (widget.textStyle ??
+                TextStyle(
+                  fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                  fontSize: 14,
+                  color: t.fg1,
+                  height: 1.2,
+                ))
+            .copyWith(color: t.fg1);
     if (focused && fs.fontStyle != null) {
       baseStyle = baseStyle.merge(fs.fontStyle);
     }
@@ -721,32 +733,39 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     OutlineInputBorder ob(Color c) => bare
         ? const OutlineInputBorder(borderSide: BorderSide.none)
         : OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
+            borderRadius: BorderRadius.circular(
+              AutoSuggestionsBoxThemeData.radiusSm,
+            ),
             borderSide: BorderSide(color: c, width: bw),
           );
 
     final Color enabledBorderColor = hasError ? cs.error : t.border;
-    final Color focusedBorderColor =
-        hasError ? cs.error : (fs.border?.color ?? t.borderFocus);
+    final Color focusedBorderColor = hasError
+        ? cs.error
+        : (fs.border?.color ?? t.borderFocus);
     final Color disabledBorderColor = t.border;
 
     // ── Fill ──
     final Color fillColor = (bare || disabled)
         ? Colors.transparent
         : focused
-            ? (fs.fillColor ?? t.fieldBgFocus)
-            : t.fieldBg;
+        ? (fs.fillColor ?? t.fieldBgFocus)
+        : t.fieldBg;
 
     // ── Leading (prefixIcon) ──
-    final Widget leadingWidget = widget.leading ??
+    final Widget leadingWidget =
+        widget.leading ??
         (bare
             ? const SizedBox.shrink()
-            : Icon(Icons.search_rounded,
-                size: 18, color: focused ? t.borderFocus : t.fg3));
-    final bool hasLeading = !(leadingWidget is SizedBox &&
-        leadingWidget.width == 0 &&
-        leadingWidget.height == 0);
+            : Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: focused ? t.borderFocus : t.fg3,
+              ));
+    final bool hasLeading =
+        !(leadingWidget is SizedBox &&
+            leadingWidget.width == 0 &&
+            leadingWidget.height == 0);
 
     // ── Suffix row ──
     final suffixWidgets = <Widget>[
@@ -768,8 +787,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
               child: leadingWidget,
             )
           : null,
-      prefixIconConstraints:
-          hasLeading ? const BoxConstraints(minWidth: 0, minHeight: 0) : null,
+      prefixIconConstraints: hasLeading
+          ? const BoxConstraints(minWidth: 0, minHeight: 0)
+          : null,
       // Suffix row
       suffixIcon: Padding(
         padding: const EdgeInsetsDirectional.only(end: 2),
@@ -824,61 +844,78 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   /// The trailing adornments (count pill · spinner · clear / chevron) spliced
   /// into the field row. Taps are inert while the field is non-interactive.
   List<Widget> _suffixChildren(
-      AutoSuggestionsBoxThemeData t, bool hasText, bool interactive) {
+    AutoSuggestionsBoxThemeData t,
+    bool hasText,
+    bool interactive,
+  ) {
     final children = <Widget>[];
     // Multi-select: a count pill of how many rows are chosen.
     if (widget.multiSelect && _c.selectedItems.isNotEmpty) {
-      children.add(Padding(
-        padding: const EdgeInsetsDirectional.only(end: 4),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            '${_c.selectedItems.length}',
-            style: const TextStyle(
+      children.add(
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 4),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '${_c.selectedItems.length}',
+              style: const TextStyle(
                 fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                color: Colors.white),
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
-      ));
+      );
     }
     if (_c.isLoading) {
-      children.add(Padding(
-        padding: const EdgeInsetsDirectional.only(end: 4),
-        child: SizedBox(
+      children.add(
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 4),
+          child: SizedBox(
             width: 15,
             height: 15,
             child: CircularProgressIndicator(
-                strokeWidth: 2, color: Theme.of(context).colorScheme.primary)),
-      ));
+              strokeWidth: 2,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      );
     }
     if (widget.clearButton && hasText && interactive) {
-      children.add(_IconBtn(
-        icon: Icons.close_rounded,
-        color: t.fg3,
-        hoverColor: t.fg1,
-        onTap: () {
-          _c.clear();
-          _focus.requestFocus();
-        },
-      ));
+      children.add(
+        _IconBtn(
+          icon: Icons.close_rounded,
+          color: t.fg3,
+          hoverColor: t.fg1,
+          onTap: () {
+            _c.clear();
+            _focus.requestFocus();
+          },
+        ),
+      );
     } else {
-      children.add(_IconBtn(
-        icon: _c.isOpen ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-        color: t.fg3,
-        hoverColor: t.fg1,
-        onTap: interactive
-            ? () {
-                _c.toggle();
-                _focus.requestFocus();
-              }
-            : () {},
-      ));
+      children.add(
+        _IconBtn(
+          icon: _c.isOpen
+              ? Icons.expand_less_rounded
+              : Icons.expand_more_rounded,
+          color: t.fg3,
+          hoverColor: t.fg1,
+          onTap: interactive
+              ? () {
+                  _c.toggle();
+                  _focus.requestFocus();
+                }
+              : () {},
+        ),
+      );
     }
     return children;
   }
@@ -893,7 +930,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     // Decide flip: place above when there isn't room below.
     final media = MediaQuery.of(ctx);
     final fieldTopLeft = box?.localToGlobal(Offset.zero) ?? Offset.zero;
-    final spaceBelow = media.size.height -
+    final spaceBelow =
+        media.size.height -
         (fieldTopLeft.dy + fieldSize.height) -
         media.viewInsets.bottom;
     final desired = _overlayHeight(t);
@@ -903,45 +941,49 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final targetAnchor = flipUp ? Alignment.topLeft : Alignment.bottomLeft;
     const gap = AutoSuggestionsBoxThemeData.overlayGap;
 
-    return Stack(children: [
-      // tap-outside scrim to dismiss
-      Positioned.fill(
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () => _c.close(),
-        ),
-      ),
-      CompositedTransformFollower(
-        link: _link,
-        showWhenUnlinked: false,
-        offset: Offset(0, flipUp ? -gap : gap),
-        followerAnchor: followerAnchor,
-        targetAnchor: targetAnchor,
-        child: Align(
-          alignment: flipUp ? Alignment.bottomLeft : Alignment.topLeft,
-          child: AutoSuggestionsPanel<T>(
-            width: fieldW.clamp(
-                180.0, AutoSuggestionsBoxThemeData.overlayMaxWidth),
-            theme: t,
-            controller: _c,
-            scroll: _scroll,
-            maxVisibleRows: widget.maxVisibleRows,
-            highlightMatch: widget.highlightMatch,
-            highlightMatches: widget.highlightMatches,
-            itemBuilder: widget.itemBuilder,
-            emptyBuilder: widget.emptyBuilder,
-            loadingBuilder: widget.loadingBuilder,
-            hlKey: _hlRowKey,
-            multiSelect: widget.multiSelect,
-            onPick: _pick,
-            onHover: _c.highlightAt,
-            createLabel: _canCreate ? _createLabel : null,
-            creating: _creating,
-            onCreate: _startCreate,
+    return Stack(
+      children: [
+        // tap-outside scrim to dismiss
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => _c.close(),
           ),
         ),
-      ),
-    ]);
+        CompositedTransformFollower(
+          link: _link,
+          showWhenUnlinked: false,
+          offset: Offset(0, flipUp ? -gap : gap),
+          followerAnchor: followerAnchor,
+          targetAnchor: targetAnchor,
+          child: Align(
+            alignment: flipUp ? Alignment.bottomLeft : Alignment.topLeft,
+            child: AutoSuggestionsPanel<T>(
+              width: fieldW.clamp(
+                180.0,
+                AutoSuggestionsBoxThemeData.overlayMaxWidth,
+              ),
+              theme: t,
+              controller: _c,
+              scroll: _scroll,
+              maxVisibleRows: widget.maxVisibleRows,
+              highlightMatch: widget.highlightMatch,
+              highlightMatches: widget.highlightMatches,
+              itemBuilder: widget.itemBuilder,
+              emptyBuilder: widget.emptyBuilder,
+              loadingBuilder: widget.loadingBuilder,
+              hlKey: _hlRowKey,
+              multiSelect: widget.multiSelect,
+              onPick: _pick,
+              onHover: _c.highlightAt,
+              createLabel: _canCreate ? _createLabel : null,
+              creating: _creating,
+              onCreate: _startCreate,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   double _overlayHeight(AutoSuggestionsBoxThemeData t) {
@@ -1008,44 +1050,53 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
     Widget body;
     if (controller.isLoading && results.isEmpty) {
       // Async source is fetching and nothing to show yet.
-      body = loadingBuilder?.call(context, q) ??
+      body =
+          loadingBuilder?.call(context, q) ??
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Row(children: [
-              SizedBox(
-                width: 15,
-                height: 15,
-                child: CircularProgressIndicator(
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Theme.of(context).colorScheme.primary),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                q.trim().isEmpty ? 'Loading…' : 'Searching “$q”…',
-                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  q.trim().isEmpty ? 'Loading…' : 'Searching “$q”…',
+                  style: TextStyle(
                     fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                     fontSize: 13,
-                    color: t.fg2),
-              ),
-            ]),
+                    color: t.fg2,
+                  ),
+                ),
+              ],
+            ),
           );
     } else if (results.isEmpty) {
-      body = emptyBuilder?.call(context, q) ??
+      body =
+          emptyBuilder?.call(context, q) ??
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            child: Row(children: [
-              Icon(Icons.search_off_rounded, size: 16, color: t.fg3),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  q.trim().isEmpty ? 'Type to search' : 'No matches for “$q”',
-                  style: TextStyle(
+            child: Row(
+              children: [
+                Icon(Icons.search_off_rounded, size: 16, color: t.fg3),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    q.trim().isEmpty ? 'Type to search' : 'No matches for “$q”',
+                    style: TextStyle(
                       fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                       fontSize: 13,
-                      color: t.fg2),
+                      color: t.fg2,
+                    ),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           );
     } else {
       body = ConstrainedBox(
@@ -1057,27 +1108,35 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
             // already-visible local rows.
             if (controller.isLoadingMore)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: t.accentWash(0.06),
                   border: Border(bottom: BorderSide(color: t.border)),
                 ),
-                child: Row(children: [
-                  SizedBox(
-                    width: 13,
-                    height: 13,
-                    child: CircularProgressIndicator(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 13,
+                      height: 13,
+                      child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.primary),
-                  ),
-                  const SizedBox(width: 9),
-                  Text('Loading more from server…',
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Text(
+                      'Loading more from server…',
                       style: TextStyle(
-                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                          fontSize: 11.5,
-                          color: t.fg2)),
-                ]),
+                        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                        fontSize: 11.5,
+                        color: t.fg2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             Flexible(
               child: NotificationListener<ScrollNotification>(
@@ -1106,7 +1165,8 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                       if (i >= results.length) return _PageLoadingRow(theme: t);
                       final s = results[i];
                       final isHl = controller.isHighlighted(i);
-                      final showGroup = s.group != null &&
+                      final showGroup =
+                          s.group != null &&
                           (i == 0 || results[i - 1].group != s.group);
                       final row = _Row<T>(
                         key: isHl ? hlKey : null,
@@ -1125,24 +1185,30 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                       );
                       if (!showGroup) return row;
                       return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                  14, i == 0 ? 4 : 9, 14, 5),
-                              child: Text(
-                                s.group!.toUpperCase(),
-                                style: TextStyle(
-                                    fontFamily:
-                                        AutoSuggestionsBoxThemeData.bodyFont,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.7,
-                                    color: t.groupFg),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                              14,
+                              i == 0 ? 4 : 9,
+                              14,
+                              5,
+                            ),
+                            child: Text(
+                              s.group!.toUpperCase(),
+                              style: TextStyle(
+                                fontFamily:
+                                    AutoSuggestionsBoxThemeData.bodyFont,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.7,
+                                color: t.groupFg,
                               ),
                             ),
-                            row,
-                          ]);
+                          ),
+                          row,
+                        ],
+                      );
                     },
                   ),
                 ),
@@ -1159,8 +1225,9 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
         width: width,
         decoration: BoxDecoration(
           color: t.overlayBg,
-          borderRadius:
-              BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusLg),
+          borderRadius: BorderRadius.circular(
+            AutoSuggestionsBoxThemeData.radiusLg,
+          ),
           border: Border.all(color: t.border),
           boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
         ),
@@ -1222,8 +1289,9 @@ class _Row<T> extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected ? accent : Colors.transparent,
         border: Border.all(color: selected ? accent : t.fg3, width: 1.6),
-        borderRadius:
-            BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusSm),
+        borderRadius: BorderRadius.circular(
+          AutoSuggestionsBoxThemeData.radiusSm,
+        ),
       ),
       child: selected
           ? const Icon(Icons.check_rounded, size: 13, color: Colors.white)
@@ -1238,73 +1306,88 @@ class _Row<T> extends StatelessWidget {
     final s = suggestion;
     final enabled = s.enabled;
 
-    final inner = custom?.call(context, s, highlighted) ??
-        Row(children: [
-          if (s.icon != null) ...[
-            Icon(s.icon,
+    final inner =
+        custom?.call(context, s, highlighted) ??
+        Row(
+          children: [
+            if (s.icon != null) ...[
+              Icon(
+                s.icon,
                 size: 17,
                 color: highlighted
                     ? Theme.of(context).colorScheme.primary
-                    : t.fg3),
-            const SizedBox(width: 10),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AutoSuggestionsHighlight(
-                  text: s.label,
-                  query: query,
-                  match: highlightMatch,
-                  enabled: highlightMatches,
-                  baseStyle: TextStyle(
+                    : t.fg3,
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AutoSuggestionsHighlight(
+                    text: s.label,
+                    query: query,
+                    match: highlightMatch,
+                    enabled: highlightMatches,
+                    baseStyle: TextStyle(
                       fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                       fontSize: 13.5,
                       height: 1.2,
                       color: enabled ? t.fg1 : t.fg3,
-                      fontWeight: FontWeight.w500),
-                ),
-                if (s.description != null) ...[
-                  const SizedBox(height: 1),
-                  Text(s.description!,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (s.description != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      s.description!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                          fontSize: 11.5,
-                          height: 1.2,
-                          color: t.fg2)),
+                        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                        fontSize: 11.5,
+                        height: 1.2,
+                        color: t.fg2,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-          ),
-          if (s.trailing != null) ...[
-            const SizedBox(width: 10),
-            Text(
-              s.trailing!,
-              style: TextStyle(
-                fontFamily:superTheme.tokens.monoFont,
-                fontSize: 12,
-                height: 1.2,
-                color: enabled ? t.fg2 : t.fg3,
-                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
+            if (s.trailing != null) ...[
+              const SizedBox(width: 10),
+              Text(
+                s.trailing!,
+                style: TextStyle(
+                  fontFamily: superTheme.tokens.monoFont,
+                  fontSize: 12,
+                  height: 1.2,
+                  color: enabled ? t.fg2 : t.fg3,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+            if (highlighted && enabled) ...[
+              const SizedBox(width: 8),
+              Icon(
+                Icons.subdirectory_arrow_left_rounded,
+                size: 14,
+                color: t.fg3,
+              ),
+            ],
           ],
-          if (highlighted && enabled) ...[
-            const SizedBox(width: 8),
-            Icon(Icons.subdirectory_arrow_left_rounded, size: 14, color: t.fg3),
-          ],
-        ]);
+        );
 
     // In multi-select prepend a checkbox so the chosen state is explicit.
     final content = multiSelect
-        ? Row(children: [
-            _checkbox(t, context),
-            const SizedBox(width: 11),
-            Expanded(child: inner),
-          ])
+        ? Row(
+            children: [
+              _checkbox(t, context),
+              const SizedBox(width: 11),
+              Expanded(child: inner),
+            ],
+          )
         : inner;
 
     return MouseRegion(
@@ -1344,12 +1427,13 @@ class _CreateFooter extends StatefulWidget {
   final bool creating;
   final bool showEnterHint;
   final VoidCallback? onTap;
-  const _CreateFooter(
-      {required this.theme,
-      required this.label,
-      required this.creating,
-      this.showEnterHint = true,
-      this.onTap});
+  const _CreateFooter({
+    required this.theme,
+    required this.label,
+    required this.creating,
+    this.showEnterHint = true,
+    this.onTap,
+  });
 
   @override
   State<_CreateFooter> createState() => _CreateFooterState();
@@ -1361,8 +1445,9 @@ class _CreateFooterState extends State<_CreateFooter> {
   Widget build(BuildContext context) {
     final t = widget.theme;
     return MouseRegion(
-      cursor:
-          widget.creating ? SystemMouseCursors.wait : SystemMouseCursors.click,
+      cursor: widget.creating
+          ? SystemMouseCursors.wait
+          : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _h = true),
       onExit: (_) => setState(() => _h = false),
       child: GestureDetector(
@@ -1375,51 +1460,62 @@ class _CreateFooterState extends State<_CreateFooter> {
             color: _h ? t.accentWash(0.12) : t.accentWash(0.05),
             border: Border(top: BorderSide(color: t.border)),
           ),
-          child: Row(children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: widget.creating
-                  ? CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Theme.of(context).colorScheme.primary)
-                  : Icon(Icons.add_rounded,
-                      size: 18, color: Theme.of(context).colorScheme.primary),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  text: 'Create ',
-                  style: TextStyle(
+          child: Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: widget.creating
+                    ? CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    text: 'Create ',
+                    style: TextStyle(
                       fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                       fontSize: 13,
-                      color: t.fg2),
-                  children: [
-                    TextSpan(
-                      text: '“${widget.label}”',
-                      style: TextStyle(
+                      color: t.fg2,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '“${widget.label}”',
+                        style: TextStyle(
                           fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: t.fg1),
-                    ),
-                  ],
+                          color: t.fg1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(width: 8),
-            if (widget.showEnterHint)
-              Text('ENTER',
+              const SizedBox(width: 8),
+              if (widget.showEnterHint)
+                Text(
+                  'ENTER',
                   style: TextStyle(
-                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6,
-                      color: t.fg3)),
-          ]),
+                    fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                    color: t.fg3,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -1437,20 +1533,28 @@ class _PageLoadingRow extends StatelessWidget {
       height: AutoSuggestionsBoxThemeData.rowHeight,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        SizedBox(
-          width: 13,
-          height: 13,
-          child: CircularProgressIndicator(
-              strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
-        ),
-        const SizedBox(width: 9),
-        Text('Loading more…',
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 13,
+            height: 13,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 9),
+          Text(
+            'Loading more…',
             style: TextStyle(
-                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                fontSize: 11.5,
-                color: t.fg2)),
-      ]),
+              fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+              fontSize: 11.5,
+              color: t.fg2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1461,11 +1565,12 @@ class _IconBtn extends StatefulWidget {
   final Color color;
   final Color hoverColor;
   final VoidCallback onTap;
-  const _IconBtn(
-      {required this.icon,
-      required this.color,
-      required this.hoverColor,
-      required this.onTap});
+  const _IconBtn({
+    required this.icon,
+    required this.color,
+    required this.hoverColor,
+    required this.onTap,
+  });
   @override
   State<_IconBtn> createState() => _IconBtnState();
 }
@@ -1482,8 +1587,11 @@ class _IconBtnState extends State<_IconBtn> {
         onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: Icon(widget.icon,
-              size: 17, color: _h ? widget.hoverColor : widget.color),
+          child: Icon(
+            widget.icon,
+            size: 17,
+            color: _h ? widget.hoverColor : widget.color,
+          ),
         ),
       ),
     );
@@ -1494,8 +1602,11 @@ class _IconBtnState extends State<_IconBtn> {
 // Matches super_form_field's FieldShell label: ALL CAPS, 11/700, ~0.05em
 // tracking, with a danger-red `*` when required.
 class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(
-      {required this.text, required this.required, required this.color});
+  const _FieldLabel({
+    required this.text,
+    required this.required,
+    required this.color,
+  });
 
   final String text;
   final bool required;
@@ -1517,9 +1628,9 @@ class _FieldLabel extends StatelessWidget {
         style: style,
         children: [
           TextSpan(
-              text: ' *',
-              style:
-                  style.copyWith(color: Theme.of(context).colorScheme.error)),
+            text: ' *',
+            style: style.copyWith(color: Theme.of(context).colorScheme.error),
+          ),
         ],
       ),
     );
@@ -1545,8 +1656,9 @@ class _ErrorBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: cs.error,
-        borderRadius:
-            BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusMd),
+        borderRadius: BorderRadius.circular(
+          AutoSuggestionsBoxThemeData.radiusMd,
+        ),
       ),
       textStyle: const TextStyle(
         fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
@@ -1605,8 +1717,10 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
     _c.addListener(_onModel);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focus.requestFocus();
-      _text.selection =
-          TextSelection(baseOffset: 0, extentOffset: _text.text.length);
+      _text.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _text.text.length,
+      );
     });
   }
 
@@ -1660,179 +1774,221 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
             child: Container(
               decoration: BoxDecoration(
                 color: t.overlayBg,
-                borderRadius:
-                    BorderRadius.circular(AutoSuggestionsBoxThemeData.radiusLg),
+                borderRadius: BorderRadius.circular(
+                  AutoSuggestionsBoxThemeData.radiusLg,
+                ),
                 border: Border.all(color: t.border),
                 boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
               ),
               clipBehavior: Clip.antiAlias,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                // header
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 14, 14),
-                  child: Row(children: [
-                    Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('ADVANCED SEARCH',
-                                style: TextStyle(
-                                    fontFamily:
-                                        AutoSuggestionsBoxThemeData.bodyFont,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.0,
-                                    color:
-                                        Theme.of(context).colorScheme.primary)),
-                            const SizedBox(height: 3),
-                            Text(widget.title,
-                                style: TextStyle(
-                                    fontFamily:
-                                        AutoSuggestionsBoxThemeData.displayFont,
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: -0.4,
-                                    color: t.fg1)),
-                          ]),
-                    ),
-                    _IconBtn(
-                      icon: Icons.close_rounded,
-                      color: t.fg3,
-                      hoverColor: t.fg1,
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
-                  ]),
-                ),
-                // search field
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-                  child: Focus(
-                    onKeyEvent: _onKey,
-                    child: Container(
-                      height: 48,
-                      padding:
-                          const EdgeInsetsDirectional.only(start: 14, end: 8),
-                      decoration: BoxDecoration(
-                        color: t.fieldBg,
-                        borderRadius: BorderRadius.circular(
-                            AutoSuggestionsBoxThemeData.radiusMd),
-                        border: Border.all(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 1.5),
-                      ),
-                      child: Row(children: [
-                        Icon(Icons.search_rounded, size: 19, color: t.fg3),
-                        const SizedBox(width: 11),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 14, 14),
+                    child: Row(
+                      children: [
                         Expanded(
-                          child: TextField(
-                            controller: _text,
-                            focusNode: _focus,
-                            onChanged: _c.setText,
-                            style: TextStyle(
-                                fontFamily:
-                                    AutoSuggestionsBoxThemeData.bodyFont,
-                                fontSize: 15,
-                                color: t.fg1),
-                            cursorColor: Theme.of(context).colorScheme.primary,
-                            decoration: InputDecoration(
-                              isCollapsed: true,
-                              border: InputBorder.none,
-                              hintText: 'Search…',
-                              hintStyle: TextStyle(fontSize: 15, color: t.fg3),
-                            ),
-                          ),
-                        ),
-                        if (_c.isLoading)
-                          SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color:
-                                      Theme.of(context).colorScheme.primary)),
-                      ]),
-                    ),
-                  ),
-                ),
-                if (_c.isLoadingMore)
-                  Container(
-                    width: double.infinity,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    color: t.accentWash(0.06),
-                    child: Row(children: [
-                      SizedBox(
-                          width: 13,
-                          height: 13,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Theme.of(context).colorScheme.primary)),
-                      const SizedBox(width: 9),
-                      Text('Loading more from server…',
-                          style: TextStyle(
-                              fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                              fontSize: 11.5,
-                              color: t.fg2)),
-                    ]),
-                  ),
-                Divider(height: 1, color: t.border),
-                // results
-                Flexible(
-                  child: results.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 48),
-                          child: Text(
-                              _c.isLoading ? 'Searching…' : 'No matches',
-                              style: TextStyle(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ADVANCED SEARCH',
+                                style: TextStyle(
                                   fontFamily:
                                       AutoSuggestionsBoxThemeData.bodyFont,
-                                  fontSize: 13,
-                                  color: t.fg3)),
-                        )
-                      : Scrollbar(
-                          controller: _scroll,
-                          child: ListView.builder(
-                            controller: _scroll,
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            itemCount: results.length,
-                            itemBuilder: (ctx, i) {
-                              final s = results[i];
-                              return _Row<T>(
-                                theme: t,
-                                suggestion: s,
-                                query: q,
-                                highlighted: _c.isHighlighted(i),
-                                highlightMatch: widget.highlightMatch,
-                                highlightMatches: true,
-                                custom: null,
-                                multiSelect: widget.multiSelect,
-                                selected: widget.multiSelect &&
-                                    _c.isSelectedValue(s.value),
-                                onTap: () => widget.onPick(s),
-                                onHover: () => _c.highlightAt(i),
-                              );
-                            },
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.0,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                widget.title,
+                                style: TextStyle(
+                                  fontFamily:
+                                      AutoSuggestionsBoxThemeData.displayFont,
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.4,
+                                  color: t.fg1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                ),
-                // footer hint
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: t.fieldBg,
-                    border: Border(top: BorderSide(color: t.border)),
+                        _IconBtn(
+                          icon: Icons.close_rounded,
+                          color: t.fg3,
+                          hoverColor: t.fg1,
+                          onTap: () => Navigator.of(context).maybePop(),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Text('↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE',
+                  // search field
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                    child: Focus(
+                      onKeyEvent: _onKey,
+                      child: Container(
+                        height: 48,
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 14,
+                          end: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: t.fieldBg,
+                          borderRadius: BorderRadius.circular(
+                            AutoSuggestionsBoxThemeData.radiusMd,
+                          ),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.search_rounded, size: 19, color: t.fg3),
+                            const SizedBox(width: 11),
+                            Expanded(
+                              child: TextField(
+                                controller: _text,
+                                focusNode: _focus,
+                                onChanged: _c.setText,
+                                style: TextStyle(
+                                  fontFamily:
+                                      AutoSuggestionsBoxThemeData.bodyFont,
+                                  fontSize: 15,
+                                  color: t.fg1,
+                                ),
+                                cursorColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                decoration: InputDecoration(
+                                  isCollapsed: true,
+                                  border: InputBorder.none,
+                                  hintText: 'Search…',
+                                  hintStyle: TextStyle(
+                                    fontSize: 15,
+                                    color: t.fg3,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (_c.isLoading)
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_c.isLoadingMore)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      color: t.accentWash(0.06),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 13,
+                            height: 13,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 9),
+                          Text(
+                            'Loading more from server…',
+                            style: TextStyle(
+                              fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                              fontSize: 11.5,
+                              color: t.fg2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Divider(height: 1, color: t.border),
+                  // results
+                  Flexible(
+                    child: results.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 48),
+                            child: Text(
+                              _c.isLoading ? 'Searching…' : 'No matches',
+                              style: TextStyle(
+                                fontFamily:
+                                    AutoSuggestionsBoxThemeData.bodyFont,
+                                fontSize: 13,
+                                color: t.fg3,
+                              ),
+                            ),
+                          )
+                        : Scrollbar(
+                            controller: _scroll,
+                            child: ListView.builder(
+                              controller: _scroll,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              itemCount: results.length,
+                              itemBuilder: (ctx, i) {
+                                final s = results[i];
+                                return _Row<T>(
+                                  theme: t,
+                                  suggestion: s,
+                                  query: q,
+                                  highlighted: _c.isHighlighted(i),
+                                  highlightMatch: widget.highlightMatch,
+                                  highlightMatches: true,
+                                  custom: null,
+                                  multiSelect: widget.multiSelect,
+                                  selected:
+                                      widget.multiSelect &&
+                                      _c.isSelectedValue(s.value),
+                                  onTap: () => widget.onPick(s),
+                                  onHover: () => _c.highlightAt(i),
+                                );
+                              },
+                            ),
+                          ),
+                  ),
+                  // footer hint
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: t.fieldBg,
+                      border: Border(top: BorderSide(color: t.border)),
+                    ),
+                    child: Text(
+                      '↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE',
                       style: TextStyle(
-                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                          color: t.fg3)),
-                ),
-              ]),
+                        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: t.fg3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

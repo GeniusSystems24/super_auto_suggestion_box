@@ -8,7 +8,7 @@ description: >
   LTR, and RTL.
 
 # package version
-version: 0.8.1
+version: 0.8.2
 
 # package homepage, repository, and issue tracker URLs
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box
@@ -30,7 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
   # Shared GeniusLink design-system foundation (theme, tokens, type, widgets).
-  super_core: ">=2.0.0 <3.0.0"
+  super_core: ">=2.1.0 <3.0.0"
 
 dev_dependencies:
   flutter_test:

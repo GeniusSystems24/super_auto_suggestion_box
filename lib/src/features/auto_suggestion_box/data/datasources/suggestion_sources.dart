@@ -36,18 +36,19 @@ abstract final class SuggestionSources {
     List<AutoSuggestion<T>> items, {
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
     bool caseSensitive = false,
-  }) =>
-      ListSuggestionsSource<T>(items, match: match, caseSensitive: caseSensitive);
+  }) => ListSuggestionsSource<T>(
+    items,
+    match: match,
+    caseSensitive: caseSensitive,
+  );
 
   /// A static source over plain strings (value == label).
   static AutoSuggestionsSource<String> strings(
     List<String> values, {
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
-  }) =>
-      ListSuggestionsSource<String>(
-        [for (final v in values) AutoSuggestion<String>(value: v, label: v)],
-        match: match,
-      );
+  }) => ListSuggestionsSource<String>([
+    for (final v in values) AutoSuggestion<String>(value: v, label: v),
+  ], match: match);
 
   /// A static, in-memory list ranked by **fuzzy** (subsequence) matching — type
   /// loosely (`acrv` → *Accounts Receivable*) and rows order by match quality
@@ -56,14 +57,16 @@ abstract final class SuggestionSources {
   static AutoSuggestionsSource<T> fuzzy<T>(
     List<AutoSuggestion<T>> items, {
     bool caseSensitive = false,
-  }) =>
-      ListSuggestionsSource<T>(items, match: AutoSuggestionMatch.fuzzy, caseSensitive: caseSensitive);
+  }) => ListSuggestionsSource<T>(
+    items,
+    match: AutoSuggestionMatch.fuzzy,
+    caseSensitive: caseSensitive,
+  );
 
   /// Async source — any `Future`-returning search (debounced by the controller).
   static AutoSuggestionsSource<T> async<T>(
     Future<List<AutoSuggestion<T>>> Function(String query) fetch,
-  ) =>
-      AsyncSuggestionsSource<T>(fetch);
+  ) => AsyncSuggestionsSource<T>(fetch);
 
   /// Hybrid source: filter the in-memory [initialItems] first and, when the
   /// local matches are insufficient, fall back to an async [fetch] (remote
@@ -83,15 +86,14 @@ abstract final class SuggestionSources {
     int remoteThreshold = 1,
     int remoteMinChars = 1,
     bool caseSensitive = false,
-  }) =>
-      HybridSuggestionsSource<T>(
-        initialItems: initialItems,
-        fetch: fetch,
-        match: match,
-        remoteThreshold: remoteThreshold,
-        remoteMinChars: remoteMinChars,
-        caseSensitive: caseSensitive,
-      );
+  }) => HybridSuggestionsSource<T>(
+    initialItems: initialItems,
+    fetch: fetch,
+    match: match,
+    remoteThreshold: remoteThreshold,
+    remoteMinChars: remoteMinChars,
+    caseSensitive: caseSensitive,
+  );
 
   /// Local-first with a **progressive remote fallback**: filter [initialItems]
   /// locally and show them instantly; when the local match count is
@@ -107,15 +109,14 @@ abstract final class SuggestionSources {
     int remoteThreshold = 5,
     int remoteMinChars = 1,
     bool caseSensitive = false,
-  }) =>
-      RemoteFallbackSuggestionsSource<T>(
-        initialItems: initialItems,
-        fetch: fetch,
-        match: match,
-        remoteThreshold: remoteThreshold,
-        remoteMinChars: remoteMinChars,
-        caseSensitive: caseSensitive,
-      );
+  }) => RemoteFallbackSuggestionsSource<T>(
+    initialItems: initialItems,
+    fetch: fetch,
+    match: match,
+    remoteThreshold: remoteThreshold,
+    remoteMinChars: remoteMinChars,
+    caseSensitive: caseSensitive,
+  );
 
   /// **Paged** remote source for large master data (infinite scroll). [fetch]
   /// returns one [SuggestionsPage] per `(query, page)` — the rows for that page
@@ -126,8 +127,7 @@ abstract final class SuggestionSources {
   static AutoSuggestionsSource<T> paged<T>(
     Future<SuggestionsPage<T>> Function(String query, int page) fetch, {
     List<AutoSuggestion<T>> resolveFrom = const [],
-  }) =>
-      PagedSuggestionsSource<T>(fetch, resolveFrom: resolveFrom);
+  }) => PagedSuggestionsSource<T>(fetch, resolveFrom: resolveFrom);
 }
 
 /// Static, in-memory list filtered locally by [match].
@@ -147,7 +147,9 @@ class ListSuggestionsSource<T> extends AutoSuggestionsSource<T> {
     if (q.isEmpty) return List<AutoSuggestion<T>>.of(items);
     final out = <AutoSuggestion<T>>[];
     for (final s in items) {
-      final hay = caseSensitive ? ([s.label, ...s.keywords].join(' ')) : s.haystack;
+      final hay = caseSensitive
+          ? ([s.label, ...s.keywords].join(' '))
+          : s.haystack;
       if (AutoSuggestionMatching.test(hay, q, match)) out.add(s);
     }
     if (match == AutoSuggestionMatch.fuzzy) {
@@ -155,8 +157,11 @@ class ListSuggestionsSource<T> extends AutoSuggestionsSource<T> {
       String hayOf(AutoSuggestion<T> s) =>
           caseSensitive ? ([s.label, ...s.keywords].join(' ')) : s.haystack;
       out.sort((a, b) {
-        final d = AutoSuggestionMatching.score(hayOf(b), q, match)
-            .compareTo(AutoSuggestionMatching.score(hayOf(a), q, match));
+        final d = AutoSuggestionMatching.score(
+          hayOf(b),
+          q,
+          match,
+        ).compareTo(AutoSuggestionMatching.score(hayOf(a), q, match));
         return d != 0 ? d : a.label.length - b.label.length;
       });
       return out;
@@ -219,7 +224,9 @@ class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
     if (q.isEmpty) return List<AutoSuggestion<T>>.of(initialItems);
     final out = <AutoSuggestion<T>>[];
     for (final s in initialItems) {
-      final hay = caseSensitive ? ([s.label, ...s.keywords].join(' ')) : s.haystack;
+      final hay = caseSensitive
+          ? ([s.label, ...s.keywords].join(' '))
+          : s.haystack;
       if (AutoSuggestionMatching.test(hay, q, match)) out.add(s);
     }
     return out;
@@ -234,14 +241,16 @@ class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
       return local;
     }
     // Otherwise load more and merge (local first, de-duped by value).
-    return fetch(query).then((remote) {
-      final seen = <T>{for (final s in local) s.value};
-      final merged = <AutoSuggestion<T>>[...local];
-      for (final r in remote) {
-        if (seen.add(r.value)) merged.add(r);
-      }
-      return merged;
-    }).catchError((Object _) => local); // network failed → degrade to local
+    return fetch(query)
+        .then((remote) {
+          final seen = <T>{for (final s in local) s.value};
+          final merged = <AutoSuggestion<T>>[...local];
+          for (final r in remote) {
+            if (seen.add(r.value)) merged.add(r);
+          }
+          return merged;
+        })
+        .catchError((Object _) => local); // network failed → degrade to local
   }
 
   @override
@@ -281,7 +290,9 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
     if (q.isEmpty) return List<AutoSuggestion<T>>.of(initialItems);
     final out = <AutoSuggestion<T>>[];
     for (final s in initialItems) {
-      final hay = caseSensitive ? ([s.label, ...s.keywords].join(' ')) : s.haystack;
+      final hay = caseSensitive
+          ? ([s.label, ...s.keywords].join(' '))
+          : s.haystack;
       if (AutoSuggestionMatching.test(hay, q, match)) out.add(s);
     }
     return out;
@@ -292,14 +303,17 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   FutureOr<List<AutoSuggestion<T>>> query(String query) {
     final r = progressive(query);
     if (r.loadMore == null) return r.items;
-    return r.loadMore!().then((remote) => _merge(r.items, remote)).catchError((Object _) => r.items);
+    return r.loadMore!()
+        .then((remote) => _merge(r.items, remote))
+        .catchError((Object _) => r.items);
   }
 
   @override
   SuggestionsQueryResult<T> progressive(String query) {
     final local = _local(query);
     final q = query.trim();
-    final wantRemote = local.length <= remoteThreshold && q.length >= remoteMinChars;
+    final wantRemote =
+        local.length <= remoteThreshold && q.length >= remoteMinChars;
     if (!wantRemote) return SuggestionsQueryResult<T>.complete(local);
     return SuggestionsQueryResult<T>(
       items: local,
@@ -307,7 +321,10 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
     );
   }
 
-  List<AutoSuggestion<T>> _merge(List<AutoSuggestion<T>> local, List<AutoSuggestion<T>> remote) {
+  List<AutoSuggestion<T>> _merge(
+    List<AutoSuggestion<T>> local,
+    List<AutoSuggestion<T>> remote,
+  ) {
     final seen = <T>{for (final s in local) s.value};
     final merged = <AutoSuggestion<T>>[...local];
     for (final r in remote) {
@@ -343,12 +360,14 @@ class PagedSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   bool get isPaged => true;
 
   @override
-  Future<SuggestionsPage<T>> fetchPage(String query, int page) => fetch(query, page);
+  Future<SuggestionsPage<T>> fetchPage(String query, int page) =>
+      fetch(query, page);
 
   /// The single-phase [query] returns page 0 only — so the source still works if
   /// a host ignores pagination (the controller uses [fetchPage] for the rest).
   @override
-  Future<List<AutoSuggestion<T>>> query(String query) => fetch(query, 0).then((p) => p.items);
+  Future<List<AutoSuggestion<T>>> query(String query) =>
+      fetch(query, 0).then((p) => p.items);
 
   @override
   AutoSuggestion<T>? resolve(T value) {

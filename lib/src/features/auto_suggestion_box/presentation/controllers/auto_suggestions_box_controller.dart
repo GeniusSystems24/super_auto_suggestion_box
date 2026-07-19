@@ -36,14 +36,19 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     List<AutoSuggestion<T>>? initialRecents,
     this.recentsGroupLabel = 'Recent',
     this.onRecentsChanged,
-  })  : _source = source,
-        _ownsText = textController == null,
-        text = textController ?? TextEditingController(text: initialValue?.label ?? initialText ?? '') {
+  }) : _source = source,
+       _ownsText = textController == null,
+       text =
+           textController ??
+           TextEditingController(
+             text: initialValue?.label ?? initialText ?? '',
+           ) {
     _selected = initialValue;
     _committed = initialValue;
     _committedText = initialValue?.label ?? initialText;
     if (initialSelected != null) _selectedItems.addAll(initialSelected);
-    if (initialRecents != null) _recents.addAll(initialRecents.take(maxRecents));
+    if (initialRecents != null)
+      _recents.addAll(initialRecents.take(maxRecents));
     text.addListener(_onTextChanged);
     _lastText = text.text;
     // Seed the initial (empty-query) result set so opening shows everything.
@@ -96,7 +101,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   bool _loadingMore = false;
   Object? _error;
   AutoSuggestion<T>? _selected;
-  AutoSuggestion<T>? _committed; // last committed selection (for restore-on-blur)
+  AutoSuggestion<T>?
+  _committed; // last committed selection (for restore-on-blur)
   String? _committedText; // last committed field text (null = never committed)
   String _activeQuery = ''; // the effective (prefix-to-caret) query in force
 
@@ -104,7 +110,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   Timer? _debounceTimer;
   String _lastText = '';
   bool _muteText = false; // suppress _onTextChanged during programmatic writes
-  final List<AutoSuggestion<T>> _selectedItems = []; // multi-select set (ordered)
+  final List<AutoSuggestion<T>> _selectedItems =
+      []; // multi-select set (ordered)
   final List<AutoSuggestion<T>> _recents = []; // most-recent-first, capped
 
   // ── pagination (paged sources) ─────────────────────────────
@@ -125,7 +132,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   bool get hasResults => _results.isNotEmpty;
   int get highlightedIndex => _highlighted;
   AutoSuggestion<T>? get highlighted =>
-      (_highlighted >= 0 && _highlighted < _results.length) ? _results[_highlighted] : null;
+      (_highlighted >= 0 && _highlighted < _results.length)
+      ? _results[_highlighted]
+      : null;
   bool get isOpen => _open;
   bool get isLoading => _loading;
 
@@ -150,7 +159,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   String _queryString() {
     final full = text.text;
     final sel = text.selection;
-    final caret = sel.isValid && sel.extentOffset >= 0 ? sel.extentOffset.clamp(0, full.length) : full.length;
+    final caret = sel.isValid && sel.extentOffset >= 0
+        ? sel.extentOffset.clamp(0, full.length)
+        : full.length;
     return full.substring(0, caret);
   }
 
@@ -168,7 +179,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   // ── multi-select ───────────────────────────────────────────
   /// The chosen rows (multi-select), in pick order.
-  List<AutoSuggestion<T>> get selectedItems => List.unmodifiable(_selectedItems);
+  List<AutoSuggestion<T>> get selectedItems =>
+      List.unmodifiable(_selectedItems);
 
   /// The chosen values (multi-select), in pick order.
   List<T> get selectedValues => [for (final s in _selectedItems) s.value];
@@ -281,7 +293,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// is empty and recents exist; the rest of [base] follows, de-duplicated and
   /// tagged so it reads as a separate section.
   List<AutoSuggestion<T>> _decorateRecents(List<AutoSuggestion<T>> base) {
-    if (!showRecents || _recents.isEmpty || _activeQuery.trim().isNotEmpty) return base;
+    if (!showRecents || _recents.isEmpty || _activeQuery.trim().isNotEmpty)
+      return base;
     final recentVals = <T>{for (final r in _recents) r.value};
     return [
       for (final r in _recents) r.copyWith(group: recentsGroupLabel),
@@ -342,7 +355,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _muteText = true;
     text.value = TextEditingValue(
       text: value,
-      selection: moveCursorToEnd ? TextSelection.collapsed(offset: value.length) : text.selection,
+      selection: moveCursorToEnd
+          ? TextSelection.collapsed(offset: value.length)
+          : text.selection,
     );
     _lastText = value;
     _muteText = false;
@@ -389,18 +404,21 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
         notifyListeners();
         final loadMore = prog.loadMore!;
         void fire() {
-          loadMore().then((list) {
-            if (mySeq != _seq) return;
-            _setResults(list);
-            if (_highlighted >= _results.length) _highlighted = _results.isEmpty ? -1 : 0;
-            _loadingMore = false;
-            _error = null;
-            notifyListeners();
-          }).catchError((Object e) {
-            if (mySeq != _seq) return;
-            _loadingMore = false; // keep the local rows already shown
-            notifyListeners();
-          });
+          loadMore()
+              .then((list) {
+                if (mySeq != _seq) return;
+                _setResults(list);
+                if (_highlighted >= _results.length)
+                  _highlighted = _results.isEmpty ? -1 : 0;
+                _loadingMore = false;
+                _error = null;
+                notifyListeners();
+              })
+              .catchError((Object e) {
+                if (mySeq != _seq) return;
+                _loadingMore = false; // keep the local rows already shown
+                notifyListeners();
+              });
         }
 
         if (immediate || debounce == Duration.zero) {
@@ -453,25 +471,28 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _loadingMore = false;
     notifyListeners();
     void fire() {
-      _source.fetchPage(raw, 0).then((page) {
-        if (mySeq != _seq) return;
-        _pagedItems = List<AutoSuggestion<T>>.of(page.items);
-        _hasMore = page.hasMore;
-        _loading = false;
-        _error = null;
-        _setResults(_pagedItems);
-        _highlighted = _results.isEmpty ? -1 : 0;
-        notifyListeners();
-      }).catchError((Object e) {
-        if (mySeq != _seq) return;
-        _error = e;
-        _loading = false;
-        _hasMore = false;
-        _pagedItems = const [];
-        _setResults(const []);
-        _highlighted = -1;
-        notifyListeners();
-      });
+      _source
+          .fetchPage(raw, 0)
+          .then((page) {
+            if (mySeq != _seq) return;
+            _pagedItems = List<AutoSuggestion<T>>.of(page.items);
+            _hasMore = page.hasMore;
+            _loading = false;
+            _error = null;
+            _setResults(_pagedItems);
+            _highlighted = _results.isEmpty ? -1 : 0;
+            notifyListeners();
+          })
+          .catchError((Object e) {
+            if (mySeq != _seq) return;
+            _error = e;
+            _loading = false;
+            _hasMore = false;
+            _pagedItems = const [];
+            _setResults(const []);
+            _highlighted = -1;
+            notifyListeners();
+          });
     }
 
     if (immediate || debounce == Duration.zero) {
@@ -490,23 +511,26 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     final mySeq = _seq; // stay bound to the current query
     _isLoadingPage = true;
     notifyListeners();
-    _source.fetchPage(_pagedQuery, next).then((page) {
-      if (mySeq != _seq) return;
-      _page = next;
-      final seen = <T>{for (final s in _pagedItems) s.value};
-      for (final s in page.items) {
-        if (seen.add(s.value)) _pagedItems.add(s);
-      }
-      _hasMore = page.hasMore;
-      _isLoadingPage = false;
-      _setResults(_pagedItems);
-      notifyListeners();
-    }).catchError((Object _) {
-      if (mySeq != _seq) return;
-      _isLoadingPage = false;
-      _hasMore = false; // stop paging on error; keep what we have
-      notifyListeners();
-    });
+    _source
+        .fetchPage(_pagedQuery, next)
+        .then((page) {
+          if (mySeq != _seq) return;
+          _page = next;
+          final seen = <T>{for (final s in _pagedItems) s.value};
+          for (final s in page.items) {
+            if (seen.add(s.value)) _pagedItems.add(s);
+          }
+          _hasMore = page.hasMore;
+          _isLoadingPage = false;
+          _setResults(_pagedItems);
+          notifyListeners();
+        })
+        .catchError((Object _) {
+          if (mySeq != _seq) return;
+          _isLoadingPage = false;
+          _hasMore = false; // stop paging on error; keep what we have
+          notifyListeners();
+        });
   }
 
   /// Force a re-query of the current text (e.g. after the source changed).
@@ -572,7 +596,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Revert the field to the last committed value — used on blur when the user
   /// typed but didn't pick. No-op when nothing was ever committed ("unless null").
   void restoreCommitted() {
-    if (_committedText == null) return; // never committed → leave the field as-is
+    if (_committedText == null)
+      return; // never committed → leave the field as-is
     _selected = _committed;
     if (text.text != _committedText) setText(_committedText!);
     _highlighted = -1;

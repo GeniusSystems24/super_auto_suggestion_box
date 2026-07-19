@@ -34,11 +34,21 @@ class AutoSuggestionsHighlight extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!enabled || query.trim().isEmpty) {
-      return Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: baseStyle);
+      return Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: baseStyle,
+      );
     }
     final spans = AutoSuggestionMatching.spans(text, query, match);
     if (spans.isEmpty) {
-      return Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: baseStyle);
+      return Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: baseStyle,
+      );
     }
     final hi = baseStyle.copyWith(
       color: highlightColor ?? AutoSuggestionsBoxThemeData.accent,
@@ -47,11 +57,15 @@ class AutoSuggestionsHighlight extends StatelessWidget {
     final pieces = <TextSpan>[];
     var cursor = 0;
     for (final HighlightSpan span in spans) {
-      if (span.start > cursor) pieces.add(TextSpan(text: text.substring(cursor, span.start)));
-      pieces.add(TextSpan(text: text.substring(span.start, span.end), style: hi));
+      if (span.start > cursor)
+        pieces.add(TextSpan(text: text.substring(cursor, span.start)));
+      pieces.add(
+        TextSpan(text: text.substring(span.start, span.end), style: hi),
+      );
       cursor = span.end;
     }
-    if (cursor < text.length) pieces.add(TextSpan(text: text.substring(cursor)));
+    if (cursor < text.length)
+      pieces.add(TextSpan(text: text.substring(cursor)));
 
     return RichText(
       maxLines: 1,

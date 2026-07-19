@@ -37,7 +37,10 @@ class AutoSuggestionMatching {
       case AutoSuggestionMatch.prefix:
         return haystack.startsWith(query);
       case AutoSuggestionMatch.words:
-        return query.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).every(haystack.contains);
+        return query
+            .split(RegExp(r'\s+'))
+            .where((t) => t.isNotEmpty)
+            .every(haystack.contains);
       case AutoSuggestionMatch.fuzzy:
         return _isSubsequence(query, haystack);
     }
@@ -62,12 +65,16 @@ class AutoSuggestionMatching {
     switch (mode) {
       case AutoSuggestionMatch.prefix:
         // Shorter haystacks rank first (the query is a larger fraction of them).
-        return (1000 - (haystack.length - query.length).clamp(0, 999)).toDouble();
+        return (1000 - (haystack.length - query.length).clamp(0, 999))
+            .toDouble();
       case AutoSuggestionMatch.contains:
       case AutoSuggestionMatch.words:
         final at = haystack.indexOf(query);
         final idx = at < 0 ? 500 : at; // words: fall back to a mid rank
-        return (1000 - idx * 2 - (haystack.length - query.length).clamp(0, 400) * 0.25).toDouble();
+        return (1000 -
+                idx * 2 -
+                (haystack.length - query.length).clamp(0, 400) * 0.25)
+            .toDouble();
       case AutoSuggestionMatch.fuzzy:
         return _fuzzyScore(query, haystack);
     }
@@ -101,7 +108,11 @@ class AutoSuggestionMatching {
   /// Compute highlight spans of [query] within [label] for bolding. Returns the
   /// contiguous match for contains/prefix/words tokens, or per-character spans
   /// for fuzzy. Empty when nothing lines up.
-  static List<HighlightSpan> spans(String label, String query, AutoSuggestionMatch mode) {
+  static List<HighlightSpan> spans(
+    String label,
+    String query,
+    AutoSuggestionMatch mode,
+  ) {
     if (query.trim().isEmpty) return const [];
     final lower = label.toLowerCase();
     final q = query.trim().toLowerCase();
@@ -149,7 +160,10 @@ class AutoSuggestionMatching {
       final last = out.last;
       final s = spans[k];
       if (s.start <= last.end) {
-        out[out.length - 1] = HighlightSpan(last.start, s.end > last.end ? s.end : last.end);
+        out[out.length - 1] = HighlightSpan(
+          last.start,
+          s.end > last.end ? s.end : last.end,
+        );
       } else {
         out.add(s);
       }
