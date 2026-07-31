@@ -4,6 +4,27 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 0.11.0 — 2026-08-01
+
+### Added
+
+- Added inline shadow-hint completion while typing. The untyped remainder of the
+  highlighted prefix suggestion is painted inside the editor without changing
+  the real text value.
+- Added `showShadowHint` (enabled by default) and `shadowHintStyle` for per-field
+  control.
+- Added support for shadow hints when callers provide an externally owned
+  `TextEditingController`; the view mirrors editing state without replacing the
+  controller used by `AutoSuggestionsBoxController`.
+- Added widget coverage for visual completion, exact-match hiding, and opt-out.
+
+### Behavior
+
+- Shadow hints appear only for enabled single-select fields while focused, with
+  a collapsed caret at the end and no active IME composing range.
+- The hint is excluded from filtering, `onChanged`, validation, `onSave`, and the
+  controller's text. Enter continues to commit the highlighted suggestion.
+
 ## 0.10.0 — 2026-08-01
 
 ### Added

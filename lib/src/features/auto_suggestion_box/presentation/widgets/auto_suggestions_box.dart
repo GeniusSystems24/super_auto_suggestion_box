@@ -36,6 +36,75 @@ typedef AutoSuggestionsValidator = String? Function(String value);
 /// Reports the field's current error (null == valid) to a host on every change.
 typedef AutoSuggestionsValidityChanged = void Function(String? error);
 
+/// A view-only text controller that paints the remaining characters of the
+/// active suggestion after the real editable value. The shadow text is never
+/// inserted into [value], so selection, validation, saving, and filtering keep
+/// operating on exactly what the user typed.
+class _ShadowHintTextEditingController extends TextEditingController {
+  _ShadowHintTextEditingController.fromValue(TextEditingValue value)
+    : super.fromValue(value);
+
+  String _shadowSuffix = '';
+  TextStyle? _shadowStyle;
+
+  void updateShadowHint({required String suffix, TextStyle? style}) {
+    _shadowSuffix = suffix;
+    _shadowStyle = style;
+  }
+
+  /// RenderEditable measures the complete painted span, including the visual
+  /// suffix. Clamp pointer-derived selections to the real editable value so a
+  /// tap on the shadow text can never create an out-of-range selection.
+  @override
+  set value(TextEditingValue newValue) {
+    final maxOffset = newValue.text.length;
+    final selection = newValue.selection;
+    final composing = newValue.composing;
+
+    final clampedSelection = selection.isValid
+        ? TextSelection(
+            baseOffset: selection.baseOffset.clamp(0, maxOffset).toInt(),
+            extentOffset: selection.extentOffset.clamp(0, maxOffset).toInt(),
+            affinity: selection.affinity,
+            isDirectional: selection.isDirectional,
+          )
+        : selection;
+    final clampedComposing = composing.isValid
+        ? TextRange(
+            start: composing.start.clamp(0, maxOffset).toInt(),
+            end: composing.end.clamp(0, maxOffset).toInt(),
+          )
+        : composing;
+
+    super.value = newValue.copyWith(
+      selection: clampedSelection,
+      composing: clampedComposing,
+    );
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final editableSpan = super.buildTextSpan(
+      context: context,
+      style: style,
+      withComposing: withComposing,
+    );
+    if (_shadowSuffix.isEmpty) return editableSpan;
+
+    return TextSpan(
+      style: style,
+      children: <InlineSpan>[
+        editableSpan,
+        TextSpan(text: _shadowSuffix, style: _shadowStyle),
+      ],
+    );
+  }
+}
+
 class AutoSuggestionsBox<T> extends StatefulWidget {
   /// Provide a [source] (or [items]) — or a fully-owned [controller].
   final AutoSuggestionsSource<T>? source;
@@ -70,6 +139,20 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
 
   /// Placeholder shown when empty.
   final String? hintText;
+
+  /// Shows the untyped remainder of the currently highlighted prefix match as
+  /// faint inline text while the user is typing.
+  ///
+  /// For example, typing `INV-1` while `INV-1042` is highlighted renders
+  /// `042` as a non-editable shadow hint. The shadow is only visual: it is not
+  /// included in [onChanged], validation, [onSave], or the controller value.
+  /// Pressing Enter keeps the existing behavior and commits the highlighted row.
+  final bool showShadowHint;
+
+  /// Optional style for the shadow suffix. It is merged over the effective
+  /// field text style. By default the package uses the theme's tertiary
+  /// foreground color while preserving the field's font metrics.
+  final TextStyle? shadowHintStyle;
 
   /// Field label rendered above the box (optional).
   final String? label;
@@ -337,6 +420,8 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.hintText,
+    this.showShadowHint = true,
+    this.shadowHintStyle,
     this.label,
     this.leading,
     this.clearButton = true,
@@ -419,6 +504,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   late AutoSuggestionsBoxController<T> _c;
   bool _ownsController = false;
 
+  /// The editable controller mounted in TextFormField. It mirrors the public
+  /// controller's text value so shadow rendering also works when callers supply
+  /// a plain external [TextEditingController].
+  late _ShadowHintTextEditingController _fieldText;
+  bool _syncingTextControllers = false;
+
   final _overlay = OverlayPortalController();
   final _link = LayerLink();
   final _fieldKey = GlobalKey();
@@ -443,6 +534,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     _c = widget.controller ?? _buildController();
     _ownsController = widget.controller == null;
     _c.addListener(_onModel);
+    _attachFieldTextController();
 
     _focus = widget.focusNode ?? FocusNode();
     _ownsFocus = widget.focusNode == null;
@@ -464,6 +556,87 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       multiSelect: widget.multiSelect,
       initialSelected: widget.initialSelected,
     );
+  }
+
+  void _attachFieldTextController() {
+    _fieldText = _ShadowHintTextEditingController.fromValue(_c.text.value);
+    _fieldText.addListener(_syncFieldTextToController);
+    _c.text.addListener(_syncControllerTextToField);
+  }
+
+  void _detachFieldTextController() {
+    _fieldText.removeListener(_syncFieldTextToController);
+    _c.text.removeListener(_syncControllerTextToField);
+    _fieldText.dispose();
+  }
+
+  void _syncFieldTextToController() {
+    if (_syncingTextControllers || _fieldText.value == _c.text.value) return;
+
+    // Hide a stale completion immediately. The source/controller notification
+    // that follows computes a new suffix for the newly formatted value.
+    _fieldText.updateShadowHint(suffix: '');
+    _syncingTextControllers = true;
+    try {
+      _c.text.value = _fieldText.value;
+    } finally {
+      _syncingTextControllers = false;
+    }
+  }
+
+  void _syncControllerTextToField() {
+    if (_syncingTextControllers || _fieldText.value == _c.text.value) return;
+    _syncingTextControllers = true;
+    try {
+      _fieldText.value = _c.text.value;
+    } finally {
+      _syncingTextControllers = false;
+    }
+  }
+
+  /// Returns the visual completion suffix for the highlighted row. Inline
+  /// completion is deliberately limited to prefix matches and a caret at the
+  /// end of the value, preventing misleading text for contains/fuzzy results or
+  /// edits made in the middle of a code.
+  String get _shadowHintSuffix {
+    if (!widget.showShadowHint ||
+        widget.multiSelect ||
+        !widget.enabled ||
+        widget.disabled ||
+        widget.readOnly ||
+        !_focus.hasFocus) {
+      return '';
+    }
+
+    final value = _fieldText.value;
+    final query = value.text;
+    final selection = value.selection;
+    final composing = value.composing;
+    if (query.isEmpty ||
+        !selection.isValid ||
+        !selection.isCollapsed ||
+        selection.extentOffset != query.length ||
+        (composing.isValid && !composing.isCollapsed)) {
+      return '';
+    }
+
+    final suggestion = _c.highlighted;
+    if (suggestion == null || !suggestion.enabled) return '';
+
+    final completion = suggestion.label;
+
+    if (completion.length <= query.length ||
+        !completion.toLowerCase().startsWith(query.toLowerCase())) {
+      return '';
+    }
+    return completion.substring(query.length);
+  }
+
+  void _updateShadowHint(TextStyle baseStyle, AutoSuggestionsBoxThemeData t) {
+    final style = widget.shadowHintStyle == null
+        ? baseStyle.copyWith(color: t.fg3.withOpacity(0.72))
+        : baseStyle.merge(widget.shadowHintStyle);
+    _fieldText.updateShadowHint(suffix: _shadowHintSuffix, style: style);
   }
 
   // ── validation ──
@@ -617,10 +790,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         widget.controller != null) {
       _c.removeListener(_onModel);
       _c.text.removeListener(_onTextForValidity);
+      _detachFieldTextController();
       if (_ownsController) _c.dispose();
       _c = widget.controller!;
       _ownsController = false;
       _c.addListener(_onModel);
+      _attachFieldTextController();
       _c.text.addListener(_onTextForValidity);
     }
   }
@@ -630,6 +805,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     _blurTimer?.cancel();
     _c.text.removeListener(_onTextForValidity);
     _c.removeListener(_onModel);
+    _detachFieldTextController();
     if (_ownsController) _c.dispose();
     _focus.removeListener(_onFocus);
     if (_ownsFocus) _focus.dispose();
@@ -889,6 +1065,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     if (focused && fs.fontStyle != null) {
       baseStyle = baseStyle.merge(fs.fontStyle);
     }
+    _updateShadowHint(baseStyle, t);
 
     // ── Border helpers ──
     const double bw = AutoSuggestionsBoxThemeData.fieldBorderWidth;
@@ -981,7 +1158,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       child: Focus(
         onKeyEvent: _onKey,
         child: TextFormField(
-          controller: _c.text,
+          controller: _fieldText,
           focusNode: _focus,
           enabled: widget.enabled && !disabled,
           readOnly: readOnly,

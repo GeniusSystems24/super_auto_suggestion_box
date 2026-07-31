@@ -3,7 +3,8 @@
 /// sources, prefix / contains / words / fuzzy-ranked matching, single- and
 /// multi-select, free-text entry, a local-first progressive `remoteFallback`
 /// source, server-side **paged** infinite-scroll, **recently-used** suggestions,
-/// **inline create**, a **trailing meta** column, **record binding** +
+/// **inline create**, **shadow-hint completion**, a **trailing meta** column,
+/// **record binding** +
 /// **read-only** mode, an advanced-search overlay, and a `bare` embedding mode.
 ///
 /// This package also carries the shared GeniusLink **core** foundation (theme

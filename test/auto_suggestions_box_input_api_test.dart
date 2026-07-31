@@ -60,4 +60,122 @@ void main() {
     await tester.pump();
     expect(submittedValue, '1234');
   });
+
+  testWidgets('shows highlighted prefix remainder as a visual shadow hint', (
+    tester,
+  ) async {
+    final formKey = GlobalKey<FormState>();
+    String? savedValue;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Form(
+            key: formKey,
+            child: AutoSuggestionsBox<String>(
+              items: const [
+                AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
+                AutoSuggestion(value: 'INV-1100', label: 'INV-1100'),
+              ],
+              textDirection: TextDirection.ltr,
+              onSave: (value) => savedValue = value,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'INV-1');
+    await tester.pump();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    final context = tester.element(find.byType(EditableText));
+    final span = editable.controller.buildTextSpan(
+      context: context,
+      style: editable.style,
+      withComposing: false,
+    );
+
+    expect(editable.controller.text, 'INV-1');
+    expect(span.toPlainText(), 'INV-1042');
+    expect((span.children!.last as TextSpan).text, '042');
+
+    formKey.currentState!.save();
+    expect(savedValue, 'INV-1');
+
+    await tester.enterText(find.byType(TextField), 'INV-1042');
+    await tester.pump();
+    final exactSpan = editable.controller.buildTextSpan(
+      context: context,
+      style: editable.style,
+      withComposing: false,
+    );
+    expect(exactSpan.toPlainText(), 'INV-1042');
+  });
+
+  testWidgets('keeps an external text controller synchronized with shadow text', (
+    tester,
+  ) async {
+    final textController = TextEditingController();
+    final controller = AutoSuggestionsBoxController<String>(
+      source: SuggestionSources.list<String>(const [
+        AutoSuggestion(value: 'ACC-1000', label: 'ACC-1000'),
+      ]),
+      textController: textController,
+    );
+    addTearDown(() {
+      controller.dispose();
+      textController.dispose();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AutoSuggestionsBox<String>(controller: controller),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'ACC-1');
+    await tester.pump();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    final span = editable.controller.buildTextSpan(
+      context: tester.element(find.byType(EditableText)),
+      style: editable.style,
+      withComposing: false,
+    );
+
+    expect(textController.text, 'ACC-1');
+    expect(span.toPlainText(), 'ACC-1000');
+  });
+
+  testWidgets('can disable the visual shadow hint', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AutoSuggestionsBox<String>(
+            items: [
+              AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
+            ],
+            showShadowHint: false,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'INV-1');
+    await tester.pump();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    final span = editable.controller.buildTextSpan(
+      context: tester.element(find.byType(EditableText)),
+      style: editable.style,
+      withComposing: false,
+    );
+    expect(span.toPlainText(), 'INV-1');
+  });
 }

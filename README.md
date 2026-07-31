@@ -32,6 +32,8 @@ Light + dark themes, full LTR + RTL.
   formatters, LTR code entry inside RTL screens, capitalization, max-length
   enforcement, autofill, cursor/selection controls, outside-tap callbacks, and
   `FormState.save()` through `onSave`.
+- ✅ **Shadow hint completion** — while typing a prefix, the remaining characters
+  of the highlighted suggestion appear as faint, non-editable inline text.
 - ✅ **`disabled`** state and a per-field `theme` override.
 - ✅ **Themeable focused state** — `AutoSuggestionsBoxFocusedStyle` (`fillColor`,
   `border`, `fontStyle`, `cursorColor`, `shadow`).
@@ -127,6 +129,8 @@ Form(
     textDirection: TextDirection.ltr,
     textInputAction: TextInputAction.done,
     textCapitalization: TextCapitalization.characters,
+    showShadowHint: true, // INV-1 + highlighted INV-1042 visually shows 042
+    shadowHintStyle: const TextStyle(color: Colors.grey), // optional
     keyboardAppearance: Brightness.dark,
     autocorrect: false,
     enableSuggestions: false,
@@ -145,6 +149,13 @@ Form(
 
 formKey.currentState?.save();
 ```
+
+`showShadowHint` defaults to `true`. It displays only while the field is focused,
+the caret is collapsed at the end, and the highlighted suggestion starts with
+the typed value (case-insensitive). The suffix is view-only and is excluded from
+the controller value, callbacks, validation, formatters, and form saving. Set
+`showShadowHint: false` to disable it, or override `shadowHintStyle` to change its
+appearance. Enter continues to commit the highlighted suggestion.
 
 `onSubmitted` remains the legacy callback for accepted free text only.
 `onFieldSubmitted` is the general field callback: it runs for physical Enter and

@@ -14,7 +14,7 @@
 //   10. INLINE CREATE — "＋ Create …" adds missing master data (onCreate)
 //   11. PAGED — infinite-scroll over a 64-row catalog, 12 rows per page
 //   12. RECORD BINDING (selectByValue) + READ-ONLY view mode
-//   13. ERP INPUT + FORM SAVE — keyboard, formatters and field callbacks
+//   13. ERP INPUT + FORM SAVE — keyboard, shadow hint, formatters and callbacks
 // Used by the example app and as a visual reference.
 // ============================================================
 
@@ -592,7 +592,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 SuperSectionCard(
                   title: 'ERP Document Reference',
                   subtitle:
-                      'Exact-code input with formatters, LTR direction, keyboard actions, and form save',
+                      'Exact-code input with inline shadow completion, formatters, keyboard actions, and form save',
                   marker: SuperMarker.notes,
                   child: Form(
                     key: _erpFormKey,
@@ -614,6 +614,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                           textAlign: TextAlign.start,
                           textInputAction: TextInputAction.done,
                           textCapitalization: TextCapitalization.characters,
+                          showShadowHint: true,
                           keyboardAppearance: Theme.of(context).brightness,
                           autocorrect: false,
                           enableSuggestions: false,
