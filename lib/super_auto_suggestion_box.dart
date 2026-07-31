@@ -19,8 +19,9 @@
 ///
 /// Shared, cross-feature code lives in `lib/src/core/`.
 ///
-/// The shared GeniusLink **core** foundation now lives in the `super_core`
-/// package, which this package depends on and re-exports.
+/// The shared GeniusLink **core** foundation lives in `super_core` 3.x, which
+/// this package depends on and re-exports, including the consolidated section
+/// surfaces and responsive layout/spacing primitives.
 ///
 /// Import this single barrel to get everything:
 ///   `import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';`

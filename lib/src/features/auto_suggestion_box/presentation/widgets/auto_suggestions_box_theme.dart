@@ -243,7 +243,7 @@ class AutoSuggestionsBoxThemeData
 
   /// Derives an [AutoSuggestionsBoxThemeData] from a [SuperMaterialThemeData].
   ///
-  /// Preferred bridge (v0.8.0): reads palette-, brightness- and device-mode-
+  /// Preferred bridge (v0.9.0 / super_core 3.0.0): reads palette-, brightness- and device-mode-
   /// aware tokens from `theme.superTheme` so the box stays in lock-step with the
   /// rest of the toolkit instead of duplicating hard-coded hex. Explicit
   /// extensions still win in [of].

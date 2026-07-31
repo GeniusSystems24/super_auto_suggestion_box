@@ -22,4 +22,3 @@ export 'presentation/controllers/auto_suggestions_box_controller.dart';
 export 'presentation/widgets/auto_suggestions_box_theme.dart';
 export 'presentation/widgets/auto_suggestions_highlight.dart';
 export 'presentation/widgets/auto_suggestions_box.dart';
-export 'presentation/pages/auto_suggestion_box_demo.dart';

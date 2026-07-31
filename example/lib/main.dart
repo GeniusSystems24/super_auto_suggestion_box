@@ -1,14 +1,15 @@
 // ============================================================
 // example/lib/main.dart
 // ------------------------------------------------------------
-// Gallery launcher for super_auto_suggestion_box. Registers the SuperThemeData +
-// AutoSuggestionsBoxThemeData extensions (so the box themes light/dark in
-// parity), exposes a global Light/Dark + LTR/RTL toggle, and opens the shipped
-// AutoSuggestionsBox demo (typeahead · groups · multi-select · fuzzy).
+// Gallery launcher for super_auto_suggestion_box. Uses the super_core 3.0.0
+// theme and responsive layout primitives, exposes Light/Dark + LTR/RTL toggles,
+// and opens the shipped AutoSuggestionsBox demo.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+
+import 'auto_suggestion_box_demo.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -21,32 +22,21 @@ class ExampleApp extends StatefulWidget {
 
 class _ExampleAppState extends State<ExampleApp> {
   ThemeMode _mode = ThemeMode.dark;
-  TextDirection _dir = TextDirection.ltr;
+  TextDirection _direction = TextDirection.ltr;
 
-  ThemeData _theme(SuperThemeData s) {
-    if (s.brightness == Brightness.dark) {
-      final theme = SuperMaterialThemeData.dark();
-      return theme.copyWith(
-        extensions: [
-          s,
-          AutoSuggestionsBoxThemeData.fromMaterialTheme(theme),
-        ],
-      );
-    } else {
-      final theme = SuperMaterialThemeData.light();
-      return theme.copyWith(
-        extensions: [
-          s,
-          AutoSuggestionsBoxThemeData.fromMaterialTheme(theme),
-        ],
-      );
-    }
+  void _toggleTheme() {
+    setState(() {
+      _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    });
   }
 
-  void _toggleTheme() => setState(
-      () => _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
-  void _toggleDir() => setState(() =>
-      _dir = _dir == TextDirection.ltr ? TextDirection.rtl : TextDirection.ltr);
+  void _toggleDirection() {
+    setState(() {
+      _direction = _direction == TextDirection.ltr
+          ? TextDirection.rtl
+          : TextDirection.ltr;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,98 +44,107 @@ class _ExampleAppState extends State<ExampleApp> {
       debugShowCheckedModeBanner: false,
       title: 'Super Auto Suggestion Box',
       themeMode: _mode,
-      theme: _theme(SuperThemeData.light),
-      darkTheme: _theme(SuperThemeData.dark),
-      builder: (context, child) =>
-          Directionality(textDirection: _dir, child: child!),
+      theme: SuperMaterialThemeData.light(),
+      darkTheme: SuperMaterialThemeData.dark(),
+      builder: (context, child) => Directionality(
+        textDirection: _direction,
+        child: child!,
+      ),
       home: _Launcher(
         mode: _mode,
-        dir: _dir,
+        direction: _direction,
         onToggleTheme: _toggleTheme,
-        onToggleDir: _toggleDir,
+        onToggleDirection: _toggleDirection,
       ),
     );
   }
 }
 
 class _Demo {
+  const _Demo(this.title, this.subtitle, this.icon, this.builder);
+
   final String title;
   final String subtitle;
   final IconData icon;
   final WidgetBuilder builder;
-  const _Demo(this.title, this.subtitle, this.icon, this.builder);
 }
 
 class _Launcher extends StatelessWidget {
   const _Launcher({
     required this.mode,
-    required this.dir,
+    required this.direction,
     required this.onToggleTheme,
-    required this.onToggleDir,
+    required this.onToggleDirection,
   });
 
   final ThemeMode mode;
-  final TextDirection dir;
+  final TextDirection direction;
   final VoidCallback onToggleTheme;
-  final VoidCallback onToggleDir;
+  final VoidCallback onToggleDirection;
 
   static final List<_Demo> _demos = [
     _Demo(
-        'Auto Suggestion Box',
-        'Typeahead · recents · create · paged · multi-select · fuzzy',
-        Icons.manage_search_outlined,
-        (_) => const AutoSuggestionBoxDemo()),
+      'Auto Suggestion Box',
+      'Typeahead · recents · create · paged · multi-select · fuzzy',
+      Icons.manage_search_outlined,
+      (_) => const AutoSuggestionBoxDemo(),
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final t = context.superTheme;
+    final theme = context.superTheme;
+    final spacing = theme.spacing;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: t.bg,
+      backgroundColor: theme.bg,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(SuperThemeData.of(context).tokens.space10),
-            child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(maxWidth: SuperThemeData.of(context).tokens.contentColumn),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('SUPER AUTO SUGGESTION BOX \u2022 GALLERY',
-                      style: SuperText.eyebrow.copyWith(
-                          color: Theme.of(context).colorScheme.primary)),
-                  SizedBox(height: SuperThemeData.of(context).tokens.space2),
-                  Text('Component Demos مكتبة المكونات',
-                      style: SuperText.h1.copyWith(color: t.fg1)),
-                  SizedBox(height: SuperThemeData.of(context).tokens.space8),
-                  for (final d in _demos) ...[
-                    _DemoCard(demo: d),
-                    SizedBox(height: SuperThemeData.of(context).tokens.space3),
-                  ],
-                  SizedBox(height: SuperThemeData.of(context).tokens.space6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SuperButton(
-                        label: mode == ThemeMode.dark
-                            ? 'Light Theme'
-                            : 'Dark Theme',
-                        variant: SuperButtonVariant.secondary,
-                        onPressed: onToggleTheme,
-                      ),
-                      SizedBox(width: SuperThemeData.of(context).tokens.space3),
-                      SuperButton(
-                        label: dir == TextDirection.ltr
-                            ? 'العربية (RTL)'
-                            : 'English (LTR)',
-                        variant: SuperButtonVariant.secondary,
-                        onPressed: onToggleDir,
-                      ),
-                    ],
+        child: SingleChildScrollView(
+          child: SuperScaffold(
+            maxWidth: 960,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'SUPER AUTO SUGGESTION BOX • GALLERY',
+                  style: theme.textTheme.eyebrow.copyWith(
+                    color: colorScheme.primary,
                   ),
+                ),
+                SizedBox(height: spacing.space2),
+                Text(
+                  'Component Demos مكتبة المكونات',
+                  style: theme.textTheme.h1.copyWith(color: theme.fg1),
+                ),
+                SizedBox(height: spacing.space8),
+                for (final demo in _demos) ...[
+                  _DemoCard(demo: demo),
+                  SizedBox(height: spacing.section),
                 ],
-              ),
+                SizedBox(height: spacing.space6),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: spacing.space3,
+                  runSpacing: spacing.space3,
+                  children: [
+                    SuperButton(
+                      label: mode == ThemeMode.dark
+                          ? 'Light Theme'
+                          : 'Dark Theme',
+                      variant: SuperButtonVariant.secondary,
+                      onPressed: onToggleTheme,
+                    ),
+                    SuperButton(
+                      label: direction == TextDirection.ltr
+                          ? 'العربية (RTL)'
+                          : 'English (LTR)',
+                      variant: SuperButtonVariant.secondary,
+                      onPressed: onToggleDirection,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -156,57 +155,57 @@ class _Launcher extends StatelessWidget {
 
 class _DemoCard extends StatelessWidget {
   const _DemoCard({required this.demo});
+
   final _Demo demo;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.superTheme;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(SuperThemeData.of(context).tokens.radiusCard),
-        onTap: () => Navigator.of(context)
-            .push(MaterialPageRoute<void>(builder: demo.builder)),
-        child: Container(
-          padding: EdgeInsets.all(SuperThemeData.of(context).tokens.space4),
-          decoration: BoxDecoration(
-            color: t.surface,
-            borderRadius: BorderRadius.circular(SuperThemeData.of(context).tokens.radiusCard),
-            border: Border.all(color: t.border),
-            boxShadow: t.cardShadow,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Color.alphaBlend(
-                      Theme.of(context).colorScheme.primary.withOpacity(0.14),
-                      t.surface),
-                  borderRadius:
-                      BorderRadius.circular(SuperThemeData.of(context).tokens.radiusControl),
-                ),
-                child: Icon(demo.icon,
-                    size: 22, color: Theme.of(context).colorScheme.primary),
+    final theme = context.superTheme;
+    final spacing = theme.spacing;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SuperSectionCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: demo.builder),
+      ),
+      padding: spacing.cardPadding,
+      child: Row(
+        children: [
+          Container(
+            width: spacing.controlHeight,
+            height: spacing.controlHeight,
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(
+                colorScheme.primary.withValues(alpha: 0.14),
+                theme.surface,
               ),
-              SizedBox(width: SuperThemeData.of(context).tokens.space4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(demo.title,
-                        style: SuperText.heading.copyWith(color: t.fg1)),
-                    const SizedBox(height: 2),
-                    Text(demo.subtitle,
-                        style: SuperText.caption.copyWith(color: t.fg3)),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: t.fg4),
-            ],
+              borderRadius: spacing.borderRadiusControl,
+            ),
+            child: Icon(
+              demo.icon,
+              size: 22,
+              color: colorScheme.primary,
+            ),
           ),
-        ),
+          SizedBox(width: spacing.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  demo.title,
+                  style: theme.textTheme.heading.copyWith(color: theme.fg1),
+                ),
+                SizedBox(height: spacing.space1),
+                Text(
+                  demo.subtitle,
+                  style: theme.textTheme.caption.copyWith(color: theme.fg3),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: theme.fg4),
+        ],
       ),
     );
   }

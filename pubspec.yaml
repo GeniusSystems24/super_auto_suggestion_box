@@ -8,7 +8,7 @@ description: >
   LTR, and RTL.
 
 # package version
-version: 0.8.2
+version: 0.9.0
 
 # package homepage, repository, and issue tracker URLs
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box
@@ -30,7 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
   # Shared GeniusLink design-system foundation (theme, tokens, type, widgets).
-  super_core: ">=2.1.0 <3.0.0"
+  super_core: ">=3.0.0 <4.0.0"
 
 dev_dependencies:
   flutter_test:
@@ -39,9 +39,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/logo-mark.png
-    - assets/logo-mark-white.png
   # Drop brand .ttf files under assets/fonts/ to match the design system exactly.
   # Families: Manrope (display) · Inter (body) · JetBrainsMono (mono) · NotoNaskhArabic
   #
