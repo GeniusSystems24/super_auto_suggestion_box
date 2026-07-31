@@ -298,373 +298,388 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.superTheme;
+    final theme = SuperMaterialThemeData.of(context);
+    final t = theme.superTheme;
     final spacing = t.spacing;
 
     return Scaffold(
-      backgroundColor: t.bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: SuperScaffold(
-            maxWidth: 1120,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'AUTO SUGGESTION BOX',
-                  style: t.textTheme.eyebrow.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+      appBar: SuperAppBar(
+        title: const Text('Auto Suggestion Box'),
+        subtitle: Text(
+          'AUTO SUGGESTION BOX',
+          style: t.textTheme.eyebrow.copyWith(color: theme.colorScheme.primary),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: SuperScaffold(
+          maxWidth: 1120,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'v0.12.0',
+                style: t.textTheme.eyebrow.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                SizedBox(height: spacing.space2),
-                Text(
-                  'Account Lookup',
-                  style: t.textTheme.h1.copyWith(color: t.fg1),
-                ),
-                SizedBox(height: spacing.space8),
+              ),
+              SizedBox(height: spacing.space2),
+              Text(
+                'Account Lookup',
+                style: t.textTheme.h1.copyWith(color: t.fg1),
+              ),
+              SizedBox(height: spacing.space8),
 
-                // 1 — Single-select, grouped, with highlight.
-                SuperSectionCard(
-                  title: 'Post To Account',
-                  subtitle: 'Search the chart of accounts by name or code',
-                  marker: SuperMarker.identity,
-                  child: AutoSuggestionsBox<String>(
-                    items: _accounts,
-                    hintText: 'e.g. Accounts Receivable',
-                    onSelected: (s) {},
-                  ),
+              // 1 — Single-select, grouped, with highlight.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Post To Account',
+                subtitle: 'Search the chart of accounts by name or code',
+                marker: theme.tokens.markerColor(SuperMarker.identity),
+                child: AutoSuggestionsBox<String>(
+                  items: _accounts,
+                  hintText: 'e.g. Accounts Receivable',
+                  onSelected: (s) {},
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 2 — Multi-select.
-                SuperSectionCard(
-                  title: 'Tag Cost Centers',
-                  subtitle: 'Assign one or more cost centers to this entry',
-                  marker: SuperMarker.ledger,
-                  child: AutoSuggestionsBox<String>(
-                    items: _accounts,
-                    multiSelect: true,
-                    hintText: 'Select cost centers…',
-                  ),
+              // 2 — Multi-select.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Tag Cost Centers',
+                subtitle: 'Assign one or more cost centers to this entry',
+                marker: theme.tokens.markerColor(SuperMarker.ledger),
+                child: AutoSuggestionsBox<String>(
+                  items: _accounts,
+                  multiSelect: true,
+                  hintText: 'Select cost centers…',
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 3 — Fuzzy strategy over plain strings.
-                SuperSectionCard(
-                  title: 'Quick Filter',
-                  subtitle: 'Fuzzy match — type loosely',
-                  marker: SuperMarker.notes,
-                  child: AutoSuggestionsBox<String>(
-                    source: SuggestionSources.fuzzy<String>(const [
-                      AutoSuggestion(value: 'RUH', label: 'Riyadh'),
-                      AutoSuggestion(value: 'JED', label: 'Jeddah'),
-                      AutoSuggestion(value: 'DMM', label: 'Dammam'),
-                      AutoSuggestion(value: 'MKC', label: 'Mecca'),
-                      AutoSuggestion(value: 'MED', label: 'Medina'),
-                      AutoSuggestion(value: 'KHB', label: 'Khobar'),
-                      AutoSuggestion(value: 'TUU', label: 'Tabuk'),
-                      AutoSuggestion(value: 'AHB', label: 'Abha'),
-                    ]),
-                    highlightMatch: AutoSuggestionMatch.fuzzy,
-                    hintText: 'e.g. rdh',
-                  ),
+              // 3 — Fuzzy strategy over plain strings.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Quick Filter',
+                subtitle: 'Fuzzy match — type loosely',
+                marker: theme.tokens.markerColor(SuperMarker.notes),
+                child: AutoSuggestionsBox<String>(
+                  source: SuggestionSources.fuzzy<String>(const [
+                    AutoSuggestion(value: 'RUH', label: 'Riyadh'),
+                    AutoSuggestion(value: 'JED', label: 'Jeddah'),
+                    AutoSuggestion(value: 'DMM', label: 'Dammam'),
+                    AutoSuggestion(value: 'MKC', label: 'Mecca'),
+                    AutoSuggestion(value: 'MED', label: 'Medina'),
+                    AutoSuggestion(value: 'KHB', label: 'Khobar'),
+                    AutoSuggestion(value: 'TUU', label: 'Tabuk'),
+                    AutoSuggestion(value: 'AHB', label: 'Abha'),
+                  ]),
+                  highlightMatch: AutoSuggestionMatch.fuzzy,
+                  hintText: 'e.g. rdh',
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 4 — Progressive remote fallback.
-                SuperSectionCard(
-                  title: 'Select Vendor',
-                  subtitle:
-                      'Local vendors show instantly; the server is queried only when local matches are few',
-                  marker: SuperMarker.identity,
-                  child: AutoSuggestionsBox<String>(
-                    source: SuggestionSources.remoteFallback<String>(
-                      initialItems: _localVendors,
-                      fetch: _fetchRemote,
-                      remoteThreshold: 3, // fetch when ≤ 3 local matches
-                      remoteMinChars: 1,
+              // 4 — Progressive remote fallback.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Select Vendor',
+                subtitle:
+                    'Local vendors show instantly; the server is queried only when local matches are few',
+                marker: theme.tokens.markerColor(SuperMarker.identity),
+                child: AutoSuggestionsBox<String>(
+                  source: SuggestionSources.remoteFallback<String>(
+                    initialItems: _localVendors,
+                    fetch: _fetchRemote,
+                    remoteThreshold: 3, // fetch when ≤ 3 local matches
+                    remoteMinChars: 1,
+                  ),
+                  hintText: 'e.g. cement, freight, glass…',
+                  onSelected: (s) {},
+                ),
+              ),
+              SizedBox(height: spacing.section),
+
+              // 5 — Advanced search (Ctrl/⌘+F).
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Vendor Directory',
+                subtitle:
+                    'Focus the field and press Ctrl / ⌘ + F to open Advanced Search',
+                marker: theme.tokens.markerColor(SuperMarker.ledger),
+                child: AutoSuggestionsBox<String>(
+                  items: _directory,
+                  advancedSearch: true,
+                  hintText: 'Search the directory…  (⌘F)',
+                  onSelected: (s) {},
+                ),
+              ),
+              SizedBox(height: spacing.section),
+
+              // 6 — Required + validator (v0.6.0). Validity surfaces through
+              // the suffix error badge; onValidity feeds a live status line.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Post To Account',
+                subtitle:
+                    'Required field with a custom validator — leave it empty and tab away',
+                marker: theme.tokens.markerColor(SuperMarker.identity),
+                child: AutoSuggestionsBox<String>(
+                  items: _accounts,
+                  label: 'Debit Account',
+                  required: true,
+                  hint:
+                      'Pick an asset, liability, equity, income or expense account',
+                  validator: (value) {
+                    if (value.trim().isEmpty)
+                      return null; // required handles empty
+                    final match = _accounts.any((a) => a.label == value);
+                    return match ? null : 'Pick an account from the list';
+                  },
+                  onValidity: (err) => setState(() => _accountError = err),
+                  hintText: 'e.g. Accounts Receivable',
+                  onSelected: (s) {},
+                ),
+              ),
+              SizedBox(height: spacing.space2),
+              Text(
+                _accountError == null
+                    ? 'STATUS · VALID'
+                    : 'STATUS · ${_accountError!.toUpperCase()}',
+                style: t.textTheme.label.copyWith(
+                  color: _accountError == null
+                      ? t.tokens.success
+                      : Theme.of(context).colorScheme.error,
+                ),
+              ),
+              SizedBox(height: spacing.section),
+
+              // 7 — Disabled (v0.6.0). Dimmed, non-interactive, no errors.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Locked Account',
+                subtitle:
+                    'A disabled field blocks typing and opening the overlay',
+                marker: theme.tokens.markerColor(SuperMarker.notes),
+                child: AutoSuggestionsBox<String>(
+                  items: _accounts,
+                  label: 'Reconciliation Account',
+                  disabled: true,
+                  controller: _lockedController,
+                ),
+              ),
+              SizedBox(height: spacing.section),
+
+              // 8 — Field-level custom theme + focusedStyle (v0.6.0).
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Themed Field',
+                subtitle:
+                    'A theme assigned directly to one box — green focused fill, border & bold text',
+                marker: theme.tokens.markerColor(SuperMarker.ledger),
+                child: AutoSuggestionsBox<String>(
+                  items: _accounts,
+                  label: 'Ledger Account',
+                  hintText: 'Focus me to see the custom focused style',
+                  theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
+                    focusedStyle: AutoSuggestionsBoxFocusedStyle(
+                      fillColor: Color(0x141DB88A),
+                      border: BorderSide(color: t.tokens.success, width: 1.6),
+                      fontStyle: TextStyle(fontWeight: FontWeight.w600),
+                      cursorColor: t.tokens.success,
                     ),
-                    hintText: 'e.g. cement, freight, glass…',
-                    onSelected: (s) {},
                   ),
+                  onSelected: (s) {},
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 5 — Advanced search (Ctrl/⌘+F).
-                SuperSectionCard(
-                  title: 'Vendor Directory',
-                  subtitle:
-                      'Focus the field and press Ctrl / ⌘ + F to open Advanced Search',
-                  marker: SuperMarker.ledger,
-                  child: AutoSuggestionsBox<String>(
-                    items: _directory,
-                    advancedSearch: true,
-                    hintText: 'Search the directory…  (⌘F)',
-                    onSelected: (s) {},
-                  ),
+              // 9 — Recently-used (recents pin to the top on the empty field).
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Recent Accounts',
+                subtitle:
+                    'Pick a few, clear the field (×) and reopen — your recent picks pin to the top',
+                marker: theme.tokens.markerColor(SuperMarker.identity),
+                child: AutoSuggestionsBox<String>(
+                  controller: _recentsController,
+                  label: 'Account',
+                  hintText: 'Search accounts…',
+                  onSelected: (s) {},
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 6 — Required + validator (v0.6.0). Validity surfaces through
-                // the suffix error badge; onValidity feeds a live status line.
-                SuperSectionCard(
-                  title: 'Post To Account',
-                  subtitle:
-                      'Required field with a custom validator — leave it empty and tab away',
-                  marker: SuperMarker.identity,
-                  child: AutoSuggestionsBox<String>(
-                    items: _accounts,
-                    label: 'Debit Account',
-                    required: true,
-                    hint:
-                        'Pick an asset, liability, equity, income or expense account',
-                    validator: (value) {
-                      if (value.trim().isEmpty)
-                        return null; // required handles empty
-                      final match = _accounts.any((a) => a.label == value);
-                      return match ? null : 'Pick an account from the list';
-                    },
-                    onValidity: (err) => setState(() => _accountError = err),
-                    hintText: 'e.g. Accounts Receivable',
-                    onSelected: (s) {},
-                  ),
+              // 10 — Inline create (add missing master data without leaving).
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Project Tag',
+                subtitle:
+                    'Type a name that does not exist and press Enter to “＋ Create” it',
+                marker: theme.tokens.markerColor(SuperMarker.notes),
+                child: AutoSuggestionsBox<String>(
+                  items: _projects,
+                  label: 'Project',
+                  hintText: 'e.g. Seafront Villas',
+                  onCreate: (q) async {
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 400),
+                    ); // simulate a POST
+                    return AutoSuggestion<String>(
+                      value:
+                          'p-${q.toLowerCase().replaceAll(RegExp(r"\s+"), "-")}',
+                      label: q,
+                      description: 'New project',
+                      icon: Icons.sell_outlined,
+                    );
+                  },
+                  onSelected: (s) {},
                 ),
-                SizedBox(height: spacing.space2),
-                Text(
-                  _accountError == null
-                      ? 'STATUS · VALID'
-                      : 'STATUS · ${_accountError!.toUpperCase()}',
-                  style: t.textTheme.label.copyWith(
-                    color: _accountError == null
-                        ? t.tokens.success
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 7 — Disabled (v0.6.0). Dimmed, non-interactive, no errors.
-                SuperSectionCard(
-                  title: 'Locked Account',
-                  subtitle:
-                      'A disabled field blocks typing and opening the overlay',
-                  marker: SuperMarker.notes,
-                  child: AutoSuggestionsBox<String>(
-                    items: _accounts,
-                    label: 'Reconciliation Account',
-                    disabled: true,
-                    controller: _lockedController,
+              // 11 — Server-side pagination / infinite scroll over a big catalog.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Item Catalog',
+                subtitle:
+                    'Large master data — 12 rows per page; scroll the dropdown to load more',
+                marker: theme.tokens.markerColor(SuperMarker.ledger),
+                child: AutoSuggestionsBox<String>(
+                  source: SuggestionSources.paged<String>(
+                    _fetchCatalogPage,
+                    resolveFrom: _catalog,
                   ),
+                  label: 'Item',
+                  maxVisibleRows: 7,
+                  hintText: 'Search 64 items…',
+                  onSelected: (s) {},
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 8 — Field-level custom theme + focusedStyle (v0.6.0).
-                SuperSectionCard(
-                  title: 'Themed Field',
-                  subtitle:
-                      'A theme assigned directly to one box — green focused fill, border & bold text',
-                  marker: SuperMarker.ledger,
-                  child: AutoSuggestionsBox<String>(
-                    items: _accounts,
-                    label: 'Ledger Account',
-                    hintText: 'Focus me to see the custom focused style',
-                    theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
-                      focusedStyle: AutoSuggestionsBoxFocusedStyle(
-                        fillColor: Color(0x141DB88A),
-                        border: BorderSide(color: t.tokens.success, width: 1.6),
-                        fontStyle: TextStyle(fontWeight: FontWeight.w600),
-                        cursorColor: t.tokens.success,
-                      ),
+              // 12 — Record binding (selectByValue) + read-only view mode.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Bound Account',
+                subtitle:
+                    'Bind by stored code, then lock to a read-only (posted) view',
+                marker: theme.tokens.markerColor(SuperMarker.identity),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AutoSuggestionsBox<String>(
+                      controller: _boundController,
+                      label: 'Ledger Account',
+                      readOnly: _boundReadOnly,
+                      hintText: 'Pick or bind by code',
+                      onSelected: (s) {},
                     ),
-                    onSelected: (s) {},
-                  ),
-                ),
-                SizedBox(height: spacing.section),
-
-                // 9 — Recently-used (recents pin to the top on the empty field).
-                SuperSectionCard(
-                  title: 'Recent Accounts',
-                  subtitle:
-                      'Pick a few, clear the field (×) and reopen — your recent picks pin to the top',
-                  marker: SuperMarker.identity,
-                  child: AutoSuggestionsBox<String>(
-                    controller: _recentsController,
-                    label: 'Account',
-                    hintText: 'Search accounts…',
-                    onSelected: (s) {},
-                  ),
-                ),
-                SizedBox(height: spacing.section),
-
-                // 10 — Inline create (add missing master data without leaving).
-                SuperSectionCard(
-                  title: 'Project Tag',
-                  subtitle:
-                      'Type a name that does not exist and press Enter to “＋ Create” it',
-                  marker: SuperMarker.notes,
-                  child: AutoSuggestionsBox<String>(
-                    items: _projects,
-                    label: 'Project',
-                    hintText: 'e.g. Seafront Villas',
-                    onCreate: (q) async {
-                      await Future<void>.delayed(
-                        const Duration(milliseconds: 400),
-                      ); // simulate a POST
-                      return AutoSuggestion<String>(
-                        value:
-                            'p-${q.toLowerCase().replaceAll(RegExp(r"\s+"), "-")}',
-                        label: q,
-                        description: 'New project',
-                        icon: Icons.sell_outlined,
-                      );
-                    },
-                    onSelected: (s) {},
-                  ),
-                ),
-                SizedBox(height: spacing.section),
-
-                // 11 — Server-side pagination / infinite scroll over a big catalog.
-                SuperSectionCard(
-                  title: 'Item Catalog',
-                  subtitle:
-                      'Large master data — 12 rows per page; scroll the dropdown to load more',
-                  marker: SuperMarker.ledger,
-                  child: AutoSuggestionsBox<String>(
-                    source: SuggestionSources.paged<String>(
-                      _fetchCatalogPage,
-                      resolveFrom: _catalog,
+                    SizedBox(height: spacing.space3),
+                    Wrap(
+                      spacing: spacing.space2,
+                      runSpacing: spacing.space2,
+                      children: [
+                        SuperButton(
+                          label: 'Bind 1020',
+                          variant: SuperButtonVariant.secondary,
+                          onPressed: () =>
+                              _boundController.selectByValue('1020'),
+                        ),
+                        SuperButton(
+                          label: 'Bind 4000',
+                          variant: SuperButtonVariant.secondary,
+                          onPressed: () =>
+                              _boundController.selectByValue('4000'),
+                        ),
+                        SuperButton(
+                          label: _boundReadOnly ? 'Edit' : 'Lock (read-only)',
+                          variant: SuperButtonVariant.secondary,
+                          onPressed: () =>
+                              setState(() => _boundReadOnly = !_boundReadOnly),
+                        ),
+                      ],
                     ),
-                    label: 'Item',
-                    maxVisibleRows: 7,
-                    hintText: 'Search 64 items…',
-                    onSelected: (s) {},
-                  ),
+                  ],
                 ),
-                SizedBox(height: spacing.section),
+              ),
+              SizedBox(height: spacing.section),
 
-                // 12 — Record binding (selectByValue) + read-only view mode.
-                SuperSectionCard(
-                  title: 'Bound Account',
-                  subtitle:
-                      'Bind by stored code, then lock to a read-only (posted) view',
-                  marker: SuperMarker.identity,
+              // 13 — ERP keyboard, formatter, callbacks, and FormState.save.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'ERP Document Reference',
+                subtitle:
+                    'Type a prefix, press Tab to accept the shadow completion, then Tab again to move focus',
+                marker: theme.tokens.markerColor(SuperMarker.notes),
+                child: Form(
+                  key: _erpFormKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       AutoSuggestionsBox<String>(
-                        controller: _boundController,
-                        label: 'Ledger Account',
-                        readOnly: _boundReadOnly,
-                        hintText: 'Pick or bind by code',
-                        onSelected: (s) {},
+                        items: _documentReferences,
+                        label: 'Document Reference',
+                        hintText: 'e.g. INV-1042',
+                        keyboardType: TextInputType.text,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[A-Za-z0-9-]'),
+                          ),
+                          LengthLimitingTextInputFormatter(16),
+                        ],
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.start,
+                        textInputAction: TextInputAction.done,
+                        textCapitalization: TextCapitalization.characters,
+                        showShadowHint: true,
+                        completeShadowHintOnTab: true,
+                        keyboardAppearance: Theme.of(context).brightness,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        enableIMEPersonalizedLearning: false,
+                        maxLength: 16,
+                        onTap: () =>
+                            setState(() => _lastInputEvent = 'Field tapped'),
+                        onTapOutside: (_) => setState(
+                          () => _lastInputEvent = 'Pointer down outside',
+                        ),
+                        onTapUpOutside: (_) => setState(
+                          () => _lastInputEvent = 'Pointer up outside',
+                        ),
+                        onEditingComplete: () => setState(
+                          () => _lastInputEvent = 'Editing completed',
+                        ),
+                        onFieldSubmitted: (value) => setState(
+                          () => _lastInputEvent = 'Submitted: $value',
+                        ),
+                        onSave: (value) =>
+                            setState(() => _savedDocumentReference = value),
                       ),
                       SizedBox(height: spacing.space3),
                       Wrap(
                         spacing: spacing.space2,
                         runSpacing: spacing.space2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           SuperButton(
-                            label: 'Bind 1020',
+                            label: 'Save Form',
                             variant: SuperButtonVariant.secondary,
-                            onPressed: () =>
-                                _boundController.selectByValue('1020'),
+                            onPressed: () => _erpFormKey.currentState?.save(),
                           ),
-                          SuperButton(
-                            label: 'Bind 4000',
-                            variant: SuperButtonVariant.secondary,
-                            onPressed: () =>
-                                _boundController.selectByValue('4000'),
-                          ),
-                          SuperButton(
-                            label: _boundReadOnly ? 'Edit' : 'Lock (read-only)',
-                            variant: SuperButtonVariant.secondary,
-                            onPressed: () => setState(
-                              () => _boundReadOnly = !_boundReadOnly,
-                            ),
+                          Text(
+                            _savedDocumentReference == null
+                                ? _lastInputEvent
+                                : 'Saved: $_savedDocumentReference · $_lastInputEvent',
+                            style: t.textTheme.label.copyWith(color: t.fg2),
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: spacing.section),
-
-                // 13 — ERP keyboard, formatter, callbacks, and FormState.save.
-                SuperSectionCard(
-                  title: 'ERP Document Reference',
-                  subtitle:
-                      'Type a prefix, press Tab to accept the shadow completion, then Tab again to move focus',
-                  marker: SuperMarker.notes,
-                  child: Form(
-                    key: _erpFormKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AutoSuggestionsBox<String>(
-                          items: _documentReferences,
-                          label: 'Document Reference',
-                          hintText: 'e.g. INV-1042',
-                          keyboardType: TextInputType.text,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[A-Za-z0-9-]'),
-                            ),
-                            LengthLimitingTextInputFormatter(16),
-                          ],
-                          textDirection: TextDirection.ltr,
-                          textAlign: TextAlign.start,
-                          textInputAction: TextInputAction.done,
-                          textCapitalization: TextCapitalization.characters,
-                          showShadowHint: true,
-                          completeShadowHintOnTab: true,
-                          keyboardAppearance: Theme.of(context).brightness,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          enableIMEPersonalizedLearning: false,
-                          maxLength: 16,
-                          onTap: () => setState(
-                            () => _lastInputEvent = 'Field tapped',
-                          ),
-                          onTapOutside: (_) => setState(
-                            () => _lastInputEvent = 'Pointer down outside',
-                          ),
-                          onTapUpOutside: (_) => setState(
-                            () => _lastInputEvent = 'Pointer up outside',
-                          ),
-                          onEditingComplete: () => setState(
-                            () => _lastInputEvent = 'Editing completed',
-                          ),
-                          onFieldSubmitted: (value) => setState(
-                            () => _lastInputEvent = 'Submitted: $value',
-                          ),
-                          onSave: (value) => setState(
-                            () => _savedDocumentReference = value,
-                          ),
-                        ),
-                        SizedBox(height: spacing.space3),
-                        Wrap(
-                          spacing: spacing.space2,
-                          runSpacing: spacing.space2,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            SuperButton(
-                              label: 'Save Form',
-                              variant: SuperButtonVariant.secondary,
-                              onPressed: () => _erpFormKey.currentState?.save(),
-                            ),
-                            Text(
-                              _savedDocumentReference == null
-                                  ? _lastInputEvent
-                                  : 'Saved: $_savedDocumentReference · $_lastInputEvent',
-                              style: t.textTheme.label.copyWith(color: t.fg2),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
