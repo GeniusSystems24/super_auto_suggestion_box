@@ -178,4 +178,70 @@ void main() {
     );
     expect(span.toPlainText(), 'INV-1');
   });
+
+  testWidgets('Tab accepts the visible shadow hint before focus traversal', (
+    tester,
+  ) async {
+    var tabNextCount = 0;
+    var selectedCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AutoSuggestionsBox<String>(
+            items: const [
+              AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
+              AutoSuggestion(value: 'INV-1100', label: 'INV-1100'),
+            ],
+            textDirection: TextDirection.ltr,
+            onTabNext: () => tabNextCount++,
+            onSelected: (_) => selectedCount++,
+          ),
+        ),
+      ),
+    );
+
+    final suggestionField = find.byType(TextField);
+    await tester.tap(suggestionField);
+    await tester.enterText(suggestionField, 'INV-1');
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.controller.text, 'INV-1042');
+    expect(tabNextCount, 0);
+    expect(selectedCount, 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(tabNextCount, 1);
+  });
+
+  testWidgets('can opt out of accepting shadow hints with Tab', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AutoSuggestionsBox<String>(
+            items: [
+              AutoSuggestion(value: 'ACC-1000', label: 'ACC-1000'),
+            ],
+            completeShadowHintOnTab: false,
+          ),
+        ),
+      ),
+    );
+
+    final field = find.byType(TextField);
+    await tester.tap(field);
+    await tester.enterText(field, 'ACC-1');
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+
+    final editable = tester.widget<EditableText>(find.byType(EditableText));
+    expect(editable.controller.text, 'ACC-1');
+  });
 }

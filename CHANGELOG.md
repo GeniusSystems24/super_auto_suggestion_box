@@ -4,6 +4,24 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 0.12.0 — 2026-08-01
+
+### Added
+
+- Pressing Tab now promotes the visible shadow-hint suffix into the real field
+  value before focus traversal, enabling keyboard-first completion for account
+  codes, document references, SKUs, and other ERP identifiers.
+- Added `completeShadowHintOnTab` (enabled by default) to opt out per field.
+- Added widget coverage for Tab completion, second-Tab traversal, and opt-out.
+
+### Behavior
+
+- Shift+Tab is never intercepted by shadow completion.
+- When no shadow hint is visible, Tab retains its existing behavior: it invokes
+  `onTabNext` when supplied or proceeds with normal focus traversal.
+- Accepting the shadow hint completes the text only; it does not fire
+  `onSelected` or commit the highlighted suggestion.
+
 ## 0.11.0 — 2026-08-01
 
 ### Added

@@ -130,6 +130,7 @@ Form(
     textInputAction: TextInputAction.done,
     textCapitalization: TextCapitalization.characters,
     showShadowHint: true, // INV-1 + highlighted INV-1042 visually shows 042
+    completeShadowHintOnTab: true, // Tab changes INV-1 to INV-1042
     shadowHintStyle: const TextStyle(color: Colors.grey), // optional
     keyboardAppearance: Brightness.dark,
     autocorrect: false,
@@ -155,7 +156,9 @@ the caret is collapsed at the end, and the highlighted suggestion starts with
 the typed value (case-insensitive). The suffix is view-only and is excluded from
 the controller value, callbacks, validation, formatters, and form saving. Set
 `showShadowHint: false` to disable it, or override `shadowHintStyle` to change its
-appearance. Enter continues to commit the highlighted suggestion.
+appearance. Tab completes the real text from the visible suffix before focus
+traversal; set `completeShadowHintOnTab: false` to keep Tab traversal-only.
+Shift+Tab is unaffected. Enter continues to commit the highlighted suggestion.
 
 `onSubmitted` remains the legacy callback for accepted free text only.
 `onFieldSubmitted` is the general field callback: it runs for physical Enter and

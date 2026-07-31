@@ -147,56 +147,17 @@ would be too large — it serves one `SuggestionsPage(items, hasMore)` per
   typing / overlay / clear (the “posted / review” state). Distinct from `disabled`,
   which dims to 55 %.
 
-```
-
-### ERP text input and Flutter forms (0.10.0)
-
-Use the forwarded text-input API for exact ERP identifiers. Important fields:
-
-- `keyboardType`, `inputFormatters`, `textDirection`, `textAlign`,
-  `textAlignVertical`, `textInputAction`, `textCapitalization`,
-  `keyboardAppearance`.
-- `onFieldSubmitted`, `onTap`, `onTapOutside`, `onTapUpOutside`,
-  `onEditingComplete`, `onSave`.
-- `autocorrect`, `enableSuggestions`, `enableIMEPersonalizedLearning`,
-  `smartDashesType`, `smartQuotesType`, `autofillHints`, `maxLength`,
-  `maxLengthEnforcement`, cursor/selection options, scroll options, `mouseCursor`,
-  and `canRequestFocus`.
-
-`onSave` is forwarded to `TextFormField.onSaved`, so it runs when the enclosing
-`FormState.save()` is called. `onSubmitted` remains specific to accepted free
-text; use `onFieldSubmitted` when the host must observe every submit action.
-
-```dart
-Form(
-  key: formKey,
-  child: AutoSuggestionsBox<String>(
-    items: references,
-    keyboardType: TextInputType.text,
-    inputFormatters: [
-      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
-      LengthLimitingTextInputFormatter(16),
-    ],
-    textDirection: TextDirection.ltr,
-    textInputAction: TextInputAction.done,
-    textCapitalization: TextCapitalization.characters,
-    autocorrect: false,
-    enableSuggestions: false,
-    maxLength: 16,
-    onFieldSubmitted: (value) => submit(value),
-    onSave: (value) => save(value),
-  ),
-);
-```
-
-### Shadow hint completion (0.11.0)
+### Shadow hint completion (0.12.0)
 
 `showShadowHint` defaults to `true`. While the field is focused and the caret is
 at the end, the untyped remainder of the highlighted prefix match is painted in a
 faint style inside the editor. It is visual only and never changes the controller
 value, validation, callbacks, or saved form value. Use `shadowHintStyle` for a
 per-field appearance override and `showShadowHint: false` when exact-entry forms
-must not expose inline completion. Enter still commits the highlighted row.
+must not expose inline completion. Tab promotes the visible suffix into the real
+text by default; disable that behavior with `completeShadowHintOnTab: false`.
+Shift+Tab always keeps reverse focus traversal, and Enter still commits the
+highlighted row.
 
 ### Behaviour to know
 

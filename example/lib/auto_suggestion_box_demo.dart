@@ -592,7 +592,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 SuperSectionCard(
                   title: 'ERP Document Reference',
                   subtitle:
-                      'Exact-code input with inline shadow completion, formatters, keyboard actions, and form save',
+                      'Type a prefix, press Tab to accept the shadow completion, then Tab again to move focus',
                   marker: SuperMarker.notes,
                   child: Form(
                     key: _erpFormKey,
@@ -615,6 +615,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                           textInputAction: TextInputAction.done,
                           textCapitalization: TextCapitalization.characters,
                           showShadowHint: true,
+                          completeShadowHintOnTab: true,
                           keyboardAppearance: Theme.of(context).brightness,
                           autocorrect: false,
                           enableSuggestions: false,

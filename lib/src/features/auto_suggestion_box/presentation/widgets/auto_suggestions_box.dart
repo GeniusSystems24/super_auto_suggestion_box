@@ -2,7 +2,8 @@
 // features/auto_suggestion_box/presentation/widgets/auto_suggestions_box.dart
 // ------------------------------------------------------------
 // The VIEW. A text field with an anchored suggestions overlay. Type to filter,
-// up/down to move through matches, Enter / tap to pick, Esc to dismiss; when
+// up/down to move through matches, Tab to complete, Enter / tap to pick, and
+// Esc to dismiss; when
 // free-text is allowed an unmatched value commits as-is on Enter. The matched
 // substring of each row is highlighted (see AutoSuggestionsHighlight).
 //
@@ -148,6 +149,13 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// included in [onChanged], validation, [onSave], or the controller value.
   /// Pressing Enter keeps the existing behavior and commits the highlighted row.
   final bool showShadowHint;
+
+  /// Completes the real field value from the visible shadow hint when the user
+  /// presses Tab. Enabled by default for fast keyboard-first ERP data entry.
+  ///
+  /// Shift+Tab is never intercepted. When no shadow hint is visible, Tab keeps
+  /// its normal focus-traversal behavior (or calls [onTabNext], when provided).
+  final bool completeShadowHintOnTab;
 
   /// Optional style for the shadow suffix. It is merged over the effective
   /// field text style. By default the package uses the theme's tertiary
@@ -359,7 +367,9 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// the edit). When null, Escape just closes the overlay.
   final VoidCallback? onEscape;
 
-  /// Pressing Tab / Shift+Tab calls these (commit + move to the next/prev cell).
+  /// Pressing Tab / Shift+Tab calls these to move to the next/previous cell.
+  /// Forward Tab first accepts a visible shadow hint when
+  /// [completeShadowHintOnTab] is enabled; the callback runs on the next Tab.
   /// When null, Tab performs normal focus traversal.
   final VoidCallback? onTabNext;
   final VoidCallback? onTabPrev;
@@ -421,6 +431,7 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.onSubmitted,
     this.hintText,
     this.showShadowHint = true,
+    this.completeShadowHintOnTab = true,
     this.shadowHintStyle,
     this.label,
     this.leading,
@@ -639,6 +650,22 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     _fieldText.updateShadowHint(suffix: _shadowHintSuffix, style: style);
   }
 
+  /// Promotes the currently painted shadow suffix into the real editable value.
+  /// Returns false when inline completion is unavailable so callers can preserve
+  /// normal focus traversal.
+  bool _completeShadowHint() {
+    final suffix = _shadowHintSuffix;
+    if (suffix.isEmpty) return false;
+
+    final completedText = '${_fieldText.text}$suffix';
+    _fieldText.updateShadowHint(suffix: '');
+    _fieldText.value = TextEditingValue(
+      text: completedText,
+      selection: TextSelection.collapsed(offset: completedText.length),
+    );
+    return true;
+  }
+
   // ── validation ──
   /// The raw error for the current value (independent of touched state).
   String? get _error {
@@ -853,6 +880,11 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         return KeyEventResult.ignored;
       case LogicalKeyboardKey.tab:
         final shift = HardwareKeyboard.instance.isShiftPressed;
+        if (!shift &&
+            widget.completeShadowHintOnTab &&
+            _completeShadowHint()) {
+          return KeyEventResult.handled;
+        }
         final cb = shift ? widget.onTabPrev : widget.onTabNext;
         if (cb != null) {
           if (_c.isOpen) _c.close();
