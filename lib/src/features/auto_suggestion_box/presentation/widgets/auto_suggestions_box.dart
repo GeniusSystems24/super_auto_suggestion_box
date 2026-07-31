@@ -143,6 +143,124 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   final bool autofocus;
   final FocusNode? focusNode;
 
+  /// The keyboard configuration used by the editable text field.
+  ///
+  /// ERP examples include [TextInputType.number] for account codes and
+  /// [TextInputType.text] for mixed document references such as `INV-1042`.
+  final TextInputType? keyboardType;
+
+  /// Formatters applied to user-entered query text before suggestions are
+  /// filtered. Useful for enforcing numeric codes, uppercase identifiers, and
+  /// maximum lengths. Programmatic controller updates are not reformatted.
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// Explicit direction for the editable value, independent of the surrounding
+  /// interface direction. This is useful when an RTL ERP displays LTR account,
+  /// SKU, IBAN, or document codes.
+  final TextDirection? textDirection;
+
+  /// Alignment of the editable query within the field.
+  final TextAlign textAlign;
+
+  /// Vertical alignment of the editable query within the fixed-height field.
+  final TextAlignVertical? textAlignVertical;
+
+  /// The action button shown by software keyboards.
+  final TextInputAction? textInputAction;
+
+  /// Capitalization behavior for newly entered text.
+  final TextCapitalization textCapitalization;
+
+  /// Called whenever the platform submits the field, including software-keyboard
+  /// actions. Unlike the legacy [onSubmitted], this callback is invoked after
+  /// any submit attempt, whether it selects a highlighted row, creates a row,
+  /// or accepts free text.
+  final ValueChanged<String>? onFieldSubmitted;
+
+  /// Called when the editable field is tapped. The suggestions overlay still
+  /// opens automatically when the field is interactive.
+  final GestureTapCallback? onTap;
+
+  /// Called for pointer-down events outside the underlying text field.
+  /// Overlay dismissal remains managed by the suggestion box so row taps are
+  /// not cancelled prematurely.
+  final TapRegionCallback? onTapOutside;
+
+  /// Called for pointer-up events outside the underlying text field.
+  final TapRegionUpCallback? onTapUpOutside;
+
+  /// Called when editing completes. When null, Flutter applies its default
+  /// focus behavior for the selected [textInputAction].
+  final VoidCallback? onEditingComplete;
+
+  /// Called by `FormState.save()` with the current query/committed label.
+  ///
+  /// The public name intentionally follows the package convention while it is
+  /// forwarded to `TextFormField.onSaved`.
+  final FormFieldSetter<String>? onSave;
+
+  /// Keyboard brightness override, primarily for iOS.
+  final Brightness? keyboardAppearance;
+
+  /// Whether taps are reported even when the field already owns focus.
+  final bool onTapAlwaysCalled;
+
+  /// Controls automatic capitalization-independent spelling correction.
+  final bool autocorrect;
+
+  /// Whether the platform may show predictive suggestions. Disable for exact
+  /// ERP identifiers such as account codes, SKUs, and voucher numbers.
+  final bool enableSuggestions;
+
+  /// Whether the IME may learn personalized input from this field.
+  final bool enableIMEPersonalizedLearning;
+
+  /// Smart punctuation behavior for dashes.
+  final SmartDashesType? smartDashesType;
+
+  /// Smart punctuation behavior for quotes.
+  final SmartQuotesType? smartQuotesType;
+
+  /// Autofill hints forwarded to the platform.
+  final Iterable<String>? autofillHints;
+
+  /// Maximum number of user-entered characters. The visual counter is hidden to
+  /// preserve the design-system field height; enforcement still applies.
+  final int? maxLength;
+
+  /// How [maxLength] is enforced.
+  final MaxLengthEnforcement? maxLengthEnforcement;
+
+  /// Whether to display the text cursor.
+  final bool? showCursor;
+
+  /// Width of the text cursor.
+  final double cursorWidth;
+
+  /// Optional cursor height override.
+  final double? cursorHeight;
+
+  /// Optional cursor corner radius.
+  final Radius? cursorRadius;
+
+  /// Enables selection handles, copy, and paste.
+  final bool enableInteractiveSelection;
+
+  /// Platform-specific selection controls override.
+  final TextSelectionControls? selectionControls;
+
+  /// Padding used when Flutter scrolls the field above the software keyboard.
+  final EdgeInsets scrollPadding;
+
+  /// Scroll physics for the editable text viewport.
+  final ScrollPhysics? scrollPhysics;
+
+  /// Mouse cursor used over the editable field on desktop and web.
+  final MouseCursor? mouseCursor;
+
+  /// Whether this field may request focus.
+  final bool canRequestFocus;
+
   /// Embed mode: drop the outer border + fill and tighten padding so the box
   /// sits flush inside a host surface (e.g. an EditableTable cell). The overlay
   /// dropdown is unchanged.
@@ -240,6 +358,39 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.theme,
     this.autofocus = false,
     this.focusNode,
+    this.keyboardType,
+    this.inputFormatters,
+    this.textDirection,
+    this.textAlign = TextAlign.start,
+    this.textAlignVertical,
+    this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
+    this.onFieldSubmitted,
+    this.onTap,
+    this.onTapOutside,
+    this.onTapUpOutside,
+    this.onEditingComplete,
+    this.onSave,
+    this.keyboardAppearance,
+    this.onTapAlwaysCalled = false,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
+    this.enableIMEPersonalizedLearning = true,
+    this.smartDashesType,
+    this.smartQuotesType,
+    this.autofillHints,
+    this.maxLength,
+    this.maxLengthEnforcement,
+    this.showCursor,
+    this.cursorWidth = 2.0,
+    this.cursorHeight,
+    this.cursorRadius,
+    this.enableInteractiveSelection = true,
+    this.selectionControls,
+    this.scrollPadding = const EdgeInsets.all(20.0),
+    this.scrollPhysics,
+    this.mouseCursor,
+    this.canRequestFocus = true,
     this.bare = false,
     this.fieldHeight,
     this.textStyle,
@@ -511,16 +662,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         return KeyEventResult.handled;
       case LogicalKeyboardKey.enter:
       case LogicalKeyboardKey.numpadEnter:
-        final h = _c.highlighted;
-        if (h != null && h.enabled) {
-          _choose(h);
-        } else if (_canCreate) {
-          _startCreate(); // “＋ Create …” takes Enter before free-text submit
-        } else if (_c.allowFreeText && !widget.multiSelect) {
-          _c.acceptFreeText(); // make the typed text the committed baseline
-          widget.onSubmitted?.call(_c.query);
-          _c.close();
-        }
+        _handleFieldSubmitted(_c.query);
         return KeyEventResult.handled;
       case LogicalKeyboardKey.escape:
         if (widget.onEscape != null) {
@@ -548,6 +690,26 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   }
 
   void _pick(AutoSuggestion<T> s) => _choose(s);
+
+  /// Applies the component's submit semantics, then reports the resulting query
+  /// through [AutoSuggestionsBox.onFieldSubmitted]. This path is shared by
+  /// physical Enter keys and software-keyboard actions.
+  void _handleFieldSubmitted(String _) {
+    if (widget.disabled || widget.readOnly || !widget.enabled) return;
+
+    final highlighted = _c.highlighted;
+    if (highlighted != null && highlighted.enabled) {
+      _choose(highlighted);
+    } else if (_canCreate) {
+      _startCreate(); // “＋ Create …” takes submit before free-text acceptance.
+    } else if (_c.allowFreeText && !widget.multiSelect) {
+      _c.acceptFreeText();
+      widget.onSubmitted?.call(_c.query);
+      _c.close();
+    }
+
+    widget.onFieldSubmitted?.call(_c.query);
+  }
 
   /// Open the Advanced Search surface (Ctrl/⌘+F). Reuses the live controller so
   /// a pick made there commits straight back into the field.
@@ -780,6 +942,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final decoration = InputDecoration(
       hintText: widget.hintText,
       hintStyle: baseStyle.copyWith(color: t.fg3, fontWeight: FontWeight.w400),
+      counterText: widget.maxLength == null ? null : '',
       // Leading icon
       prefixIcon: hasLeading
           ? Padding(
@@ -817,17 +980,55 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       key: _fieldKey,
       child: Focus(
         onKeyEvent: _onKey,
-        child: TextField(
+        child: TextFormField(
           controller: _c.text,
           focusNode: _focus,
           enabled: widget.enabled && !disabled,
           readOnly: readOnly,
           autofocus: widget.autofocus,
+          keyboardType: widget.keyboardType,
+          inputFormatters: widget.inputFormatters,
+          textDirection: widget.textDirection,
+          textAlign: widget.textAlign,
+          textAlignVertical: widget.textAlignVertical,
+          textInputAction: widget.textInputAction,
+          textCapitalization: widget.textCapitalization,
+          keyboardAppearance: widget.keyboardAppearance,
+          onTapAlwaysCalled: widget.onTapAlwaysCalled,
+          autocorrect: widget.autocorrect,
+          enableSuggestions: widget.enableSuggestions,
+          enableIMEPersonalizedLearning:
+              widget.enableIMEPersonalizedLearning,
+          smartDashesType: widget.smartDashesType,
+          smartQuotesType: widget.smartQuotesType,
+          autofillHints: widget.autofillHints,
+          maxLength: widget.maxLength,
+          maxLengthEnforcement: widget.maxLengthEnforcement,
+          showCursor: widget.showCursor,
+          cursorWidth: widget.cursorWidth,
+          cursorHeight: widget.cursorHeight,
+          cursorRadius: widget.cursorRadius,
+          enableInteractiveSelection: widget.enableInteractiveSelection,
+          selectionControls: widget.selectionControls,
+          scrollPadding: widget.scrollPadding,
+          scrollPhysics: widget.scrollPhysics,
+          mouseCursor: widget.mouseCursor,
+          canRequestFocus: widget.canRequestFocus,
           onChanged: (v) {
             widget.onChanged?.call(v);
-            if (!_c.isOpen) _c.open();
+            if (interactive && !_c.isOpen) _c.open();
           },
-          onTap: interactive ? () => _c.open() : null,
+          onTap: widget.enabled && !disabled
+              ? () {
+                  widget.onTap?.call();
+                  if (interactive) _c.open();
+                }
+              : null,
+          onTapOutside: widget.onTapOutside,
+          onTapUpOutside: widget.onTapUpOutside,
+          onEditingComplete: widget.onEditingComplete,
+          onFieldSubmitted: _handleFieldSubmitted,
+          onSaved: widget.onSave,
           style: baseStyle,
           cursorColor: fs.cursorColor ?? t.borderFocus,
           decoration: decoration,

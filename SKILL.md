@@ -8,7 +8,8 @@ description: >
   server-side paged infinite-scroll, recently-used suggestions, inline create, a
   trailing meta column, record binding + a read-only view mode, an advanced-search
   overlay, a bare embedding mode, required + validator field validation, a
-  disabled state, and per-field theming with a focused-state style. Apply when a
+  disabled state, ERP keyboard/input-formatter integration, Flutter form-save
+  support, and per-field theming with a focused-state style. Apply when a
   Flutter app needs a themed (light/dark, LTR/RTL) typeahead/autocomplete field,
   or an embeddable pick-or-type combobox. This package also carries the shared
   GeniusLink core theme foundation; the super_table_field package depends on it.
@@ -35,7 +36,7 @@ data grid too, use `super_table_field` (which re-exports this package).
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^0.8.0
+  super_auto_suggestion_box: ^0.10.0
 ```
 
 ```dart
@@ -73,6 +74,46 @@ AutoSuggestionsBox<String>(
   hintText: 'Type or pick…',
   onSelected: (s) => /* s.value, s.label */,
   onSubmitted: (raw) => /* free-text Enter */,
+);
+```
+
+### ERP text input and Flutter forms (0.10.0)
+
+Use the forwarded text-input API for exact ERP identifiers. Important fields:
+
+- `keyboardType`, `inputFormatters`, `textDirection`, `textAlign`,
+  `textAlignVertical`, `textInputAction`, `textCapitalization`,
+  `keyboardAppearance`.
+- `onFieldSubmitted`, `onTap`, `onTapOutside`, `onTapUpOutside`,
+  `onEditingComplete`, `onSave`.
+- `autocorrect`, `enableSuggestions`, `enableIMEPersonalizedLearning`,
+  `smartDashesType`, `smartQuotesType`, `autofillHints`, `maxLength`,
+  `maxLengthEnforcement`, cursor/selection options, scroll options, `mouseCursor`,
+  and `canRequestFocus`.
+
+`onSave` is forwarded to `TextFormField.onSaved`, so it runs when the enclosing
+`FormState.save()` is called. `onSubmitted` remains specific to accepted free
+text; use `onFieldSubmitted` when the host must observe every submit action.
+
+```dart
+Form(
+  key: formKey,
+  child: AutoSuggestionsBox<String>(
+    items: references,
+    keyboardType: TextInputType.text,
+    inputFormatters: [
+      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
+      LengthLimitingTextInputFormatter(16),
+    ],
+    textDirection: TextDirection.ltr,
+    textInputAction: TextInputAction.done,
+    textCapitalization: TextCapitalization.characters,
+    autocorrect: false,
+    enableSuggestions: false,
+    maxLength: 16,
+    onFieldSubmitted: (value) => submit(value),
+    onSave: (value) => save(value),
+  ),
 );
 ```
 

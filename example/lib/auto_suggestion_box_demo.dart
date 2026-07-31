@@ -14,10 +14,12 @@
 //   10. INLINE CREATE — "＋ Create …" adds missing master data (onCreate)
 //   11. PAGED — infinite-scroll over a 64-row catalog, 12 rows per page
 //   12. RECORD BINDING (selectByValue) + READ-ONLY view mode
+//   13. ERP INPUT + FORM SAVE — keyboard, formatters and field callbacks
 // Used by the example app and as a visual reference.
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 class AutoSuggestionBoxDemo extends StatefulWidget {
@@ -100,6 +102,34 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
       trailing: '96,000.00',
       group: 'Expenses',
       icon: Icons.badge_outlined,
+    ),
+  ];
+
+  // Exact ERP document references for keyboard/input-formatter integration.
+  static const List<AutoSuggestion<String>> _documentReferences = [
+    AutoSuggestion(
+      value: 'INV-1001',
+      label: 'INV-1001',
+      description: 'Sales invoice · Posted',
+      icon: Icons.receipt_long_outlined,
+    ),
+    AutoSuggestion(
+      value: 'INV-1042',
+      label: 'INV-1042',
+      description: 'Sales invoice · Draft',
+      icon: Icons.receipt_long_outlined,
+    ),
+    AutoSuggestion(
+      value: 'PO-2040',
+      label: 'PO-2040',
+      description: 'Purchase order · Approved',
+      icon: Icons.shopping_cart_outlined,
+    ),
+    AutoSuggestion(
+      value: 'JV-0098',
+      label: 'JV-0098',
+      description: 'Journal voucher · Posted',
+      icon: Icons.menu_book_outlined,
     ),
   ];
 
@@ -231,6 +261,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
 
   // Whether the "Bound Account" field is locked to its read-only view.
   bool _boundReadOnly = false;
+
+  final GlobalKey<FormState> _erpFormKey = GlobalKey<FormState>();
+  String? _savedDocumentReference;
+  String _lastInputEvent = 'No input event yet';
 
   // A stable, pre-filled controller for the disabled-field example.
   late final AutoSuggestionsBoxController<String> _lockedController =
@@ -550,6 +584,81 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         ],
                       ),
                     ],
+                  ),
+                ),
+                SizedBox(height: spacing.section),
+
+                // 13 — ERP keyboard, formatter, callbacks, and FormState.save.
+                SuperSectionCard(
+                  title: 'ERP Document Reference',
+                  subtitle:
+                      'Exact-code input with formatters, LTR direction, keyboard actions, and form save',
+                  marker: SuperMarker.notes,
+                  child: Form(
+                    key: _erpFormKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AutoSuggestionsBox<String>(
+                          items: _documentReferences,
+                          label: 'Document Reference',
+                          hintText: 'e.g. INV-1042',
+                          keyboardType: TextInputType.text,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[A-Za-z0-9-]'),
+                            ),
+                            LengthLimitingTextInputFormatter(16),
+                          ],
+                          textDirection: TextDirection.ltr,
+                          textAlign: TextAlign.start,
+                          textInputAction: TextInputAction.done,
+                          textCapitalization: TextCapitalization.characters,
+                          keyboardAppearance: Theme.of(context).brightness,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          enableIMEPersonalizedLearning: false,
+                          maxLength: 16,
+                          onTap: () => setState(
+                            () => _lastInputEvent = 'Field tapped',
+                          ),
+                          onTapOutside: (_) => setState(
+                            () => _lastInputEvent = 'Pointer down outside',
+                          ),
+                          onTapUpOutside: (_) => setState(
+                            () => _lastInputEvent = 'Pointer up outside',
+                          ),
+                          onEditingComplete: () => setState(
+                            () => _lastInputEvent = 'Editing completed',
+                          ),
+                          onFieldSubmitted: (value) => setState(
+                            () => _lastInputEvent = 'Submitted: $value',
+                          ),
+                          onSave: (value) => setState(
+                            () => _savedDocumentReference = value,
+                          ),
+                        ),
+                        SizedBox(height: spacing.space3),
+                        Wrap(
+                          spacing: spacing.space2,
+                          runSpacing: spacing.space2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            SuperButton(
+                              label: 'Save Form',
+                              variant: SuperButtonVariant.secondary,
+                              onPressed: () => _erpFormKey.currentState?.save(),
+                            ),
+                            Text(
+                              _savedDocumentReference == null
+                                  ? _lastInputEvent
+                                  : 'Saved: $_savedDocumentReference · $_lastInputEvent',
+                              style: t.textTheme.label.copyWith(color: t.fg2),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

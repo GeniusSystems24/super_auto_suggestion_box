@@ -28,6 +28,10 @@ Light + dark themes, full LTR + RTL.
 - ✅ **Validation** — `required` + a custom `validator`; errors surface through a
   suffix **error badge** tooltip (never inline), gated on touch / `forceError`,
   reported via `onValidity`.
+- ✅ **ERP text-input integration** — keyboard type/action/appearance, input
+  formatters, LTR code entry inside RTL screens, capitalization, max-length
+  enforcement, autofill, cursor/selection controls, outside-tap callbacks, and
+  `FormState.save()` through `onSave`.
 - ✅ **`disabled`** state and a per-field `theme` override.
 - ✅ **Themeable focused state** — `AutoSuggestionsBoxFocusedStyle` (`fillColor`,
   `border`, `fontStyle`, `cursorColor`, `shadow`).
@@ -97,6 +101,62 @@ AutoSuggestionsBox<String>(
   onSubmitted: (raw) => /* free-text Enter */,
 );
 ```
+
+### ERP input configuration and form save
+
+`AutoSuggestionsBox` forwards the text-input controls commonly required by ERP
+forms. Use them for exact identifiers such as account codes, SKU values, invoice
+references, IBANs, and voucher numbers. The internal editor is a `TextFormField`,
+so `onSave` is invoked by the enclosing `FormState.save()`.
+
+```dart
+import 'package:flutter/services.dart';
+
+final formKey = GlobalKey<FormState>();
+
+Form(
+  key: formKey,
+  child: AutoSuggestionsBox<String>(
+    items: documentReferences,
+    label: 'Document Reference',
+    keyboardType: TextInputType.text,
+    inputFormatters: [
+      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
+      LengthLimitingTextInputFormatter(16),
+    ],
+    textDirection: TextDirection.ltr,
+    textInputAction: TextInputAction.done,
+    textCapitalization: TextCapitalization.characters,
+    keyboardAppearance: Brightness.dark,
+    autocorrect: false,
+    enableSuggestions: false,
+    enableIMEPersonalizedLearning: false,
+    maxLength: 16,
+    onTap: () {},
+    onTapOutside: (event) {},
+    onTapUpOutside: (event) {},
+    onEditingComplete: () {},
+    onFieldSubmitted: (value) {},
+    onSave: (value) {
+      // Persist the current query or committed suggestion label.
+    },
+  ),
+);
+
+formKey.currentState?.save();
+```
+
+`onSubmitted` remains the legacy callback for accepted free text only.
+`onFieldSubmitted` is the general field callback: it runs for physical Enter and
+software-keyboard actions after the component applies its normal highlighted-row,
+inline-create, or free-text submit behavior.
+
+The complete ERP-oriented input surface also includes `textAlign`,
+`textAlignVertical`, `autofillHints`, `smartDashesType`, `smartQuotesType`,
+`maxLengthEnforcement`, `showCursor`, `cursorWidth`, `cursorHeight`,
+`cursorRadius`, `enableInteractiveSelection`, `selectionControls`,
+`scrollPadding`, `scrollPhysics`, `mouseCursor`, `canRequestFocus`, and
+`onTapAlwaysCalled`.
 
 ### Validation (`required` · `validator`)
 

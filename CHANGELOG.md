@@ -4,6 +4,31 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 0.10.0 — 2026-08-01
+
+### Added
+
+- Added ERP-oriented text-input configuration to `AutoSuggestionsBox`: `keyboardType`,
+  `inputFormatters`, `textDirection`, `textAlign`, `textAlignVertical`,
+  `textInputAction`, `textCapitalization`, and `keyboardAppearance`.
+- Added field lifecycle callbacks: `onFieldSubmitted`, `onTap`, `onTapOutside`,
+  `onTapUpOutside`, `onEditingComplete`, and `onSave`.
+- Added exact-entry controls useful for account codes, SKUs, document references,
+  IBANs, and voucher numbers: autocorrect/prediction toggles, IME learning, smart
+  punctuation, autofill hints, maximum length enforcement, cursor configuration,
+  interactive selection, scroll padding/physics, mouse cursor, and focus control.
+- Added an ERP document-reference example and a widget test covering keyboard
+  configuration, submission, and `FormState.save()`.
+
+### Changed
+
+- Replaced the internal `TextField` with `TextFormField` so the component
+  participates in Flutter form-save workflows without changing its existing
+  validation badge or suggestion behavior.
+- Unified physical Enter and software-keyboard submit handling through the same
+  selection/create/free-text pipeline.
+- Restored the missing root `pubspec.yaml` and bumped the package to `0.10.0`.
+
 ## 0.9.0
 
 - Migrated the package dependency from `super_core` 2.4.0 to 3.0.0.
@@ -12,8 +37,7 @@ follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 - Migrated spacing and radii reads from `SuperTokensData` to
   `context.superTheme.spacing`.
 - Updated the example to use `SuperScaffold` for its responsive page frame.
-- Simplified theme setup to use `SuperMaterialThemeData.light()` and `.dark()`
--
+- Simplified theme setup to use `SuperMaterialThemeData.light()` and `.dark()`.
 
 ## [0.8.0] — 2026-07-16
 
