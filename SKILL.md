@@ -36,26 +36,48 @@ data grid too, use `super_table_field` (which re-exports this package).
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^0.11.0
+  super_auto_suggestion_box: ^0.13.0
 ```
 
 ```dart
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 ```
 
-Register the theme extensions on your `ThemeData` (without them colors fall back to
-defaults):
+Use `super_core >=3.3.0` and build the app theme with explicit
+`SuperTextTheme` values:
 
 ```dart
-theme: ThemeData(
-  brightness: Brightness.light,
-  extensions: [SuperThemeData.light, AutoSuggestionsBoxThemeData.light],
+final typography = SuperTextTheme();
+
+theme: SuperMaterialThemeData.light(
+  textTheme: typography,
+  primaryTextTheme: typography,
 ),
-darkTheme: ThemeData(
-  brightness: Brightness.dark,
-  extensions: [SuperThemeData.dark, AutoSuggestionsBoxThemeData.dark],
+darkTheme: SuperMaterialThemeData.dark(
+  textTheme: typography,
+  primaryTextTheme: typography,
 ),
 ```
+
+`AutoSuggestionsBoxThemeData.of(context)` automatically derives component colors
+from the active `SuperMaterialThemeData`; register an explicit
+`AutoSuggestionsBoxThemeData` extension only when overriding the component.
+
+### super_core 3.3.0 typography rules
+
+- `SuperThemeData` does **not** expose `textTheme`; never generate
+  `context.superTheme.textTheme`, `theme.superTheme.textTheme`, or
+  `SuperThemeData.of(context).textTheme`.
+- Read branded typography with `context.superTextTheme`, or from
+  `SuperMaterialThemeData.of(context).textTheme`.
+- `SuperMaterialThemeData.light` and `.dark` require both `textTheme` and
+  `primaryTextTheme`, each a `SuperTextTheme`.
+- Configure custom body/display families through `SuperTextTheme(bodyFont:,
+  otherFont:)`. Do not rely on `SuperMaterialThemeData` to infer a font family
+  from the text theme. Pass its `fontFamily` only when token-level font metadata
+  also needs an explicit override.
+- `AutoSuggestionsBox` follows the ambient `SuperTextTheme` font families; do not
+  hard-code `AutoSuggestionsBoxThemeData.bodyFont` / `displayFont` in new code.
 
 ## AutoSuggestionsBox
 

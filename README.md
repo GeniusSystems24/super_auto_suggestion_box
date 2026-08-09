@@ -63,26 +63,37 @@ dependencies:
     path: ../super_auto_suggestion_box   # or a git / hosted ref
 ```
 
-Register the `ThemeExtension`s on your `ThemeData`:
+Use `SuperMaterialThemeData` from `super_core >=3.3.0`. Both light and dark
+factories require explicit `SuperTextTheme` values:
 
 ```dart
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
+final typography = SuperTextTheme();
+
 MaterialApp(
-  theme: ThemeData(
-    brightness: Brightness.light,
-    extensions: const [SuperThemeData.light, AutoSuggestionsBoxThemeData.light],
+  theme: SuperMaterialThemeData.light(
+    textTheme: typography,
+    primaryTextTheme: typography,
   ),
-  darkTheme: ThemeData(
-    brightness: Brightness.dark,
-    extensions: const [SuperThemeData.dark, AutoSuggestionsBoxThemeData.dark],
+  darkTheme: SuperMaterialThemeData.dark(
+    textTheme: typography,
+    primaryTextTheme: typography,
   ),
 );
 ```
 
-> **Fonts** — the design system uses Manrope (display), Inter (body), JetBrains Mono
-> (numerics) and Noto Naskh Arabic. Drop the `.ttf` files under `assets/fonts/` and
-> uncomment the `fonts:` block in `pubspec.yaml`; otherwise platform defaults are used.
+`AutoSuggestionsBoxThemeData.of(context)` derives its color/layout defaults from
+the active `SuperMaterialThemeData`; an explicit component extension is needed
+only when overriding the box theme. Typography comes from
+`context.superTextTheme` (`SuperMaterialThemeData.textTheme`), not from
+`context.superTheme`.
+
+> **super_core 3.3.0 typography** — `SuperThemeData` no longer exposes
+> `textTheme`. Configure body/display faces on `SuperTextTheme` (`bodyFont` /
+> `otherFont`) and read them through `context.superTextTheme`. `fontFamily` on
+> `SuperMaterialThemeData` is an explicit token-level override only; font families
+> are not inferred from the supplied `SuperTextTheme`.
 
 ## Usage
 

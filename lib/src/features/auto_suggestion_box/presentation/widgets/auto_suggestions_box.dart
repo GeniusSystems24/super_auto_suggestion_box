@@ -42,8 +42,8 @@ typedef AutoSuggestionsValidityChanged = void Function(String? error);
 /// inserted into [value], so selection, validation, saving, and filtering keep
 /// operating on exactly what the user typed.
 class _ShadowHintTextEditingController extends TextEditingController {
-  _ShadowHintTextEditingController.fromValue(TextEditingValue value)
-    : super.fromValue(value);
+  _ShadowHintTextEditingController.fromValue(TextEditingValue super.value)
+    : super.fromValue();
 
   String _shadowSuffix = '';
   TextStyle? _shadowStyle;
@@ -1055,7 +1055,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
               child: Text(
                 widget.hint!,
                 style: TextStyle(
-                  fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                  fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                   fontSize: 12,
                   height: 1.35,
                   color: t.fg3,
@@ -1088,7 +1088,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     var baseStyle =
         (widget.textStyle ??
                 TextStyle(
-                  fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                  fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                   fontSize: 14,
                   color: t.fg1,
                   height: 1.2,
@@ -1272,8 +1272,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
             ),
             child: Text(
               '${_c.selectedItems.length}',
-              style: const TextStyle(
-                fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+              style: TextStyle(
+                fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
@@ -1478,7 +1478,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                 Text(
                   q.trim().isEmpty ? 'Loading…' : 'Searching “$q”…',
                   style: TextStyle(
-                    fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                    fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                     fontSize: 13,
                     color: t.fg2,
                   ),
@@ -1499,7 +1499,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                   child: Text(
                     q.trim().isEmpty ? 'Type to search' : 'No matches for “$q”',
                     style: TextStyle(
-                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                       fontSize: 13,
                       color: t.fg2,
                     ),
@@ -1540,7 +1540,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                     Text(
                       'Loading more from server…',
                       style: TextStyle(
-                        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                        fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                         fontSize: 11.5,
                         color: t.fg2,
                       ),
@@ -1608,7 +1608,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                               s.group!.toUpperCase(),
                               style: TextStyle(
                                 fontFamily:
-                                    AutoSuggestionsBoxThemeData.bodyFont,
+                                    (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.7,
@@ -1712,7 +1712,6 @@ class _Row<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
-    final superTheme = SuperMaterialThemeData.of(context);
     final s = suggestion;
     final enabled = s.enabled;
 
@@ -1741,7 +1740,7 @@ class _Row<T> extends StatelessWidget {
                     match: highlightMatch,
                     enabled: highlightMatches,
                     baseStyle: TextStyle(
-                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                       fontSize: 13.5,
                       height: 1.2,
                       color: enabled ? t.fg1 : t.fg3,
@@ -1755,7 +1754,7 @@ class _Row<T> extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                        fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                         fontSize: 11.5,
                         height: 1.2,
                         color: t.fg2,
@@ -1770,7 +1769,7 @@ class _Row<T> extends StatelessWidget {
               Text(
                 s.trailing!,
                 style: TextStyle(
-                  fontFamily: superTheme.tokens.monoFont,
+                  fontFamily: (SuperMaterialThemeData.of(context).textTheme).mono.fontFamily,
                   fontSize: 12,
                   height: 1.2,
                   color: enabled ? t.fg2 : t.fg3,
@@ -1892,7 +1891,7 @@ class _CreateFooterState extends State<_CreateFooter> {
                   TextSpan(
                     text: 'Create ',
                     style: TextStyle(
-                      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                      fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                       fontSize: 13,
                       color: t.fg2,
                     ),
@@ -1900,7 +1899,7 @@ class _CreateFooterState extends State<_CreateFooter> {
                       TextSpan(
                         text: '“${widget.label}”',
                         style: TextStyle(
-                          fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                          fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: t.fg1,
@@ -1917,7 +1916,7 @@ class _CreateFooterState extends State<_CreateFooter> {
                 Text(
                   'ENTER',
                   style: TextStyle(
-                    fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                    fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,
@@ -1958,7 +1957,7 @@ class _PageLoadingRow extends StatelessWidget {
           Text(
             'Loading more…',
             style: TextStyle(
-              fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+              fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
               fontSize: 11.5,
               color: t.fg2,
             ),
@@ -2025,7 +2024,7 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+      fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
       fontSize: 11,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.55,
@@ -2070,8 +2069,8 @@ class _ErrorBadge extends StatelessWidget {
           AutoSuggestionsBoxThemeData.radiusMd,
         ),
       ),
-      textStyle: const TextStyle(
-        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+      textStyle: TextStyle(
+        fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
         fontSize: 12,
         height: 1.45,
         fontWeight: FontWeight.w500,
@@ -2207,7 +2206,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                                 'ADVANCED SEARCH',
                                 style: TextStyle(
                                   fontFamily:
-                                      AutoSuggestionsBoxThemeData.bodyFont,
+                                      (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 1.0,
@@ -2219,7 +2218,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                                 widget.title,
                                 style: TextStyle(
                                   fontFamily:
-                                      AutoSuggestionsBoxThemeData.displayFont,
+                                      (SuperMaterialThemeData.of(context).textTheme).h1.fontFamily,
                                   fontSize: 19,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.4,
@@ -2270,7 +2269,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                                 onChanged: _c.setText,
                                 style: TextStyle(
                                   fontFamily:
-                                      AutoSuggestionsBoxThemeData.bodyFont,
+                                      (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                                   fontSize: 15,
                                   color: t.fg1,
                                 ),
@@ -2324,7 +2323,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                           Text(
                             'Loading more from server…',
                             style: TextStyle(
-                              fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                              fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                               fontSize: 11.5,
                               color: t.fg2,
                             ),
@@ -2342,7 +2341,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                               _c.isLoading ? 'Searching…' : 'No matches',
                               style: TextStyle(
                                 fontFamily:
-                                    AutoSuggestionsBoxThemeData.bodyFont,
+                                    (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                                 fontSize: 13,
                                 color: t.fg3,
                               ),
@@ -2389,7 +2388,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                     child: Text(
                       '↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE',
                       style: TextStyle(
-                        fontFamily: AutoSuggestionsBoxThemeData.bodyFont,
+                        fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.6,

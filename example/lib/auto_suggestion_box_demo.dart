@@ -300,6 +300,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   Widget build(BuildContext context) {
     final theme = SuperMaterialThemeData.of(context);
     final t = theme.superTheme;
+    final typography = context.superTextTheme;
     final spacing = t.spacing;
 
     return Scaffold(
@@ -307,7 +308,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
         title: const Text('Auto Suggestion Box'),
         subtitle: Text(
           'AUTO SUGGESTION BOX',
-          style: t.textTheme.eyebrow.copyWith(color: theme.colorScheme.primary),
+          style: typography.eyebrow.copyWith(color: theme.colorScheme.primary),
         ),
       ),
       body: SingleChildScrollView(
@@ -317,15 +318,15 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v0.12.0',
-                style: t.textTheme.eyebrow.copyWith(
+                'v0.13.0',
+                style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               SizedBox(height: spacing.space2),
               Text(
                 'Account Lookup',
-                style: t.textTheme.h1.copyWith(color: t.fg1),
+                style: typography.h1.copyWith(color: t.fg1),
               ),
               SizedBox(height: spacing.space8),
 
@@ -431,8 +432,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   hint:
                       'Pick an asset, liability, equity, income or expense account',
                   validator: (value) {
-                    if (value.trim().isEmpty)
+                    if (value.trim().isEmpty) {
                       return null; // required handles empty
+                    }
                     final match = _accounts.any((a) => a.label == value);
                     return match ? null : 'Pick an account from the list';
                   },
@@ -446,7 +448,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 _accountError == null
                     ? 'STATUS · VALID'
                     : 'STATUS · ${_accountError!.toUpperCase()}',
-                style: t.textTheme.label.copyWith(
+                style: typography.label.copyWith(
                   color: _accountError == null
                       ? t.tokens.success
                       : Theme.of(context).colorScheme.error,
@@ -483,9 +485,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   hintText: 'Focus me to see the custom focused style',
                   theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
                     focusedStyle: AutoSuggestionsBoxFocusedStyle(
-                      fillColor: Color(0x141DB88A),
+                      fillColor: const Color(0x141DB88A),
                       border: BorderSide(color: t.tokens.success, width: 1.6),
-                      fontStyle: TextStyle(fontWeight: FontWeight.w600),
+                      fontStyle: const TextStyle(fontWeight: FontWeight.w600),
                       cursorColor: t.tokens.success,
                     ),
                   ),
@@ -671,7 +673,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                             _savedDocumentReference == null
                                 ? _lastInputEvent
                                 : 'Saved: $_savedDocumentReference · $_lastInputEvent',
-                            style: t.textTheme.label.copyWith(color: t.fg2),
+                            style: typography.label.copyWith(color: t.fg2),
                           ),
                         ],
                       ),

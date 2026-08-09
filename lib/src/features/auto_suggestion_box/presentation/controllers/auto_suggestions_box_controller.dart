@@ -47,8 +47,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _committed = initialValue;
     _committedText = initialValue?.label ?? initialText;
     if (initialSelected != null) _selectedItems.addAll(initialSelected);
-    if (initialRecents != null)
+    if (initialRecents != null) {
       _recents.addAll(initialRecents.take(maxRecents));
+    }
     text.addListener(_onTextChanged);
     _lastText = text.text;
     // Seed the initial (empty-query) result set so opening shows everything.
@@ -293,8 +294,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// is empty and recents exist; the rest of [base] follows, de-duplicated and
   /// tagged so it reads as a separate section.
   List<AutoSuggestion<T>> _decorateRecents(List<AutoSuggestion<T>> base) {
-    if (!showRecents || _recents.isEmpty || _activeQuery.trim().isNotEmpty)
+    if (!showRecents || _recents.isEmpty || _activeQuery.trim().isNotEmpty) {
       return base;
+    }
     final recentVals = <T>{for (final r in _recents) r.value};
     return [
       for (final r in _recents) r.copyWith(group: recentsGroupLabel),
@@ -408,8 +410,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
               .then((list) {
                 if (mySeq != _seq) return;
                 _setResults(list);
-                if (_highlighted >= _results.length)
+                if (_highlighted >= _results.length) {
                   _highlighted = _results.isEmpty ? -1 : 0;
+                }
                 _loadingMore = false;
                 _error = null;
                 notifyListeners();
@@ -596,8 +599,9 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Revert the field to the last committed value — used on blur when the user
   /// typed but didn't pick. No-op when nothing was ever committed ("unless null").
   void restoreCommitted() {
-    if (_committedText == null)
+    if (_committedText == null) {
       return; // never committed → leave the field as-is
+    }
     _selected = _committed;
     if (text.text != _committedText) setText(_committedText!);
     _highlighted = -1;

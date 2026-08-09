@@ -3,6 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
+Widget _themedApp(Widget home) {
+  final typography = SuperTextTheme();
+  return MaterialApp(
+    theme: SuperMaterialThemeData.light(
+      textTheme: typography,
+      primaryTextTheme: typography,
+    ),
+    home: home,
+  );
+}
+
 void main() {
   testWidgets('forwards ERP input configuration and participates in Form.save', (
     tester,
@@ -13,8 +24,8 @@ void main() {
     var tapCount = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      _themedApp(
+        Scaffold(
           body: Form(
             key: formKey,
             child: AutoSuggestionsBox<String>(
@@ -68,8 +79,8 @@ void main() {
     String? savedValue;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      _themedApp(
+        Scaffold(
           body: Form(
             key: formKey,
             child: AutoSuggestionsBox<String>(
@@ -130,8 +141,8 @@ void main() {
     });
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      _themedApp(
+        Scaffold(
           body: AutoSuggestionsBox<String>(controller: controller),
         ),
       ),
@@ -154,8 +165,8 @@ void main() {
 
   testWidgets('can disable the visual shadow hint', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
+      _themedApp(
+        const Scaffold(
           body: AutoSuggestionsBox<String>(
             items: [
               AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
@@ -186,8 +197,8 @@ void main() {
     var selectedCount = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
+      _themedApp(
+        Scaffold(
           body: AutoSuggestionsBox<String>(
             items: const [
               AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
@@ -221,8 +232,8 @@ void main() {
 
   testWidgets('can opt out of accepting shadow hints with Tab', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
+      _themedApp(
+        const Scaffold(
           body: AutoSuggestionsBox<String>(
             items: [
               AutoSuggestion(value: 'ACC-1000', label: 'ACC-1000'),

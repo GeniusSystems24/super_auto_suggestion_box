@@ -4,6 +4,33 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 0.13.0 — 2026-08-10
+
+### Changed
+
+- Raised the minimum `super_core` dependency to `3.3.0`.
+- Updated all `SuperMaterialThemeData.light` / `.dark` setup examples to pass
+  required `SuperTextTheme` values for `textTheme` and `primaryTextTheme`.
+- Migrated example typography reads from the removed
+  `SuperThemeData.textTheme` API to `context.superTextTheme`.
+- `AutoSuggestionsBox` now resolves body, display, and mono font families from
+  the ambient `SuperTextTheme` instead of hard-coding `Inter`, `Manrope`, or
+  token-level mono metadata. This keeps the component aligned with custom,
+  Arabic, and device-specific typography supplied by the host application.
+- Deprecated `AutoSuggestionsBoxThemeData.bodyFont` and `displayFont`; they are
+  retained temporarily for source compatibility but are no longer used
+  internally.
+
+### Migration notes
+
+- `SuperThemeData` no longer owns typography in `super_core 3.3.0`; do not use
+  `context.superTheme.textTheme`. Use `context.superTextTheme` or
+  `SuperMaterialThemeData.of(context).textTheme`.
+- `super_core` no longer infers token font-family metadata from `SuperTextTheme`.
+  Configure the type ramp through `SuperTextTheme(bodyFont:, otherFont:)` and
+  pass `SuperMaterialThemeData.fontFamily` separately only when a token-level
+  override is required.
+
 ## 0.12.0 — 2026-08-01
 
 ### Added

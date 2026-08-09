@@ -57,15 +57,17 @@ class AutoSuggestionsHighlight extends StatelessWidget {
     final pieces = <TextSpan>[];
     var cursor = 0;
     for (final HighlightSpan span in spans) {
-      if (span.start > cursor)
+      if (span.start > cursor) {
         pieces.add(TextSpan(text: text.substring(cursor, span.start)));
+      }
       pieces.add(
         TextSpan(text: text.substring(span.start, span.end), style: hi),
       );
       cursor = span.end;
     }
-    if (cursor < text.length)
+    if (cursor < text.length) {
       pieces.add(TextSpan(text: text.substring(cursor)));
+    }
 
     return RichText(
       maxLines: 1,

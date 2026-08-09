@@ -1,13 +1,12 @@
 // ============================================================
 // features/auto_suggestion_box/presentation/widgets/auto_suggestions_box_theme.dart
 // ------------------------------------------------------------
-// The box's own ThemeExtension, aligned with the core SuperTokensData / SuperTheme
-// surfaces so the box drops into the same console as the table and tree.
-// Instance fields swap dark <-> light (lerped); static consts re-expose the
-// shared brand constants for terse local use.
+// The box's own ThemeExtension, aligned with SuperMaterialThemeData /
+// SuperThemeData color and layout surfaces. Typography is owned by the ambient
+// SuperTextTheme from super_core 3.3.0; this extension intentionally keeps only
+// component colors, focused-state styling, and stable component metrics.
 //
-//   ThemeData(extensions: [AutoSuggestionsBoxThemeData.light]);   // or .dark
-//   final t = AutoSuggestionsBoxThemeData.of(context);            // -> .dark fallback
+//   final t = AutoSuggestionsBoxThemeData.of(context);
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -122,14 +121,24 @@ class AutoSuggestionsBoxThemeData
     this.focusedStyle = const AutoSuggestionsBoxFocusedStyle(),
   });
 
-  // ── brand + semantic palette (local const literals for the const presets +
-  //    const TextStyles below; the DYNAMIC path is fromMaterialTheme, which
-  //    reads palette-aware tokens from SuperMaterialThemeData) ──
+  // ── brand + semantic palette (local const literals for the const presets;
+  //    the dynamic path is fromMaterialTheme, which reads palette-aware tokens
+  //    from SuperMaterialThemeData) ──
   static const Color accent = Color(0xFF4A7CFF);
   static const Color danger = Color(0xFFEF4444);
 
-  // ── typography ──
+  // ── legacy typography family aliases ──
+  // Typography is owned by SuperMaterialThemeData / SuperTextTheme since
+  // super_core 3.3.0. These aliases remain only for source compatibility;
+  // package widgets no longer use them internally.
+  @Deprecated(
+    'Use context.superTextTheme.h1.fontFamily or configure SuperTextTheme.otherFont.',
+  )
   static const String displayFont = 'Manrope';
+
+  @Deprecated(
+    'Use context.superTextTheme.body.fontFamily or configure SuperTextTheme.bodyFont.',
+  )
   static const String bodyFont = 'Inter';
 
   // ── radii ──
@@ -212,9 +221,19 @@ class AutoSuggestionsBoxThemeData
   /// enabling seamless use with [SuperMaterialThemeData]:
   ///
   /// ```dart
+  /// final typography = SuperTextTheme();
+  ///
   /// MaterialApp(
-  ///   theme:     SuperMaterialThemeData.light(palette: SuperPalette.bluePalette),
-  ///   darkTheme: SuperMaterialThemeData.dark(palette: SuperPalette.bluePalette),
+  ///   theme: SuperMaterialThemeData.light(
+  ///     palette: SuperPalette.bluePalette,
+  ///     textTheme: typography,
+  ///     primaryTextTheme: typography,
+  ///   ),
+  ///   darkTheme: SuperMaterialThemeData.dark(
+  ///     palette: SuperPalette.bluePalette,
+  ///     textTheme: typography,
+  ///     primaryTextTheme: typography,
+  ///   ),
   ///   // AutoSuggestionsBox adapts automatically — no extra registration needed.
   /// );
   /// ```
@@ -243,10 +262,11 @@ class AutoSuggestionsBoxThemeData
 
   /// Derives an [AutoSuggestionsBoxThemeData] from a [SuperMaterialThemeData].
   ///
-  /// Preferred bridge (v0.9.0 / super_core 3.0.0): reads palette-, brightness- and device-mode-
-  /// aware tokens from `theme.superTheme` so the box stays in lock-step with the
-  /// rest of the toolkit instead of duplicating hard-coded hex. Explicit
-  /// extensions still win in [of].
+  /// Preferred bridge (v0.13.0 / super_core 3.3.0): reads palette-, brightness-
+  /// and device-mode-aware color/layout tokens from `theme.superTheme`.
+  /// Typography is intentionally not read from [SuperThemeData]; super_core
+  /// 3.3.0 owns it on [SuperMaterialThemeData.textTheme] as [SuperTextTheme].
+  /// Explicit component-theme extensions still win in [of].
   factory AutoSuggestionsBoxThemeData.fromMaterialTheme(
     SuperMaterialThemeData theme,
   ) {
