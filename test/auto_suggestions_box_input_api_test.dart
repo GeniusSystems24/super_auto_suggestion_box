@@ -15,6 +15,58 @@ Widget _themedApp(Widget home) {
 }
 
 void main() {
+  testWidgets('allowFixed toggles a compact label action and protects text', (
+    tester,
+  ) async {
+    final focusNode = FocusNode();
+    final formFieldKey = GlobalKey<FormFieldState<String>>();
+    final controller = AutoSuggestionsBoxController<String>(
+      source: SuggestionSources.list(const [
+        AutoSuggestion(value: 'A', label: 'Alpha'),
+      ]),
+      focusNode: focusNode,
+      formFieldKey: formFieldKey,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: AutoSuggestionsBox<String>(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Account',
+              helperText: 'Choose an account',
+              prefixIcon: Icon(Icons.account_balance_outlined),
+            ),
+            allowFixed: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(focusNode.hasListeners, isTrue);
+    expect(formFieldKey.currentState, isNotNull);
+    expect(find.text('ACCOUNT'), findsOneWidget);
+    expect(find.text('Choose an account'), findsOneWidget);
+    expect(find.byIcon(Icons.account_balance_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.lock_open_rounded), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.lock_open_rounded));
+    await tester.pump();
+    expect(controller.isFixed.value, isTrue);
+    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+
+    controller.setText('blocked');
+    controller.clear();
+    expect(controller.text.text, isEmpty);
+
+    await tester.tap(find.byIcon(Icons.lock_rounded));
+    controller.setText('editable');
+    expect(controller.text.text, 'editable');
+  });
+
   testWidgets('forwards ERP input configuration and participates in Form.save', (
     tester,
   ) async {

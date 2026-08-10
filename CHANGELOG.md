@@ -4,7 +4,45 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 0.14.0 — 2026-08-10
+
+### Added
+
+- Added `AutoSuggestionsBox.decoration` for supplying label, helper,
+  placeholder, and prefix-icon content through Flutter's standard
+  `InputDecoration` API.
+
+### Deprecated
+
+- Deprecated `AutoSuggestionsBox.label`; use
+  `decoration: InputDecoration(labelText: ...)`.
+- Deprecated `AutoSuggestionsBox.hint`; use
+  `decoration: InputDecoration(helperText: ...)`.
+- Deprecated `AutoSuggestionsBox.leading`; use
+  `decoration: InputDecoration(prefixIcon: ...)`.
+
+### Changed
+
+- Migrated the runnable gallery, README, and agent skill examples to the new
+  decoration API. The legacy parameters continue to work during migration.
+
 ## 0.13.0 — 2026-08-10
+
+### Added
+
+- Added controller-level `isFixed`, `focusNode`, `isHiden`, and `formFieldKey`
+  support for protected values, focus wiring, conditional visibility, and direct
+  access to the inner `FormFieldState<String>`.
+- Added `AutoSuggestionsBox.allowFixed`, which shows a compact lock/unlock action
+  at the trailing edge of the label row and toggles `controller.isFixed`.
+- Added a runnable fixable-field gallery example and widget coverage for the new
+  controller/widget integration.
+
+### Behavior
+
+- A fixed field retains full visual contrast but blocks editing, clearing,
+  committing, and multi-select mutations until it is unlocked.
+- `isHiden` hides the complete suggestion box when the host rebuilds.
 
 ### Changed
 

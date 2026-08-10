@@ -15,6 +15,8 @@
 //   11. PAGED — infinite-scroll over a 64-row catalog, 12 rows per page
 //   12. RECORD BINDING (selectByValue) + READ-ONLY view mode
 //   13. ERP INPUT + FORM SAVE — keyboard, shadow hint, formatters and callbacks
+//   14. FIXABLE FIELD — controller-owned focus/form wiring and label lock action
+//   15. INPUT DECORATION — label, helper, and placeholder through Material API
 // Used by the example app and as a visual reference.
 // ============================================================
 
@@ -288,11 +290,26 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
         initialValue: _accounts.firstWhere((a) => a.value == '4000'),
       );
 
+  // Controller metadata used by the fixable-field example. `allowFixed` exposes
+  // the controller's isFixed state as a compact action beside the field label.
+  final FocusNode _fixableFocusNode = FocusNode();
+  final GlobalKey<FormFieldState<String>> _fixableFormFieldKey =
+      GlobalKey<FormFieldState<String>>();
+  late final AutoSuggestionsBoxController<String> _fixableController =
+      AutoSuggestionsBoxController<String>(
+        source: SuggestionSources.list<String>(_accounts),
+        initialValue: _accounts.firstWhere((a) => a.value == '1020'),
+        focusNode: _fixableFocusNode,
+        formFieldKey: _fixableFormFieldKey,
+      );
+
   @override
   void dispose() {
     _lockedController.dispose();
     _recentsController.dispose();
     _boundController.dispose();
+    _fixableController.dispose();
+    _fixableFocusNode.dispose();
     super.dispose();
   }
 
@@ -318,7 +335,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v0.13.0',
+                'v0.14.0',
                 style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -427,10 +444,12 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
-                  label: 'Debit Account',
+                  decoration: const InputDecoration(
+                    labelText: 'Debit Account',
+                    helperText:
+                        'Pick an asset, liability, equity, income or expense account',
+                  ),
                   required: true,
-                  hint:
-                      'Pick an asset, liability, equity, income or expense account',
                   validator: (value) {
                     if (value.trim().isEmpty) {
                       return null; // required handles empty
@@ -465,7 +484,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
-                  label: 'Reconciliation Account',
+                  decoration: const InputDecoration(
+                    labelText: 'Reconciliation Account',
+                  ),
                   disabled: true,
                   controller: _lockedController,
                 ),
@@ -481,7 +502,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
-                  label: 'Ledger Account',
+                  decoration: const InputDecoration(
+                    labelText: 'Ledger Account',
+                  ),
                   hintText: 'Focus me to see the custom focused style',
                   theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
                     focusedStyle: AutoSuggestionsBoxFocusedStyle(
@@ -505,7 +528,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: AutoSuggestionsBox<String>(
                   controller: _recentsController,
-                  label: 'Account',
+                  decoration: const InputDecoration(labelText: 'Account'),
                   hintText: 'Search accounts…',
                   onSelected: (s) {},
                 ),
@@ -521,7 +544,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: AutoSuggestionsBox<String>(
                   items: _projects,
-                  label: 'Project',
+                  decoration: const InputDecoration(labelText: 'Project'),
                   hintText: 'e.g. Seafront Villas',
                   onCreate: (q) async {
                     await Future<void>.delayed(
@@ -552,7 +575,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     _fetchCatalogPage,
                     resolveFrom: _catalog,
                   ),
-                  label: 'Item',
+                  decoration: const InputDecoration(labelText: 'Item'),
                   maxVisibleRows: 7,
                   hintText: 'Search 64 items…',
                   onSelected: (s) {},
@@ -572,7 +595,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   children: [
                     AutoSuggestionsBox<String>(
                       controller: _boundController,
-                      label: 'Ledger Account',
+                      decoration: const InputDecoration(
+                        labelText: 'Ledger Account',
+                      ),
                       readOnly: _boundReadOnly,
                       hintText: 'Pick or bind by code',
                       onSelected: (s) {},
@@ -621,7 +646,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     children: [
                       AutoSuggestionsBox<String>(
                         items: _documentReferences,
-                        label: 'Document Reference',
+                        decoration: const InputDecoration(
+                          labelText: 'Document Reference',
+                        ),
                         hintText: 'e.g. INV-1042',
                         keyboardType: TextInputType.text,
                         inputFormatters: [
@@ -678,6 +705,67 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         ],
                       ),
                     ],
+                  ),
+                ),
+              ),
+              SizedBox(height: spacing.section),
+
+              // 14 — Controller metadata + opt-in fix/unfix label action.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Fixable Account',
+                subtitle:
+                    'Use the small label action to protect or unlock the current value',
+                marker: theme.tokens.markerColor(SuperMarker.identity),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AutoSuggestionsBox<String>(
+                      controller: _fixableController,
+                      decoration: const InputDecoration(
+                        labelText: 'Settlement Account',
+                        helperText: 'Lock the field after selecting an account',
+                      ),
+                      allowFixed: true,
+                      hintText: 'Pick an account, then fix it',
+                    ),
+                    SizedBox(height: spacing.space3),
+                    Wrap(
+                      spacing: spacing.space2,
+                      runSpacing: spacing.space2,
+                      children: [
+                        SuperButton(
+                          label: 'Focus field',
+                          variant: SuperButtonVariant.secondary,
+                          onPressed: _fixableFocusNode.requestFocus,
+                        ),
+                        SuperButton(
+                          label: 'Validate field',
+                          variant: SuperButtonVariant.secondary,
+                          onPressed: () =>
+                              _fixableFormFieldKey.currentState?.validate(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: spacing.section),
+
+              // 15 — Standard InputDecoration replaces legacy label / hint.
+              SuperSectionCard2(
+                collapsible: false,
+                title: 'Input Decoration',
+                subtitle:
+                    'Label, helper, and placeholder copy use Flutter’s standard API',
+                marker: theme.tokens.markerColor(SuperMarker.notes),
+                child: AutoSuggestionsBox<String>(
+                  items: _accounts,
+                  decoration: const InputDecoration(
+                    labelText: 'Contra Account',
+                    helperText: 'Select the balancing ledger account',
+                    hintText: 'Search by code or name',
+                    prefixIcon: Icon(Icons.account_balance_outlined),
                   ),
                 ),
               ),

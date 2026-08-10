@@ -8,7 +8,8 @@ description: >
   multi-select, free-text entry, a local-first progressive remoteFallback source,
   server-side paged infinite-scroll, recently-used suggestions, inline create, a
   trailing meta column, record binding + a read-only view mode, an advanced-search
-  overlay, a bare embedding mode, required + validator field validation, a
+  overlay, controller-driven fix/hide/focus/form wiring, a bare embedding mode,
+  required + validator field validation, a
   disabled state, and per-field theming with a focused-state style. Apply when a
   Flutter app needs a themed (light/dark, LTR/RTL) typeahead/autocomplete field,
   or an embeddable pick-or-type combobox. This package also carries the shared
@@ -36,7 +37,7 @@ data grid too, use `super_table_field` (which re-exports this package).
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^0.13.0
+  super_auto_suggestion_box: ^0.14.0
 ```
 
 ```dart
@@ -114,15 +115,20 @@ The field matches `super_form_field` (height, layout, states) and adds:
 - `focusedStyle` on `AutoSuggestionsBoxThemeData` — an
   `AutoSuggestionsBoxFocusedStyle(fillColor, border, fontStyle, cursorColor,
   shadow)`; each field is optional and falls back to the resting token.
-- `hint:` (helper line, hidden on error) and `density:`
+- `decoration: InputDecoration(labelText:, helperText:, hintText:, prefixIcon:)`
+  for field copy and its leading icon (`label`, `hint`, and `leading` are
+  deprecated), plus `density:`
   (`FieldDensity.comfortable` / `.compact`).
 
 ```dart
 AutoSuggestionsBox<String>(
   items: accounts,
-  label: 'Debit Account',
+  decoration: const InputDecoration(
+    labelText: 'Debit Account',
+    helperText: 'Pick an account from the chart',
+    prefixIcon: Icon(Icons.account_balance_outlined),
+  ),
   required: true,
-  hint: 'Pick an account from the chart',
   validator: (v) => v.isEmpty || accounts.any((a) => a.label == v)
       ? null
       : 'Pick an account from the list',
@@ -168,6 +174,11 @@ would be too large — it serves one `SuggestionsPage(items, hasMore)` per
 - **Read-only** — `readOnly: true` shows the value at full contrast but blocks
   typing / overlay / clear (the “posted / review” state). Distinct from `disabled`,
   which dims to 55 %.
+- **Fixable field** — construct the controller with `isFixed`, `focusNode`,
+  `formFieldKey`, or `isHiden`, and set `allowFixed: true` on the widget to show a
+  small lock/unlock action at the trailing edge of its label. Fixed fields keep
+  full contrast while blocking user edits and controller mutations. `allowFixed`
+  only exposes the action; `controller.isFixed` remains the source of truth.
 
 ### Shadow hint completion (0.12.0)
 
@@ -223,3 +234,10 @@ widget-free.
   `.paged` so rows stream in a page at a time as the user scrolls.
 - Confusing `readOnly` with `disabled` — `readOnly` is a full-contrast view state
   (blocks editing only); `disabled` dims to 55 % and suppresses validation.
+- Expecting `allowFixed` to own fixed state — it only renders the label action;
+  read and update `controller.isFixed.value`. After changing the plain boolean
+  `controller.isHiden`, rebuild the host so visibility is reevaluated.
+- Generating new code with deprecated `label:` or `hint:` — use
+  `decoration: const InputDecoration(labelText:, helperText:)`. Use
+  `InputDecoration.hintText` for placeholder copy.
+- Generating `leading:` — put the widget in `InputDecoration.prefixIcon` instead.

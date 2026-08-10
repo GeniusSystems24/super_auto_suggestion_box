@@ -36,8 +36,13 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     List<AutoSuggestion<T>>? initialRecents,
     this.recentsGroupLabel = 'Recent',
     this.onRecentsChanged,
+    bool isFixed = false,
+    this.focusNode,
+    this.isHiden = false,
+    this.formFieldKey,
   }) : _source = source,
        _ownsText = textController == null,
+       isFixed = ValueNotifier<bool>(isFixed),
        text =
            textController ??
            TextEditingController(
@@ -51,6 +56,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
       _recents.addAll(initialRecents.take(maxRecents));
     }
     text.addListener(_onTextChanged);
+    this.isFixed.addListener(_onFixedChanged);
     _lastText = text.text;
     // Seed the initial (empty-query) result set so opening shows everything.
     _run(_queryString(), immediate: true);
@@ -61,6 +67,20 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   /// The field's text controller (shared with the `TextField` in the view).
   final TextEditingController text;
+
+  /// Guards user and controller-driven mutations when set to `true`.
+  final ValueNotifier<bool> isFixed;
+
+  /// Optional focus node associated with this field.
+  FocusNode? focusNode;
+
+  /// Optional key for the inner [FormField], exposing its [FormFieldState].
+  GlobalKey<FormFieldState<String>>? formFieldKey;
+
+  /// Optional flag the UI can use to hide/show the field.
+  ///
+  /// The misspelling is retained for compatibility with the existing API.
+  bool isHiden;
 
   /// Debounce window before an async query fires (sync sources ignore it).
   final Duration debounce;
@@ -197,6 +217,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Toggle [item] in the multi-select set; keeps the overlay open and the query
   /// untouched. Returns true if the item is now selected.
   bool toggleSelected(AutoSuggestion<T> item) {
+    if (isFixed.value) return isSelectedValue(item.value);
     final i = _selectedItems.indexWhere((s) => s.value == item.value);
     final nowSelected = i < 0;
     if (nowSelected) {
@@ -211,6 +232,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   /// Remove a value from the multi-select set (e.g. a chip's ×).
   void removeSelectedValue(T value) {
+    if (isFixed.value) return;
     final before = _selectedItems.length;
     _selectedItems.removeWhere((s) => s.value == value);
     if (_selectedItems.length != before) notifyListeners();
@@ -218,6 +240,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   /// Replace the whole multi-select set.
   void setSelectedItems(List<AutoSuggestion<T>> items) {
+    if (isFixed.value) return;
     _selectedItems
       ..clear()
       ..addAll(items);
@@ -226,6 +249,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   /// Clear the multi-select set.
   void clearSelection() {
+    if (isFixed.value) return;
     if (_selectedItems.isEmpty) return;
     _selectedItems.clear();
     notifyListeners();
@@ -268,6 +292,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// when the source can't resolve. Returns the committed row, or null when the
   /// value is unknown (a purely-remote source with nothing cached).
   AutoSuggestion<T>? selectByValue(T value, {bool addToRecents = false}) {
+    if (isFixed.value) return null;
     AutoSuggestion<T>? found = _source.resolve(value);
     found ??= _firstByValue(_results, value) ?? _firstByValue(_recents, value);
     if (found == null) return null;
@@ -354,6 +379,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   /// Programmatically set the field text without triggering a query churn loop.
   void setText(String value, {bool moveCursorToEnd = true}) {
+    if (isFixed.value) return;
     _muteText = true;
     text.value = TextEditingValue(
       text: value,
@@ -569,6 +595,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Commit [item]: writes its label into the field, records it as [selected],
   /// and closes the overlay. Returns the committed suggestion.
   AutoSuggestion<T> select(AutoSuggestion<T> item) {
+    if (isFixed.value) return item;
     _selected = item;
     _committed = item;
     _committedText = item.label;
@@ -591,6 +618,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Accept the current free text as the committed baseline (call after a
   /// free-text Enter submit) so a later blur won't revert it.
   void acceptFreeText() {
+    if (isFixed.value) return;
     _selected = null;
     _committed = null;
     _committedText = text.text;
@@ -599,6 +627,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Revert the field to the last committed value — used on blur when the user
   /// typed but didn't pick. No-op when nothing was ever committed ("unless null").
   void restoreCommitted() {
+    if (isFixed.value) return;
     if (_committedText == null) {
       return; // never committed → leave the field as-is
     }
@@ -611,6 +640,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   /// Clear the field, selection and results.
   void clear() {
+    if (isFixed.value) return;
     setText('');
     _selected = null;
     _committed = null;
@@ -626,7 +656,14 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   void dispose() {
     _debounceTimer?.cancel();
     text.removeListener(_onTextChanged);
+    isFixed.removeListener(_onFixedChanged);
+    isFixed.dispose();
     if (_ownsText) text.dispose();
     super.dispose();
+  }
+
+  void _onFixedChanged() {
+    if (isFixed.value) close();
+    notifyListeners();
   }
 }

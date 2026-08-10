@@ -162,11 +162,24 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// foreground color while preserving the field's font metrics.
   final TextStyle? shadowHintStyle;
 
+  /// Additional Material input configuration.
+  ///
+  /// Use [InputDecoration.labelText] for the label above the field and
+  /// [InputDecoration.helperText] for supporting text below it, and
+  /// [InputDecoration.prefixIcon] for the leading widget. Component borders,
+  /// fill, sizing, and suffix widgets remain theme-controlled.
+  final InputDecoration? decoration;
+
   /// Field label rendered above the box (optional).
+  @Deprecated('Use decoration: InputDecoration(labelText: ...) instead.')
   final String? label;
 
-  /// Leading widget inside the field (defaults to a search icon). Pass
-  /// `SizedBox.shrink()` to remove it.
+  /// Shows a compact lock/unlock action at the trailing edge of the label row.
+  /// The action toggles [AutoSuggestionsBoxController.isFixed].
+  final bool allowFixed;
+
+  /// Leading widget inside the field (defaults to a search icon).
+  @Deprecated('Use decoration: InputDecoration(prefixIcon: ...) instead.')
   final Widget? leading;
 
   /// Show the clear (×) button when there's text.
@@ -220,6 +233,7 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   final bool forceError;
 
   /// Helper text shown beneath the control. Hidden whenever an error shows.
+  @Deprecated('Use decoration: InputDecoration(helperText: ...) instead.')
   final String? hint;
 
   /// Vertical density — comfortable (42px) or compact (36px), matching
@@ -433,7 +447,9 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.showShadowHint = true,
     this.completeShadowHintOnTab = true,
     this.shadowHintStyle,
+    this.decoration,
     this.label,
+    this.allowFixed = false,
     this.leading,
     this.clearButton = true,
     this.highlightMatch = AutoSuggestionMatch.contains,
@@ -547,8 +563,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     _c.addListener(_onModel);
     _attachFieldTextController();
 
-    _focus = widget.focusNode ?? FocusNode();
-    _ownsFocus = widget.focusNode == null;
+    _focus = widget.focusNode ?? _c.focusNode ?? FocusNode();
+    _ownsFocus = widget.focusNode == null && _c.focusNode == null;
     _focus.addListener(_onFocus);
 
     _c.text.addListener(_onTextForValidity);
@@ -615,6 +631,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         !widget.enabled ||
         widget.disabled ||
         widget.readOnly ||
+        _c.isFixed.value ||
         !_focus.hasFocus) {
       return '';
     }
@@ -703,7 +720,10 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       _blurTimer?.cancel();
       if (_suppressReopen) {
         _suppressReopen = false; // consume: don't reopen right after a pick
-      } else if (widget.openOnFocus && !widget.disabled && !widget.readOnly) {
+      } else if (widget.openOnFocus &&
+          !widget.disabled &&
+          !widget.readOnly &&
+          !_c.isFixed.value) {
         _c.open();
       }
       if (widget.scrollOnFocus) _scrollIntoView();
@@ -845,7 +865,9 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
-    if (widget.disabled || widget.readOnly) return KeyEventResult.ignored;
+    if (widget.disabled || widget.readOnly || _c.isFixed.value) {
+      return KeyEventResult.ignored;
+    }
     // Ctrl/⌘+F → open the advanced search surface.
     if (e.logicalKey == LogicalKeyboardKey.keyF &&
         (HardwareKeyboard.instance.isControlPressed ||
@@ -903,7 +925,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   /// through [AutoSuggestionsBox.onFieldSubmitted]. This path is shared by
   /// physical Enter keys and software-keyboard actions.
   void _handleFieldSubmitted(String _) {
-    if (widget.disabled || widget.readOnly || !widget.enabled) return;
+    if (widget.disabled ||
+        widget.readOnly ||
+        _c.isFixed.value ||
+        !widget.enabled) {
+      return;
+    }
 
     final highlighted = _c.highlighted;
     if (highlighted != null && highlighted.enabled) {
@@ -934,7 +961,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
           _AdvancedSearchDialog<T>(
             controller: _c,
             theme: t,
-            title: widget.label ?? widget.hintText ?? 'Advanced Search',
+            title:
+                widget.decoration?.labelText ??
+                // ignore: deprecated_member_use_from_same_package
+                widget.label ??
+                widget.hintText ??
+                'Advanced Search',
             multiSelect: widget.multiSelect,
             highlightMatch: widget.highlightMatch,
             onPick: (s) {
@@ -1021,20 +1053,38 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
 
   @override
   Widget build(BuildContext context) {
+    if (_c.isHiden) return const SizedBox.shrink();
     final t = _resolveTheme(context);
     final error = _visibleError;
     final field = _buildField(t, error);
+    final label = widget.decoration?.labelText ??
+        // ignore: deprecated_member_use_from_same_package
+        widget.label;
+    final helper = widget.decoration?.helperText ??
+        // ignore: deprecated_member_use_from_same_package
+        widget.hint;
     return SizedBox(
       width: widget.width,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.label != null) ...[
-            _FieldLabel(
-              text: widget.label!,
-              required: widget.required,
-              color: t.fg2,
+          if (label != null || widget.allowFixed) ...[
+            Row(
+              children: [
+                if (label != null)
+                  Expanded(
+                    child: _FieldLabel(
+                      text: label,
+                      required: widget.required,
+                      color: t.fg2,
+                    ),
+                  )
+                else
+                  const Spacer(),
+                if (widget.allowFixed)
+                  _FixedButton(controller: _c, color: t.fg3),
+              ],
             ),
             const SizedBox(height: 8),
           ],
@@ -1048,12 +1098,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
           ),
           // Hint sits beneath the control and is hidden whenever an error shows
           // (errors surface only through the suffix badge — never inline).
-          if (widget.hint != null && error == null) ...[
+          if (helper != null && error == null) ...[
             const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsetsDirectional.only(start: 2),
               child: Text(
-                widget.hint!,
+                helper,
                 style: TextStyle(
                   fontFamily: (SuperMaterialThemeData.of(context).textTheme).bodyMedium?.fontFamily,
                   fontSize: 12,
@@ -1072,7 +1122,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final focused = _focus.hasFocus;
     final bare = widget.bare;
     final disabled = widget.disabled;
-    final readOnly = widget.readOnly && !disabled;
+    final readOnly = (widget.readOnly || _c.isFixed.value) && !disabled;
     final interactive = widget.enabled && !disabled && !readOnly;
     final hasError = error != null;
     final fs = t.focusedStyle;
@@ -1123,8 +1173,10 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
         ? (fs.fillColor ?? t.fieldBgFocus)
         : t.fieldBg;
 
-    // ── Leading (prefixIcon) ──
+    // ── Prefix icon ──
     final Widget leadingWidget =
+        widget.decoration?.prefixIcon ??
+        // ignore: deprecated_member_use_from_same_package
         widget.leading ??
         (bare
             ? const SizedBox.shrink()
@@ -1149,8 +1201,10 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     ];
 
     final decoration = InputDecoration(
-      hintText: widget.hintText,
-      hintStyle: baseStyle.copyWith(color: t.fg3, fontWeight: FontWeight.w400),
+      hintText: widget.decoration?.hintText ?? widget.hintText,
+      hintStyle:
+          widget.decoration?.hintStyle ??
+          baseStyle.copyWith(color: t.fg3, fontWeight: FontWeight.w400),
       counterText: widget.maxLength == null ? null : '',
       // Leading icon
       prefixIcon: hasLeading
@@ -1160,7 +1214,8 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
             )
           : null,
       prefixIconConstraints: hasLeading
-          ? const BoxConstraints(minWidth: 0, minHeight: 0)
+          ? widget.decoration?.prefixIconConstraints ??
+                const BoxConstraints(minWidth: 0, minHeight: 0)
           : null,
       // Suffix row
       suffixIcon: Padding(
@@ -1190,6 +1245,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       child: Focus(
         onKeyEvent: _onKey,
         child: TextFormField(
+          key: _c.formFieldKey,
           controller: _fieldText,
           focusNode: _focus,
           enabled: widget.enabled && !disabled,
@@ -2041,6 +2097,32 @@ class _FieldLabel extends StatelessWidget {
             style: style.copyWith(color: Theme.of(context).colorScheme.error),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FixedButton<T> extends StatelessWidget {
+  const _FixedButton({required this.controller, required this.color});
+
+  final AutoSuggestionsBoxController<T> controller;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: controller.isFixed,
+      builder: (context, fixed, _) => Tooltip(
+        message: fixed ? 'Unfix' : 'Fix',
+        child: IconButton(
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints.tightFor(width: 26, height: 26),
+          padding: EdgeInsets.zero,
+          iconSize: 14,
+          color: fixed ? Theme.of(context).colorScheme.primary : color,
+          onPressed: () => controller.isFixed.value = !fixed,
+          icon: Icon(fixed ? Icons.lock_rounded : Icons.lock_open_rounded),
+        ),
       ),
     );
   }

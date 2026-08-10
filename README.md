@@ -131,7 +131,7 @@ Form(
   key: formKey,
   child: AutoSuggestionsBox<String>(
     items: documentReferences,
-    label: 'Document Reference',
+    decoration: const InputDecoration(labelText: 'Document Reference'),
     keyboardType: TextInputType.text,
     inputFormatters: [
       FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
@@ -193,10 +193,12 @@ current error on every change.
 ```dart
 AutoSuggestionsBox<String>(
   items: accounts,
-  label: 'Debit Account',
+  decoration: const InputDecoration(
+    labelText: 'Debit Account',
+    helperText: 'Pick an account from the chart',
+  ),
   required: true,                       // red * on the label + "required" rule
   requiredMessage: 'Choose an account', // optional custom copy
-  hint: 'Pick an account from the chart',
   validator: (value) {
     if (value.trim().isEmpty) return null;        // `required` handles empty
     final ok = accounts.any((a) => a.label == value);
@@ -211,7 +213,7 @@ AutoSuggestionsBox<String>(
 ```dart
 AutoSuggestionsBox<String>(
   controller: lockedController, // pre-filled
-  label: 'Reconciliation Account',
+  decoration: const InputDecoration(labelText: 'Reconciliation Account'),
   disabled: true, // dimmed, no typing, no overlay, no errors
 );
 ```
@@ -225,7 +227,7 @@ leave null falls back to the resting token.
 ```dart
 AutoSuggestionsBox<String>(
   items: accounts,
-  label: 'Ledger Account',
+  decoration: const InputDecoration(labelText: 'Ledger Account'),
   theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
     focusedStyle: const AutoSuggestionsBoxFocusedStyle(
       fillColor: Color(0x141DB88A),
@@ -269,7 +271,10 @@ final box = AutoSuggestionsBoxController<String>(
   initialRecents: savedRecents,               // restore from disk
   onRecentsChanged: (r) => persist(r),        // persist on change
 );
-AutoSuggestionsBox<String>(controller: box, label: 'Account');
+AutoSuggestionsBox<String>(
+  controller: box,
+  decoration: const InputDecoration(labelText: 'Account'),
+);
 ```
 
 **Inline create** — offer a *＋ Create “…”* action for missing master data
@@ -297,6 +302,57 @@ AutoSuggestion(value: '1020', label: 'Bank — Operating',
 ```dart
 box.selectByValue('4000');                    // bind a record's stored code
 AutoSuggestionsBox<String>(controller: box, readOnly: posted); // view mode
+```
+
+**Fixable controller field** — opt into a small lock/unlock action at the trailing
+edge of the label row. While fixed, editing, clearing, selection, and other
+controller mutations are blocked without dimming the field:
+
+```dart
+final focusNode = FocusNode();
+final fieldKey = GlobalKey<FormFieldState<String>>();
+final box = AutoSuggestionsBoxController<String>(
+  source: SuggestionSources.list<String>(accounts),
+  isFixed: false,
+  focusNode: focusNode,
+  formFieldKey: fieldKey,
+);
+
+AutoSuggestionsBox<String>(
+  controller: box,
+  decoration: const InputDecoration(labelText: 'Settlement Account'),
+  allowFixed: true,
+);
+
+focusNode.requestFocus();
+fieldKey.currentState?.validate();
+box.isFixed.value = true; // the field is now protected
+box.isHiden = true;       // rebuild the host to hide the field
+```
+
+`allowFixed` only controls whether the label action is displayed; the source of
+truth remains `controller.isFixed`. The spelling `isHiden` is intentionally
+preserved for API compatibility.
+
+### Input decoration
+
+Use `decoration` for the field label, supporting text, placeholder styling, and
+prefix icon. The legacy `label`, `hint`, and `leading` parameters are deprecated
+in 0.14.0; migrate them to `InputDecoration.labelText`,
+`InputDecoration.helperText`, and `InputDecoration.prefixIcon` respectively.
+`hintText` remains available for source compatibility, while
+`InputDecoration.hintText` takes precedence when both are supplied.
+
+```dart
+AutoSuggestionsBox<String>(
+  items: accounts,
+  decoration: const InputDecoration(
+    labelText: 'Debit Account',
+    helperText: 'Pick an account from the chart',
+    hintText: 'Search by code or name',
+    prefixIcon: Icon(Icons.account_balance_outlined),
+  ),
+);
 ```
 
 ### Behaviour to know
