@@ -46,6 +46,7 @@ void main() {
       ),
     );
 
+    // ignore: invalid_use_of_protected_member
     expect(focusNode.hasListeners, isTrue);
     expect(formFieldKey.currentState, isNotNull);
     expect(find.text('ACCOUNT'), findsOneWidget);

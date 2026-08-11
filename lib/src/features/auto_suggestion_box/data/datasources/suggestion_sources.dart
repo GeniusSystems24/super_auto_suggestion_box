@@ -65,8 +65,9 @@ abstract final class SuggestionSources {
 
   /// Async source — any `Future`-returning search (debounced by the controller).
   static AutoSuggestionsSource<T> async<T>(
-    Future<List<AutoSuggestion<T>>> Function(String query) fetch,
-  ) => AsyncSuggestionsSource<T>(fetch);
+    Future<List<AutoSuggestion<T>>> Function(String query) fetch, {
+    List<AutoSuggestion<T>> initialItems = const [],
+  }) => AsyncSuggestionsSource<T>(fetch, initialItems: initialItems);
 
   /// Hybrid source: filter the in-memory [initialItems] first and, when the
   /// local matches are insufficient, fall back to an async [fetch] (remote
@@ -187,14 +188,43 @@ class ListSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   }
 }
 
+void _appendUniqueByValue<T>(
+  List<AutoSuggestion<T>> target,
+  Iterable<AutoSuggestion<T>> items,
+) {
+  final seen = <T>{for (final s in target) s.value};
+  for (final item in items) {
+    if (seen.add(item.value)) target.add(item);
+  }
+}
+
 /// Async source — any `Future`-returning search.
 class AsyncSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   final Future<List<AutoSuggestion<T>>> Function(String query) fetch;
-  const AsyncSuggestionsSource(this.fetch);
+  final List<AutoSuggestion<T>> cachedItems;
+
+  AsyncSuggestionsSource(
+    this.fetch, {
+    List<AutoSuggestion<T>> initialItems = const [],
+  }) : cachedItems = List<AutoSuggestion<T>>.of(initialItems);
+
   @override
   bool get isAsync => true;
+
   @override
-  Future<List<AutoSuggestion<T>>> query(String query) => fetch(query);
+  Future<List<AutoSuggestion<T>>> query(String query) =>
+      fetch(query).then((items) {
+        _appendUniqueByValue(cachedItems, items);
+        return items;
+      });
+
+  @override
+  AutoSuggestion<T>? resolve(T value) {
+    for (final s in cachedItems) {
+      if (s.value == value) return s;
+    }
+    return null;
+  }
 }
 
 /// Local-first source that loads more from [fetch] only when the in-memory set
@@ -206,24 +236,25 @@ class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   final int remoteThreshold;
   final int remoteMinChars;
   final bool caseSensitive;
+  final List<AutoSuggestion<T>> cachedItems;
 
-  const HybridSuggestionsSource({
+  HybridSuggestionsSource({
     required this.initialItems,
     required this.fetch,
     this.match = AutoSuggestionMatch.contains,
     this.remoteThreshold = 1,
     this.remoteMinChars = 1,
     this.caseSensitive = false,
-  });
+  }) : cachedItems = List<AutoSuggestion<T>>.of(initialItems);
 
   @override
   bool get isAsync => true;
 
   List<AutoSuggestion<T>> _local(String query) {
     final q = caseSensitive ? query.trim() : query.trim().toLowerCase();
-    if (q.isEmpty) return List<AutoSuggestion<T>>.of(initialItems);
+    if (q.isEmpty) return List<AutoSuggestion<T>>.of(cachedItems);
     final out = <AutoSuggestion<T>>[];
-    for (final s in initialItems) {
+    for (final s in cachedItems) {
       final hay = caseSensitive
           ? ([s.label, ...s.keywords].join(' '))
           : s.haystack;
@@ -243,6 +274,7 @@ class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
     // Otherwise load more and merge (local first, de-duped by value).
     return fetch(query)
         .then((remote) {
+          _appendUniqueByValue(cachedItems, remote);
           final seen = <T>{for (final s in local) s.value};
           final merged = <AutoSuggestion<T>>[...local];
           for (final r in remote) {
@@ -255,7 +287,7 @@ class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
 
   @override
   AutoSuggestion<T>? resolve(T value) {
-    for (final s in initialItems) {
+    for (final s in cachedItems) {
       if (s.value == value) return s;
     }
     return null;
@@ -272,24 +304,25 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   final int remoteThreshold;
   final int remoteMinChars;
   final bool caseSensitive;
+  final List<AutoSuggestion<T>> cachedItems;
 
-  const RemoteFallbackSuggestionsSource({
+  RemoteFallbackSuggestionsSource({
     required this.initialItems,
     required this.fetch,
     this.match = AutoSuggestionMatch.contains,
     this.remoteThreshold = 5,
     this.remoteMinChars = 1,
     this.caseSensitive = false,
-  });
+  }) : cachedItems = List<AutoSuggestion<T>>.of(initialItems);
 
   @override
   bool get isAsync => true;
 
   List<AutoSuggestion<T>> _local(String query) {
     final q = caseSensitive ? query.trim() : query.trim().toLowerCase();
-    if (q.isEmpty) return List<AutoSuggestion<T>>.of(initialItems);
+    if (q.isEmpty) return List<AutoSuggestion<T>>.of(cachedItems);
     final out = <AutoSuggestion<T>>[];
-    for (final s in initialItems) {
+    for (final s in cachedItems) {
       final hay = caseSensitive
           ? ([s.label, ...s.keywords].join(' '))
           : s.haystack;
@@ -303,9 +336,7 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
   FutureOr<List<AutoSuggestion<T>>> query(String query) {
     final r = progressive(query);
     if (r.loadMore == null) return r.items;
-    return r.loadMore!()
-        .then((remote) => _merge(r.items, remote))
-        .catchError((Object _) => r.items);
+    return r.loadMore!().catchError((Object _) => r.items);
   }
 
   @override
@@ -317,9 +348,17 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
     if (!wantRemote) return SuggestionsQueryResult<T>.complete(local);
     return SuggestionsQueryResult<T>(
       items: local,
-      loadMore: () => fetch(query).then((remote) => _merge(local, remote)),
+      loadMore: () => _fetchAndMerge(local, query),
     );
   }
+
+  Future<List<AutoSuggestion<T>>> _fetchAndMerge(
+    List<AutoSuggestion<T>> local,
+    String query,
+  ) => fetch(query).then((remote) {
+    _appendUniqueByValue(cachedItems, remote);
+    return _merge(local, remote);
+  });
 
   List<AutoSuggestion<T>> _merge(
     List<AutoSuggestion<T>> local,
@@ -335,7 +374,7 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
 
   @override
   AutoSuggestion<T>? resolve(T value) {
-    for (final s in initialItems) {
+    for (final s in cachedItems) {
       if (s.value == value) return s;
     }
     return null;

@@ -9,7 +9,7 @@ description: >
   Supports light/dark themes, LTR, and RTL.
 
 # package version
-version: 0.14.0
+version: 0.14.1
 
 # package homepage, repository, and issue tracker URLs
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box

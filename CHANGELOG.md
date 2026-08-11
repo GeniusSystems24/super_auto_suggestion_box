@@ -4,6 +4,19 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 0.14.1 — 2026-08-12
+
+### Added
+
+- Added `cachedItems` to async, hybrid, and remote-fallback suggestion sources
+  so fetched suggestions are retained for the source instance lifetime.
+
+### Changed
+
+- Hybrid and remote-fallback sources now reuse accumulated fetched suggestions
+  during local matching and value resolution, avoiding duplicate cached values
+  and unnecessary repeat fetches for already collected rows.
+
 ## 0.14.0 — 2026-08-10
 
 ### Added
