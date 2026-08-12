@@ -57,4 +57,4 @@ coverage/
 
 # Local environment
 .env
-example.dart
+# example.dart

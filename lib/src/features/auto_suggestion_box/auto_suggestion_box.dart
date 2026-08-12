@@ -11,14 +11,16 @@ export 'domain/entities/auto_suggestion.dart';
 export 'domain/entities/match_strategy.dart';
 export 'domain/entities/suggestions_query_result.dart';
 export 'domain/entities/suggestions_page.dart';
-export 'domain/repositories/suggestions_source.dart';
+export 'domain/repositories/suggestions_source.dart'
+    hide bindAutoSuggestionsSourceView;
 export 'domain/usecases/query_suggestions.dart';
 
 // Data
 export 'data/datasources/suggestion_sources.dart';
 
 // Presentation
-export 'presentation/controllers/auto_suggestions_box_controller.dart';
+export 'presentation/controllers/auto_suggestions_box_controller.dart'
+    hide bindAutoSuggestionsBoxControllerView;
 export 'presentation/widgets/auto_suggestions_box_theme.dart';
 export 'presentation/widgets/auto_suggestions_highlight.dart';
 export 'presentation/widgets/auto_suggestions_box.dart';

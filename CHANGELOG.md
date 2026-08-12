@@ -4,6 +4,46 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.0.0 - 2026-08-12
+
+### Changed
+
+- **Breaking:** Migrated the public API to raw `T` values. Callers now pass raw
+  items, initial selections, recents, created values, and fetch results instead
+  of wrapping them in `AutoSuggestion<T>`.
+- `AutoSuggestionsBox.suggestionBuilder` is now the single public conversion
+  point from raw `T` items to `AutoSuggestion<T>` metadata:
+  `AutoSuggestion<T> Function(List<T> items, int index, T element)`.
+- Removed `suggestionBuilder` from `SuggestionSources` and
+  `AutoSuggestionsBoxController`. Sources and controllers now remain raw-data
+  APIs; `AutoSuggestionsBox` owns the metadata builder and wires it internally.
+- Updated all built-in source factories (`list`, `fuzzy`, `async`, `hybrid`,
+  `remoteFallback`, and `paged`) to accept raw item collections and raw fetch
+  results.
+- Preserved local matching, fuzzy ranking, hybrid/remote fallback behavior,
+  paging, value resolution, recents, and cached de-duplication by using the
+  widget-provided builder internally when suggestion metadata is required.
+- Updated controller state and callbacks to expose raw values, including
+  `initialValue`, `initialSelected`, `initialRecents`, `results`, `selected`,
+  `selectedItems`, `selectedValues`, `recents`, `select`, `toggleSelected`,
+  `setSelectedItems`, `setRecents`, `selectByValue`, and
+  `commitHighlighted`.
+- Kept render-facing metadata available through controller accessors such as
+  `suggestions`, `suggestionAt(index)`, `highlightedSuggestion`,
+  `selectedSuggestion`, and `committedSuggestion`.
+- Updated widget callbacks to use raw values, including `onSelected`,
+  `onSelectionChanged`, `onCreate`, and the raw-friendly `itemBuilder`
+  signature that receives both the raw item and built suggestion metadata.
+
+### Documentation
+
+- Updated `README.md`, `SKILL.md`, `example/README.md`, runnable examples, and
+  test coverage for the raw `T` API and widget-owned `suggestionBuilder`.
+- Added `migration_0.14.0_to_1.0.0` with before-and-after examples for data
+  sources, `initialItems`, fetch callbacks, controllers, `AutoSuggestionsBox`,
+  `suggestionBuilder`, selection, creation, recents, and removed
+  `AutoSuggestion<T>`-based APIs.
+
 ## 0.14.1 — 2026-08-12
 
 ### Added

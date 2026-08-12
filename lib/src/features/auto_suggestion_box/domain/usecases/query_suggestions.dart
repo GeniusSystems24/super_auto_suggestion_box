@@ -9,7 +9,6 @@
 
 import 'dart:async';
 
-import '../entities/auto_suggestion.dart';
 import '../repositories/suggestions_source.dart';
 
 /// Resolves the suggestions for a query against a [source].
@@ -22,5 +21,5 @@ class QuerySuggestions<T> {
   bool get isAsync => source.isAsync;
 
   /// Run the query. The result may be a synchronous list or a [Future].
-  FutureOr<List<AutoSuggestion<T>>> call(String query) => source.query(query);
+  FutureOr<List<T>> call(String query) => source.query(query);
 }

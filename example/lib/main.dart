@@ -56,10 +56,8 @@ class _ExampleAppState extends State<ExampleApp> {
         textTheme: typography,
         primaryTextTheme: typography,
       ),
-      builder: (context, child) => Directionality(
-        textDirection: _direction,
-        child: child!,
-      ),
+      builder: (context, child) =>
+          Directionality(textDirection: _direction, child: child!),
       home: _Launcher(
         mode: _mode,
         direction: _direction,
@@ -177,9 +175,9 @@ class _DemoCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return SuperSectionCard(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: demo.builder),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: demo.builder)),
       padding: spacing.cardPadding,
       child: Row(
         children: [
@@ -193,11 +191,7 @@ class _DemoCard extends StatelessWidget {
               ),
               borderRadius: spacing.borderRadiusControl,
             ),
-            child: Icon(
-              demo.icon,
-              size: 22,
-              color: colorScheme.primary,
-            ),
+            child: Icon(demo.icon, size: 22, color: colorScheme.primary),
           ),
           SizedBox(width: spacing.space4),
           Expanded(

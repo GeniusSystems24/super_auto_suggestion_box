@@ -1,15 +1,9 @@
 // ============================================================
 // features/auto_suggestion_box/presentation/controllers/auto_suggestions_box_controller.dart
 // ------------------------------------------------------------
-// The MVC controller — the single source of truth for one box: the typed text,
-// the current result list, which row is highlighted, whether the overlay is
-// open, and the async loading / error state. The view is a thin render of this
-// and forwards every keystroke / arrow / Enter here.
-//
-// Querying is debounced and race-safe: each query bumps a sequence number; a
-// late async response whose sequence is stale is dropped, so fast typing never
-// flickers an old result set. A static (sync) source resolves inline with no
-// spinner. Depends only on the domain `AutoSuggestionsSource` contract.
+// The MVC controller: the single source of truth for one box. Its public API is
+// raw `T` values. The widget attaches the view metadata builder needed for
+// rendering, filtering, selection labels, and value resolution.
 // ============================================================
 
 import 'dart:async';
@@ -24,16 +18,16 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     required AutoSuggestionsSource<T> source,
     TextEditingController? textController,
     String? initialText,
-    AutoSuggestion<T>? initialValue,
+    T? initialValue,
     this.debounce = const Duration(milliseconds: 180),
     this.minChars = 0,
     this.maxResults = 50,
     this.allowFreeText = true,
     this.multiSelect = false,
-    List<AutoSuggestion<T>>? initialSelected,
+    List<T>? initialSelected,
     this.showRecents = false,
     this.maxRecents = 5,
-    List<AutoSuggestion<T>>? initialRecents,
+    List<T>? initialRecents,
     this.recentsGroupLabel = 'Recent',
     this.onRecentsChanged,
     bool isFixed = false,
@@ -41,16 +35,29 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     this.isHiden = false,
     this.formFieldKey,
   }) : _source = source,
+       _suggestionBuilder = _defaultSuggestionBuilder<T>,
        _ownsText = textController == null,
        isFixed = ValueNotifier<bool>(isFixed),
        text =
            textController ??
            TextEditingController(
-             text: initialValue?.label ?? initialText ?? '',
+             text: _initialDisplayText(
+               source,
+               _defaultSuggestionBuilder<T>,
+               initialValue,
+               initialText,
+             ),
            ) {
-    _selected = initialValue;
-    _committed = initialValue;
-    _committedText = initialValue?.label ?? initialText;
+    final initialItem = _resolveInitialItem(
+      source,
+      _defaultSuggestionBuilder<T>,
+      initialValue,
+    );
+    _selected = initialItem;
+    _committed = initialItem;
+    _committedText = initialItem == null
+        ? initialText
+        : source.suggestionFor(initialItem).label;
     if (initialSelected != null) _selectedItems.addAll(initialSelected);
     if (initialRecents != null) {
       _recents.addAll(initialRecents.take(maxRecents));
@@ -62,8 +69,51 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _run(_queryString(), immediate: true);
   }
 
+  static AutoSuggestion<T> _defaultSuggestionBuilder<T>(
+    List<T> items,
+    int index,
+    T element,
+  ) => AutoSuggestion<T>(value: element, label: element.toString());
+
+  static T? _resolveInitialItem<T>(
+    AutoSuggestionsSource<T> source,
+    AutoSuggestionBuilder<T> suggestionBuilder,
+    T? initialValue,
+  ) {
+    if (initialValue == null) return null;
+    bindAutoSuggestionsSourceView(source, suggestionBuilder);
+    return source.resolve(initialValue) ?? initialValue;
+  }
+
+  static String _initialDisplayText<T>(
+    AutoSuggestionsSource<T> source,
+    AutoSuggestionBuilder<T> suggestionBuilder,
+    T? initialValue,
+    String? initialText,
+  ) {
+    final item = _resolveInitialItem(source, suggestionBuilder, initialValue);
+    return item == null ? initialText ?? '' : source.suggestionFor(item).label;
+  }
+
   AutoSuggestionsSource<T> _source;
   final bool _ownsText;
+
+  AutoSuggestionBuilder<T> _suggestionBuilder;
+
+  void _bindViewAdapter(AutoSuggestionBuilder<T> builder) {
+    if (identical(_suggestionBuilder, builder)) return;
+    _suggestionBuilder = builder;
+    bindAutoSuggestionsSourceView(_source, builder);
+    final committed = _committed;
+    if (committed != null) {
+      final resolved = _source.resolve(committed) ?? committed;
+      _selected = resolved;
+      _committed = resolved;
+      _committedText = _source.suggestionFor(resolved).label;
+      _setTextInternal(_committedText!);
+    }
+    _run(_queryString(), immediate: true);
+  }
 
   /// The field's text controller (shared with the `TextField` in the view).
   final TextEditingController text;
@@ -85,7 +135,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Debounce window before an async query fires (sync sources ignore it).
   final Duration debounce;
 
-  /// Don't query until at least this many characters are typed (0 = always).
+  /// Do not query until at least this many characters are typed (0 = always).
   final int minChars;
 
   /// Hard cap on how many rows the overlay shows.
@@ -94,14 +144,10 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Whether committing arbitrary typed text (not a suggestion) is allowed.
   bool allowFreeText;
 
-  /// When true the box keeps a *set* of chosen items: tapping / Enter toggles a
-  /// row's membership and the overlay stays open (instead of committing one
-  /// value and closing). Read the chosen rows from [selectedItems].
+  /// When true the box keeps a set of chosen raw items.
   final bool multiSelect;
 
-  /// Surface a **Recent** section of the most-recently-committed rows at the top
-  /// of the overlay while the query is empty — the single biggest data-entry
-  /// accelerator in an ERP (the same accounts / vendors / items get re-picked).
+  /// Surface a Recent section while the query is empty.
   final bool showRecents;
 
   /// How many recents to retain (most-recent-first). 0 disables tracking.
@@ -110,62 +156,77 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// The group header shown above the recents section.
   final String recentsGroupLabel;
 
-  /// Fired whenever the recents list changes — persist it (e.g. to disk) and pass
-  /// it back as `initialRecents` next time.
-  final ValueChanged<List<AutoSuggestion<T>>>? onRecentsChanged;
+  /// Fired whenever the raw recents list changes.
+  final ValueChanged<List<T>>? onRecentsChanged;
 
-  // ── state ──────────────────────────────────────────────────
-  List<AutoSuggestion<T>> _results = const [];
+  // -- state ---------------------------------------------------------------
+  List<T> _results = const [];
+  List<AutoSuggestion<T>> _suggestions = const [];
   int _highlighted = -1;
   bool _open = false;
   bool _loading = false;
   bool _loadingMore = false;
   Object? _error;
-  AutoSuggestion<T>? _selected;
-  AutoSuggestion<T>?
-  _committed; // last committed selection (for restore-on-blur)
-  String? _committedText; // last committed field text (null = never committed)
-  String _activeQuery = ''; // the effective (prefix-to-caret) query in force
+  T? _selected;
+  T? _committed;
+  String? _committedText;
+  String _activeQuery = '';
 
-  int _seq = 0; // race guard for async
+  int _seq = 0;
   Timer? _debounceTimer;
   String _lastText = '';
-  bool _muteText = false; // suppress _onTextChanged during programmatic writes
-  final List<AutoSuggestion<T>> _selectedItems =
-      []; // multi-select set (ordered)
-  final List<AutoSuggestion<T>> _recents = []; // most-recent-first, capped
+  bool _muteText = false;
+  bool _disposed = false;
+  final List<T> _selectedItems = [];
+  final List<T> _recents = [];
 
-  // ── pagination (paged sources) ─────────────────────────────
+  // -- pagination ---------------------------------------------------------
   String _pagedQuery = '';
   int _page = 0;
   bool _hasMore = false;
   bool _isLoadingPage = false;
-  List<AutoSuggestion<T>> _pagedItems = const [];
+  List<T> _pagedItems = const [];
 
-  // ── reads ──────────────────────────────────────────────────
+  // -- reads --------------------------------------------------------------
   String get query => text.text;
 
-  /// The **effective** query used for matching/highlighting: the field text from
-  /// the first character up to the caret (requirement: search is anchored to the
-  /// start and ends at the cursor, ignoring anything typed after the caret).
+  /// The effective query used for matching/highlighting: the field text from
+  /// the first character up to the caret.
   String get effectiveQuery => _activeQuery;
-  List<AutoSuggestion<T>> get results => _results;
+
+  /// Raw result items currently shown by the overlay.
+  List<T> get results => List.unmodifiable(_results);
+
+  /// Built suggestion rows for the current [results].
+  List<AutoSuggestion<T>> get suggestions => List.unmodifiable(_suggestions);
+
   bool get hasResults => _results.isNotEmpty;
   int get highlightedIndex => _highlighted;
-  AutoSuggestion<T>? get highlighted =>
-      (_highlighted >= 0 && _highlighted < _results.length)
+
+  /// The highlighted raw item, if any.
+  T? get highlighted => (_highlighted >= 0 && _highlighted < _results.length)
       ? _results[_highlighted]
       : null;
+
+  /// The highlighted render/search metadata, if any.
+  AutoSuggestion<T>? get highlightedSuggestion =>
+      (_highlighted >= 0 && _highlighted < _suggestions.length)
+      ? _suggestions[_highlighted]
+      : null;
+
   bool get isOpen => _open;
   bool get isLoading => _loading;
 
-  /// True while a progressive source's remote `loadMore` is in flight (local
-  /// rows are already shown). Drives the "loading more" indicator above the list.
+  /// True while a progressive source's remote `loadMore` is in flight.
   bool get isLoadingMore => _loadingMore;
   Object? get error => _error;
 
-  /// The recently-committed rows (most-recent-first), when [showRecents] is on.
-  List<AutoSuggestion<T>> get recents => List.unmodifiable(_recents);
+  /// Recently committed raw items (most-recent-first), when [showRecents] is on.
+  List<T> get recents => List.unmodifiable(_recents);
+
+  /// Built suggestion rows for [recents].
+  List<AutoSuggestion<T>> get recentSuggestions =>
+      List.unmodifiable(_buildSuggestions(_recents));
 
   /// Whether the backing source paginates (infinite scroll).
   bool get isPaged => _source.isPaged;
@@ -173,10 +234,46 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Whether at least one more page can be loaded for the current query.
   bool get hasMore => _hasMore;
 
-  /// True while the next page is being fetched (drives the bottom spinner row).
+  /// True while the next page is being fetched.
   bool get isLoadingPage => _isLoadingPage;
 
-  /// The field text from the start to the current caret position.
+  /// The last committed raw selection (null after free-text commit or clear).
+  T? get selected => _selected;
+
+  /// The built suggestion row for [selected], if any.
+  AutoSuggestion<T>? get selectedSuggestion =>
+      _selected == null ? null : suggestionFor(_selected as T);
+
+  /// The last committed raw selection restored on blur.
+  T? get committed => _committed;
+
+  /// The built suggestion row for [committed], if any.
+  AutoSuggestion<T>? get committedSuggestion =>
+      _committed == null ? null : suggestionFor(_committed as T);
+
+  /// The committed payload value. With the raw API this is the selected value.
+  T? get value => selectedSuggestion?.value;
+
+  /// The chosen raw rows (multi-select), in pick order.
+  List<T> get selectedItems => List.unmodifiable(_selectedItems);
+
+  /// Compatibility alias for [selectedItems].
+  List<T> get selectedValues => selectedItems;
+
+  bool isHighlighted(int i) => i == _highlighted;
+
+  /// Build the suggestion metadata for the current result at [index].
+  AutoSuggestion<T> suggestionAt(int index) => _suggestions[index];
+
+  /// Build suggestion metadata for a raw [item].
+  AutoSuggestion<T> suggestionFor(T item) {
+    final resultIndex = _indexOfRaw(_results, item);
+    if (resultIndex >= 0 && resultIndex < _suggestions.length) {
+      return _suggestions[resultIndex];
+    }
+    return _source.suggestionFor(item);
+  }
+
   String _queryString() {
     final full = text.text;
     final sel = text.selection;
@@ -186,39 +283,35 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     return full.substring(0, caret);
   }
 
-  /// The last committed suggestion (null after a free-text commit or clear).
-  AutoSuggestion<T>? get selected => _selected;
-
-  /// The last *committed* selection — the value restored on blur if the user
-  /// typed without picking. Null when nothing has ever been committed.
-  AutoSuggestion<T>? get committed => _committed;
-
-  /// The committed typed value when free-text is allowed and no row matched.
-  T? get value => _selected?.value;
-
-  bool isHighlighted(int i) => i == _highlighted;
-
-  // ── multi-select ───────────────────────────────────────────
-  /// The chosen rows (multi-select), in pick order.
-  List<AutoSuggestion<T>> get selectedItems =>
-      List.unmodifiable(_selectedItems);
-
-  /// The chosen values (multi-select), in pick order.
-  List<T> get selectedValues => [for (final s in _selectedItems) s.value];
-
-  /// Whether [value] is in the multi-select set.
-  bool isSelectedValue(T value) {
-    for (final s in _selectedItems) {
-      if (s.value == value) return true;
+  int _indexOfRaw(List<T> items, T item) {
+    for (var i = 0; i < items.length; i++) {
+      if (identical(items[i], item) || items[i] == item) return i;
     }
-    return false;
+    return -1;
   }
 
-  /// Toggle [item] in the multi-select set; keeps the overlay open and the query
-  /// untouched. Returns true if the item is now selected.
-  bool toggleSelected(AutoSuggestion<T> item) {
-    if (isFixed.value) return isSelectedValue(item.value);
-    final i = _selectedItems.indexWhere((s) => s.value == item.value);
+  List<AutoSuggestion<T>> _buildSuggestions(List<T> items) =>
+      _source.suggestionsFor(items);
+
+  T _valueFor(T item) => suggestionFor(item).value;
+
+  int _indexBySuggestionValue(List<T> items, T value) {
+    for (var i = 0; i < items.length; i++) {
+      if (_source.suggestionAt(items, i).value == value) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  bool isSelectedValue(T value) =>
+      _indexBySuggestionValue(_selectedItems, value) >= 0;
+
+  /// Toggle [item] in the multi-select set. Returns true if now selected.
+  bool toggleSelected(T item) {
+    if (isFixed.value) return isSelectedValue(_valueFor(item));
+    final value = _valueFor(item);
+    final i = _indexBySuggestionValue(_selectedItems, value);
     final nowSelected = i < 0;
     if (nowSelected) {
       _selectedItems.add(item);
@@ -226,25 +319,26 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     } else {
       _selectedItems.removeAt(i);
     }
-    notifyListeners();
+    _notify();
     return nowSelected;
   }
 
-  /// Remove a value from the multi-select set (e.g. a chip's ×).
+  /// Remove a value from the multi-select set.
   void removeSelectedValue(T value) {
     if (isFixed.value) return;
-    final before = _selectedItems.length;
-    _selectedItems.removeWhere((s) => s.value == value);
-    if (_selectedItems.length != before) notifyListeners();
+    final i = _indexBySuggestionValue(_selectedItems, value);
+    if (i < 0) return;
+    _selectedItems.removeAt(i);
+    _notify();
   }
 
   /// Replace the whole multi-select set.
-  void setSelectedItems(List<AutoSuggestion<T>> items) {
+  void setSelectedItems(List<T> items) {
     if (isFixed.value) return;
     _selectedItems
       ..clear()
       ..addAll(items);
-    notifyListeners();
+    _notify();
   }
 
   /// Clear the multi-select set.
@@ -252,15 +346,15 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     if (isFixed.value) return;
     if (_selectedItems.isEmpty) return;
     _selectedItems.clear();
-    notifyListeners();
+    _notify();
   }
 
-  // ── recents ────────────────────────────────────────────────
-  /// Record [item] as the most-recent pick (deduped by value, capped at
-  /// [maxRecents]). No-op unless [showRecents] and [maxRecents] > 0.
-  void _pushRecent(AutoSuggestion<T> item) {
+  // -- recents ------------------------------------------------------------
+  void _pushRecent(T item) {
     if (!showRecents || maxRecents <= 0) return;
-    _recents.removeWhere((s) => s.value == item.value);
+    final value = _valueFor(item);
+    final i = _indexBySuggestionValue(_recents, value);
+    if (i >= 0) _recents.removeAt(i);
     _recents.insert(0, item);
     while (_recents.length > maxRecents) {
       _recents.removeLast();
@@ -268,8 +362,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     onRecentsChanged?.call(recents);
   }
 
-  /// Replace the recents list (e.g. after loading a persisted set).
-  void setRecents(List<AutoSuggestion<T>> items) {
+  /// Replace the recents list.
+  void setRecents(List<T> items) {
     _recents
       ..clear()
       ..addAll(items.take(maxRecents));
@@ -285,21 +379,17 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     if (_activeQuery.trim().isEmpty) refresh();
   }
 
-  // ── record binding ─────────────────────────────────────────
-  /// Resolve a stored [value] back to its full suggestion via the source and
-  /// commit it — so a form bound to a record's id can display the right label
-  /// without the user re-picking. Falls back to the current results / recents
-  /// when the source can't resolve. Returns the committed row, or null when the
-  /// value is unknown (a purely-remote source with nothing cached).
-  AutoSuggestion<T>? selectByValue(T value, {bool addToRecents = false}) {
+  // -- record binding -----------------------------------------------------
+  /// Resolve a stored [value] back to its raw item via the source and commit it.
+  T? selectByValue(T value, {bool addToRecents = false}) {
     if (isFixed.value) return null;
-    AutoSuggestion<T>? found = _source.resolve(value);
+    T? found = _source.resolve(value);
     found ??= _firstByValue(_results, value) ?? _firstByValue(_recents, value);
     if (found == null) return null;
     if (multiSelect) {
       if (!isSelectedValue(value)) {
         _selectedItems.add(found);
-        notifyListeners();
+        _notify();
       }
     } else {
       select(found);
@@ -308,52 +398,63 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     return found;
   }
 
-  AutoSuggestion<T>? _firstByValue(List<AutoSuggestion<T>> list, T value) {
-    for (final s in list) {
-      if (s.value == value) return s;
+  T? _firstByValue(List<T> list, T value) {
+    final i = _indexBySuggestionValue(list, value);
+    return i < 0 ? null : list[i];
+  }
+
+  void _setResults(List<T> list) {
+    final resultItems = <T>[];
+    final resultSuggestions = <AutoSuggestion<T>>[];
+
+    if (showRecents && _recents.isNotEmpty && _activeQuery.trim().isEmpty) {
+      final recentSuggestions = _buildSuggestions(_recents);
+      final recentValues = <T>{};
+      for (var i = 0; i < _recents.length; i++) {
+        final suggestion = recentSuggestions[i];
+        recentValues.add(suggestion.value);
+        resultItems.add(_recents[i]);
+        resultSuggestions.add(suggestion.copyWith(group: recentsGroupLabel));
+      }
+
+      final baseSuggestions = _buildSuggestions(list);
+      for (var i = 0; i < list.length; i++) {
+        final suggestion = baseSuggestions[i];
+        if (recentValues.contains(suggestion.value)) continue;
+        resultItems.add(list[i]);
+        resultSuggestions.add(
+          suggestion.copyWith(group: suggestion.group ?? 'All'),
+        );
+      }
+    } else {
+      resultItems.addAll(list);
+      resultSuggestions.addAll(_buildSuggestions(list));
     }
-    return null;
-  }
 
-  /// Prepend the recents section (as a `recentsGroupLabel` group) when the field
-  /// is empty and recents exist; the rest of [base] follows, de-duplicated and
-  /// tagged so it reads as a separate section.
-  List<AutoSuggestion<T>> _decorateRecents(List<AutoSuggestion<T>> base) {
-    if (!showRecents || _recents.isEmpty || _activeQuery.trim().isNotEmpty) {
-      return base;
+    if (!_source.isPaged && resultItems.length > maxResults) {
+      _results = resultItems.sublist(0, maxResults);
+      _suggestions = resultSuggestions.sublist(0, maxResults);
+    } else {
+      _results = resultItems;
+      _suggestions = resultSuggestions;
     }
-    final recentVals = <T>{for (final r in _recents) r.value};
-    return [
-      for (final r in _recents) r.copyWith(group: recentsGroupLabel),
-      for (final s in base)
-        if (!recentVals.contains(s.value)) s.copyWith(group: s.group ?? 'All'),
-    ];
   }
 
-  /// Apply recents decoration + the [maxResults] cap (paged sources are never
-  /// capped — the page size is the backend's concern) and store the list.
-  void _setResults(List<AutoSuggestion<T>> list) {
-    final composed = _decorateRecents(list);
-    _results = (!_source.isPaged && composed.length > maxResults)
-        ? composed.sublist(0, maxResults)
-        : composed;
-  }
-
-  /// Swap the data source at runtime (e.g. switching match strategy) and re-run.
+  /// Swap the data source at runtime and re-run.
   set source(AutoSuggestionsSource<T> s) {
     _source = s;
+    bindAutoSuggestionsSourceView(_source, _suggestionBuilder);
     _run(text.text, immediate: true);
   }
 
   AutoSuggestionsSource<T> get source => _source;
 
-  // ── opening / closing ──────────────────────────────────────
+  // -- opening / closing --------------------------------------------------
   void open() {
     if (_open) return;
     _open = true;
-    // Re-run so a stale list (or first open) is fresh; highlight first row.
     _run(_queryString(), immediate: true);
-    notifyListeners();
+    _notify();
   }
 
   void close() {
@@ -361,18 +462,20 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _open = false;
     _highlighted = -1;
     _debounceTimer?.cancel();
-    notifyListeners();
+    _notify();
   }
 
   void toggle() => _open ? close() : open();
 
-  // ── typing ─────────────────────────────────────────────────
+  // -- typing -------------------------------------------------------------
   void _onTextChanged() {
     if (_muteText) return;
     if (text.text == _lastText) return;
     _lastText = text.text;
-    // Typing invalidates a prior committed selection (until re-picked).
-    if (_selected != null && _selected!.label != text.text) _selected = null;
+    final selected = _selected;
+    if (selected != null && suggestionFor(selected).label != text.text) {
+      _selected = null;
+    }
     if (!_open) _open = true;
     _run(_queryString());
   }
@@ -380,6 +483,10 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   /// Programmatically set the field text without triggering a query churn loop.
   void setText(String value, {bool moveCursorToEnd = true}) {
     if (isFixed.value) return;
+    _setTextInternal(value, moveCursorToEnd: moveCursorToEnd);
+  }
+
+  void _setTextInternal(String value, {bool moveCursorToEnd = true}) {
     _muteText = true;
     text.value = TextEditingValue(
       text: value,
@@ -396,57 +503,52 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _activeQuery = raw;
     final q = raw.trim();
     if (q.length < minChars) {
-      // Below minChars: show nothing while typing, but still surface recents on
-      // an empty field (a quick-pick shortcut that ignores the min-chars gate).
-      final composed = _decorateRecents(const []);
-      _results = composed;
-      _highlighted = composed.isEmpty ? -1 : 0;
+      _setResults(const []);
+      _highlighted = _results.isEmpty ? -1 : 0;
       _loading = false;
       _loadingMore = false;
-      notifyListeners();
+      _notify();
       return;
     }
     final mySeq = ++_seq;
 
-    void deliver(List<AutoSuggestion<T>> list) {
-      if (mySeq != _seq) return; // a newer query superseded us
+    void deliver(List<T> list) {
+      if (_disposed || mySeq != _seq) return;
       _setResults(list);
       _highlighted = _results.isEmpty ? -1 : 0;
       _loading = false;
       _error = null;
-      notifyListeners();
+      _notify();
     }
 
-    // Paged source: load page 0, then append further pages on scroll.
     if (_source.isPaged) {
       _startPaged(raw, mySeq, immediate: immediate);
       return;
     }
 
-    // Two-phase (progressive) source: show local rows now, stream remote in.
     final prog = _source.progressive(raw);
     if (prog != null) {
       deliver(prog.items);
       if (prog.loadMore != null) {
         _loadingMore = true;
-        notifyListeners();
+        _notify();
         final loadMore = prog.loadMore!;
         void fire() {
           loadMore()
               .then((list) {
-                if (mySeq != _seq) return;
+                if (_disposed || mySeq != _seq) return;
                 _setResults(list);
                 if (_highlighted >= _results.length) {
                   _highlighted = _results.isEmpty ? -1 : 0;
                 }
                 _loadingMore = false;
                 _error = null;
-                notifyListeners();
+                _notify();
               })
-              .catchError((Object e) {
-                if (mySeq != _seq) return;
-                _loadingMore = false; // keep the local rows already shown
-                notifyListeners();
+              .catchError((Object _) {
+                if (_disposed || mySeq != _seq) return;
+                _loadingMore = false;
+                _notify();
               });
         }
 
@@ -462,18 +564,18 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     }
 
     final result = _source.query(raw);
-    if (result is Future<List<AutoSuggestion<T>>>) {
+    if (result is Future<List<T>>) {
       _loading = true;
       _loadingMore = false;
-      notifyListeners();
+      _notify();
       void fire() {
         result.then(deliver).catchError((Object e) {
-          if (mySeq != _seq) return;
+          if (_disposed || mySeq != _seq) return;
           _error = e;
           _loading = false;
-          _results = const [];
+          _setResults(const []);
           _highlighted = -1;
-          notifyListeners();
+          _notify();
         });
       }
 
@@ -488,8 +590,6 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     }
   }
 
-  /// Load page 0 for [raw] from a paged source (debounced like an async query),
-  /// resetting the pagination cursor. Subsequent pages come via [loadNextPage].
   void _startPaged(String raw, int mySeq, {bool immediate = false}) {
     _pagedQuery = raw;
     _page = 0;
@@ -498,29 +598,29 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _isLoadingPage = false;
     _loading = true;
     _loadingMore = false;
-    notifyListeners();
+    _notify();
     void fire() {
       _source
           .fetchPage(raw, 0)
           .then((page) {
-            if (mySeq != _seq) return;
-            _pagedItems = List<AutoSuggestion<T>>.of(page.items);
+            if (_disposed || mySeq != _seq) return;
+            _pagedItems = List<T>.of(page.items);
             _hasMore = page.hasMore;
             _loading = false;
             _error = null;
             _setResults(_pagedItems);
             _highlighted = _results.isEmpty ? -1 : 0;
-            notifyListeners();
+            _notify();
           })
           .catchError((Object e) {
-            if (mySeq != _seq) return;
+            if (_disposed || mySeq != _seq) return;
             _error = e;
             _loading = false;
             _hasMore = false;
             _pagedItems = const [];
             _setResults(const []);
             _highlighted = -1;
-            notifyListeners();
+            _notify();
           });
     }
 
@@ -531,43 +631,44 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     }
   }
 
-  /// Fetch and append the next page from a paged source. Safe to call on every
-  /// scroll tick — it no-ops unless there is another page and none is in flight.
-  /// The view calls this as the overlay nears its bottom.
+  /// Fetch and append the next page from a paged source.
   void loadNextPage() {
     if (!_source.isPaged || !_hasMore || _isLoadingPage || _loading) return;
     final next = _page + 1;
-    final mySeq = _seq; // stay bound to the current query
+    final mySeq = _seq;
     _isLoadingPage = true;
-    notifyListeners();
+    _notify();
     _source
         .fetchPage(_pagedQuery, next)
         .then((page) {
-          if (mySeq != _seq) return;
+          if (_disposed || mySeq != _seq) return;
           _page = next;
-          final seen = <T>{for (final s in _pagedItems) s.value};
-          for (final s in page.items) {
-            if (seen.add(s.value)) _pagedItems.add(s);
+          final seen = <T>{
+            for (var i = 0; i < _pagedItems.length; i++)
+              _source.suggestionAt(_pagedItems, i).value,
+          };
+          for (var i = 0; i < page.items.length; i++) {
+            final item = page.items[i];
+            final value = _source.suggestionAt(page.items, i).value;
+            if (seen.add(value)) _pagedItems.add(item);
           }
           _hasMore = page.hasMore;
           _isLoadingPage = false;
           _setResults(_pagedItems);
-          notifyListeners();
+          _notify();
         })
         .catchError((Object _) {
-          if (mySeq != _seq) return;
+          if (_disposed || mySeq != _seq) return;
           _isLoadingPage = false;
-          _hasMore = false; // stop paging on error; keep what we have
-          notifyListeners();
+          _hasMore = false;
+          _notify();
         });
   }
 
-  /// Force a re-query of the current text (e.g. after the source changed).
+  /// Force a re-query of the current text.
   void refresh() => _run(_queryString(), immediate: true);
 
-  // ── keyboard navigation ────────────────────────────────────
-  /// Move the highlight by [delta] rows, skipping disabled entries, wrapping at
-  /// the ends. Opens the overlay if closed.
+  // -- keyboard navigation ------------------------------------------------
   void moveHighlight(int delta) {
     if (!_open) {
       open();
@@ -579,44 +680,43 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     for (var step = 0; step < n; step++) {
       i = (i + delta) % n;
       if (i < 0) i += n;
-      if (_results[i].enabled) break;
+      if (_suggestions[i].enabled) break;
     }
     _highlighted = i;
-    notifyListeners();
+    _notify();
   }
 
   void highlightAt(int i) {
     if (i == _highlighted) return;
     _highlighted = (i >= 0 && i < _results.length) ? i : -1;
-    notifyListeners();
+    _notify();
   }
 
-  // ── committing ─────────────────────────────────────────────
-  /// Commit [item]: writes its label into the field, records it as [selected],
-  /// and closes the overlay. Returns the committed suggestion.
-  AutoSuggestion<T> select(AutoSuggestion<T> item) {
+  // -- committing ---------------------------------------------------------
+  /// Commit [item]: writes its label into the field and closes the overlay.
+  T select(T item) {
     if (isFixed.value) return item;
+    final suggestion = suggestionFor(item);
     _selected = item;
     _committed = item;
-    _committedText = item.label;
-    setText(item.label);
+    _committedText = suggestion.label;
+    setText(suggestion.label);
     _open = false;
     _highlighted = -1;
     _pushRecent(item);
-    notifyListeners();
+    _notify();
     return item;
   }
 
-  /// Commit whatever's highlighted (Enter). Returns the picked suggestion, or
-  /// null when there was nothing to pick (caller may treat as free-text submit).
-  AutoSuggestion<T>? commitHighlighted() {
+  /// Commit whatever is highlighted.
+  T? commitHighlighted() {
     final h = highlighted;
-    if (h != null && h.enabled) return select(h);
+    final s = highlightedSuggestion;
+    if (h != null && s != null && s.enabled) return select(h);
     return null;
   }
 
-  /// Accept the current free text as the committed baseline (call after a
-  /// free-text Enter submit) so a later blur won't revert it.
+  /// Accept the current free text as the committed baseline.
   void acceptFreeText() {
     if (isFixed.value) return;
     _selected = null;
@@ -624,18 +724,15 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _committedText = text.text;
   }
 
-  /// Revert the field to the last committed value — used on blur when the user
-  /// typed but didn't pick. No-op when nothing was ever committed ("unless null").
+  /// Revert the field to the last committed value.
   void restoreCommitted() {
     if (isFixed.value) return;
-    if (_committedText == null) {
-      return; // never committed → leave the field as-is
-    }
+    if (_committedText == null) return;
     _selected = _committed;
     if (text.text != _committedText) setText(_committedText!);
     _highlighted = -1;
     _loadingMore = false;
-    notifyListeners();
+    _notify();
   }
 
   /// Clear the field, selection and results.
@@ -645,15 +742,17 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _selected = null;
     _committed = null;
     _committedText = '';
-    _results = const [];
+    _setResults(const []);
     _highlighted = -1;
     _error = null;
-    notifyListeners();
+    _notify();
     _run('', immediate: true);
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    _seq++;
     _debounceTimer?.cancel();
     text.removeListener(_onTextChanged);
     isFixed.removeListener(_onFixedChanged);
@@ -664,6 +763,22 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   void _onFixedChanged() {
     if (isFixed.value) close();
-    notifyListeners();
+    _notify();
   }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+}
+
+/// Binds the widget-owned metadata builder to a controller.
+///
+/// This is hidden from the package barrel and is used by `AutoSuggestionsBox`
+/// so `AutoSuggestionsBoxController` does not expose `suggestionBuilder` in its
+/// public constructor or class API.
+void bindAutoSuggestionsBoxControllerView<T>(
+  AutoSuggestionsBoxController<T> controller,
+  AutoSuggestionBuilder<T> builder,
+) {
+  controller._bindViewAdapter(builder);
 }

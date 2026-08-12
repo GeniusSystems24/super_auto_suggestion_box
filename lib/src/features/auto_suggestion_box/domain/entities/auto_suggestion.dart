@@ -10,6 +10,14 @@
 
 import 'package:flutter/widgets.dart' show IconData, immutable;
 
+/// Builds the render/search metadata for [element] at [index] inside [items].
+///
+/// Public APIs accept raw `T` values; the package calls this builder whenever
+/// it needs the [AutoSuggestion] representation for filtering, display,
+/// selection, grouping, or value resolution.
+typedef AutoSuggestionBuilder<T> =
+    AutoSuggestion<T> Function(List<T> items, int index, T element);
+
 /// One suggestion row. [value] is what the host receives on select; [label] is
 /// the text shown and matched against.
 @immutable

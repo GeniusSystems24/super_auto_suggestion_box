@@ -2,69 +2,35 @@
 
 [![style: flutter_lints](https://img.shields.io/badge/style-flutter__lints-blue)](https://pub.dev/packages/flutter_lints)
 
-A **GeniusLink design-system** Flutter package shipping the **`AutoSuggestionsBox`** —
-a typeahead / combobox field with local + remote sources, prefix / contains / words /
-fuzzy-ranked matching, single- and multi-select, free-text entry, a local-first
-progressive `remoteFallback` source, **server-side paged infinite-scroll**,
-**recently-used** suggestions, **inline create**, a **trailing meta column**,
-**record binding + read-only** mode, an advanced-search overlay, and a `bare`
-embedding mode.
+`super_auto_suggestion_box` provides the GeniusLink `AutoSuggestionsBox<T>`:
+a themed typeahead / combobox with local and remote sources, fuzzy matching,
+single- and multi-select, free-text entry, progressive remote fallback,
+server-side paging, recents, inline create, shadow-hint completion, record
+binding, read-only/fixable states, advanced search, validation, and bare
+embedding.
 
-It also carries the shared GeniusLink **core** foundation (theme tokens,
-`ThemeExtension`s, text styles, and a few design-system widgets) the box is built on.
-The companion [`super_table_field`](../super_table_field) package depends on this one
-and re-exports it, so a `SuperTable`'s `combo` columns are edited through the real
-`AutoSuggestionsBox`.
+Version `1.0.0` uses raw `T` values as the public data model. Callers pass raw
+items and provide a `suggestionBuilder` only to describe how each item should be
+rendered and searched.
 
-Light + dark themes, full LTR + RTL.
+```dart
+AutoSuggestion<T> suggestionBuilder(
+  List<T> items,
+  int index,
+  T element,
+)
+```
 
-## Features
+`AutoSuggestion<T>` remains public because builders return it, but callers no
+longer wrap every collection item, fetch result, selected item, recent item, or
+created item in `AutoSuggestion<T>`.
 
-- ✅ **Typeahead / combobox** — `AutoSuggestionsBox<T>` driven by an
-  `AutoSuggestionsBoxController<T>`.
-- ✅ **Consistent field design** — same height, layout and states as the
-  `super_form_field` inputs (uppercase label, 42/36 px density, 4 px frame,
-  focused-fill + danger-halo).
-- ✅ **Validation** — `required` + a custom `validator`; errors surface through a
-  suffix **error badge** tooltip (never inline), gated on touch / `forceError`,
-  reported via `onValidity`.
-- ✅ **ERP text-input integration** — keyboard type/action/appearance, input
-  formatters, LTR code entry inside RTL screens, capitalization, max-length
-  enforcement, autofill, cursor/selection controls, outside-tap callbacks, and
-  `FormState.save()` through `onSave`.
-- ✅ **Shadow hint completion** — while typing a prefix, the remaining characters
-  of the highlighted suggestion appear as faint, non-editable inline text.
-- ✅ **`disabled`** state and a per-field `theme` override.
-- ✅ **Themeable focused state** — `AutoSuggestionsBoxFocusedStyle` (`fillColor`,
-  `border`, `fontStyle`, `cursorColor`, `shadow`).
-- ✅ **Matching strategies** — prefix, contains, words, and **fuzzy (ranked by
-  match quality)**.
-- ✅ **Single- & multi-select**, **free-text entry** (`allowFreeText`), grouped results.
-- ✅ **Recently-used** — recent picks pin to a *Recent* section when the field is
-  empty (`showRecents`, `maxRecents`, `initialRecents`, `onRecentsChanged`).
-- ✅ **Inline create** — a *＋ Create “…”* action for missing master data (`onCreate`).
-- ✅ **Trailing meta column** — `AutoSuggestion.trailing` shows a right-aligned
-  mono value (balance / qty / price) so rows read as code · name · amount.
-- ✅ **Record binding + read-only** — `controller.selectByValue(id)` and a
-  `readOnly` view state.
-- ✅ **Suggestion sources** — `SuggestionSources.list / .strings / .fuzzy / .async /
-  .hybrid / .remoteFallback / .paged` (paged = infinite scroll for large data).
-- ✅ **Advanced-search overlay** — opens on `Ctrl`/`⌘`+`F` (`advancedSearch: true`).
-- ✅ **Restore-on-blur** and **caret-anchored query** matching.
-- ✅ **`bare` embedding mode** — drop the box into a cell or compact toolbar.
-
-## Getting started
-
-Add the dependency:
+## Setup
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box:
-    path: ../super_auto_suggestion_box   # or a git / hosted ref
+  super_auto_suggestion_box: ^1.0.0
 ```
-
-Use `SuperMaterialThemeData` from `super_core >=3.3.0`. Both light and dark
-factories require explicit `SuperTextTheme` values:
 
 ```dart
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
@@ -83,55 +49,222 @@ MaterialApp(
 );
 ```
 
-`AutoSuggestionsBoxThemeData.of(context)` derives its color/layout defaults from
-the active `SuperMaterialThemeData`; an explicit component extension is needed
-only when overriding the box theme. Typography comes from
-`context.superTextTheme` (`SuperMaterialThemeData.textTheme`), not from
-`context.superTheme`.
-
-> **super_core 3.3.0 typography** — `SuperThemeData` no longer exposes
-> `textTheme`. Configure body/display faces on `SuperTextTheme` (`bodyFont` /
-> `otherFont`) and read them through `context.superTextTheme`. `fontFamily` on
-> `SuperMaterialThemeData` is an explicit token-level override only; font families
-> are not inferred from the supplied `SuperTextTheme`.
-
-## Usage
+## Basic Usage
 
 ```dart
+final units = ['each', 'box', 'carton'];
+
+AutoSuggestion<String> unitSuggestion(
+  List<String> items,
+  int index,
+  String unit,
+) => AutoSuggestion<String>(
+  value: unit,
+  label: unit,
+);
+
 final box = AutoSuggestionsBoxController<String>(
-  source: SuggestionSources.list<String>([
-    AutoSuggestion(value: 'each', label: 'each'),
-    AutoSuggestion(value: 'box',  label: 'box'),
-  ]),
-  allowFreeText: true,   // false = pick-only
-  multiSelect: false,
+  source: SuggestionSources.list<String>(units),
+  allowFreeText: true,
 );
 
 AutoSuggestionsBox<String>(
   controller: box,
-  hintText: 'Type or pick…',
-  onSelected: (s) => /* s.value, s.label */,
-  onSubmitted: (raw) => /* free-text Enter */,
+  suggestionBuilder: unitSuggestion,
+  hintText: 'Type or pick...',
+  onSelected: (unit) {
+    // unit is the raw String.
+  },
+  onSubmitted: (raw) {
+    // Free-text Enter.
+  },
 );
 ```
 
-### ERP input configuration and form save
-
-`AutoSuggestionsBox` forwards the text-input controls commonly required by ERP
-forms. Use them for exact identifiers such as account codes, SKU values, invoice
-references, IBANs, and voucher numbers. The internal editor is a `TextFormField`,
-so `onSave` is invoked by the enclosing `FormState.save()`.
+You can also let the widget create the source:
 
 ```dart
-import 'package:flutter/services.dart';
+AutoSuggestionsBox<String>(
+  items: units,
+  suggestionBuilder: unitSuggestion,
+  onSelected: (unit) {},
+);
+```
 
-final formKey = GlobalKey<FormState>();
+## Rich Rows
 
+Keep domain data raw and derive row metadata in the builder:
+
+```dart
+final accounts = ['1010', '1020', '4000'];
+
+AutoSuggestion<String> accountSuggestion(
+  List<String> items,
+  int index,
+  String code,
+) => AutoSuggestion<String>(
+  value: code,
+  label: switch (code) {
+    '1010' => 'Cash on Hand',
+    '1020' => 'Bank - Operating',
+    '4000' => 'Sales Revenue',
+    _ => code,
+  },
+  description: 'Account $code',
+  trailing: code == '1020' ? '285,120.50' : null,
+  group: code.startsWith('1') ? 'Assets' : 'Income',
+  icon: Icons.account_balance_outlined,
+  keywords: [code],
+);
+```
+
+Custom rows receive both the raw item and the built suggestion:
+
+```dart
+AutoSuggestionsBox<String>(
+  items: accounts,
+  suggestionBuilder: accountSuggestion,
+  itemBuilder: (context, code, suggestion, highlighted) {
+    return Text('${suggestion.label} ($code)');
+  },
+);
+```
+
+## Suggestion Sources
+
+All built-in sources accept raw values and source-specific matching or fetch
+configuration only. Pass `suggestionBuilder` to `AutoSuggestionsBox`; it owns
+the conversion to `AutoSuggestion<T>` for both widget-created and external
+controllers.
+
+```dart
+final staticSource = SuggestionSources.list<String>(accounts);
+
+final fuzzySource = SuggestionSources.fuzzy<String>(accounts);
+
+final asyncSource = SuggestionSources.async<String>(
+  (query) => api.searchAccounts(query), // Future<List<String>>
+  initialItems: accounts.take(5).toList(),
+);
+
+final hybridSource = SuggestionSources.hybrid<String>(
+  initialItems: accounts,
+  fetch: (query) => api.searchAccounts(query), // Future<List<String>>
+  remoteThreshold: 1,
+  remoteMinChars: 2,
+);
+
+final remoteFallbackSource = SuggestionSources.remoteFallback<String>(
+  initialItems: accounts,
+  fetch: (query) => api.searchAccounts(query), // Future<List<String>>
+  remoteThreshold: 5,
+  remoteMinChars: 1,
+);
+
+final pagedSource = SuggestionSources.paged<String>(
+  (query, page) async {
+    final response = await api.searchAccountsPage(query, page);
+    return SuggestionsPage<String>(
+      items: response.codes,
+      hasMore: response.hasMore,
+    );
+  },
+  resolveFrom: accounts,
+);
+```
+
+`SuggestionSources.strings(values)` is still available for the simple
+label-equals-value case. The source itself does not take a builder; the widget
+owns the `suggestionBuilder`.
+
+## Controller API
+
+Controller selections, result lists, recents, and callbacks use raw values:
+
+```dart
+final controller = AutoSuggestionsBoxController<String>(
+  source: staticSource,
+  initialValue: '1020',
+  initialSelected: const ['1010'],
+  showRecents: true,
+  initialRecents: const ['4000'],
+  onRecentsChanged: (recentCodes) {},
+);
+
+controller.selected;          // String?
+controller.results;           // List<String>
+controller.selectedItems;     // List<String>
+controller.selectedValues;    // List<String>, compatibility alias
+controller.recents;           // List<String>
+
+controller.select('1010');
+controller.toggleSelected('4000');
+controller.setSelectedItems(['1010', '4000']);
+controller.setRecents(['1020']);
+controller.selectByValue('4000');
+```
+
+When using an external controller, provide the builder on the widget:
+
+```dart
+AutoSuggestionsBox<String>(
+  controller: controller,
+  suggestionBuilder: accountSuggestion,
+);
+```
+
+After the controller is attached to an `AutoSuggestionsBox`, UI metadata is
+available through the render-facing accessors:
+
+```dart
+controller.suggestions;            // List<AutoSuggestion<String>>
+controller.suggestionAt(0);        // AutoSuggestion<String>
+controller.highlightedSuggestion;  // AutoSuggestion<String>?
+controller.selectedSuggestion;     // AutoSuggestion<String>?
+```
+
+## Widget Callbacks
+
+```dart
+AutoSuggestionsBox<String>(
+  items: accounts,
+  suggestionBuilder: accountSuggestion,
+  multiSelect: true,
+  initialSelected: const ['1010'],
+  onSelected: (code) {},
+  onSelectionChanged: (codes) {},
+);
+```
+
+Inline create returns a raw value:
+
+```dart
+AutoSuggestionsBox<String>(
+  items: vendors,
+  suggestionBuilder: vendorSuggestion,
+  onCreate: (query) async {
+    final vendor = await api.createVendor(query);
+    return vendor.id; // raw String
+  },
+  onSelected: (vendorId) {},
+);
+```
+
+## ERP Input And Validation
+
+`AutoSuggestionsBox` forwards ERP-style text input controls and participates in
+`FormState.save()` through `onSave`.
+
+```dart
 Form(
   key: formKey,
   child: AutoSuggestionsBox<String>(
     items: documentReferences,
-    decoration: const InputDecoration(labelText: 'Document Reference'),
+    suggestionBuilder: documentSuggestion,
+    decoration: const InputDecoration(
+      labelText: 'Document Reference',
+      helperText: 'Pick or type a document reference',
+    ),
     keyboardType: TextInputType.text,
     inputFormatters: [
       FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
@@ -139,257 +272,41 @@ Form(
     ],
     textDirection: TextDirection.ltr,
     textInputAction: TextInputAction.done,
-    textCapitalization: TextCapitalization.characters,
-    showShadowHint: true, // INV-1 + highlighted INV-1042 visually shows 042
-    completeShadowHintOnTab: true, // Tab changes INV-1 to INV-1042
-    shadowHintStyle: const TextStyle(color: Colors.grey), // optional
-    keyboardAppearance: Brightness.dark,
-    autocorrect: false,
-    enableSuggestions: false,
-    enableIMEPersonalizedLearning: false,
-    maxLength: 16,
-    onTap: () {},
-    onTapOutside: (event) {},
-    onTapUpOutside: (event) {},
-    onEditingComplete: () {},
-    onFieldSubmitted: (value) {},
-    onSave: (value) {
-      // Persist the current query or committed suggestion label.
+    showShadowHint: true,
+    completeShadowHintOnTab: true,
+    required: true,
+    validator: (value) {
+      if (value.trim().isEmpty) return null;
+      final labels = [
+        for (var i = 0; i < documentReferences.length; i++)
+          documentSuggestion(documentReferences, i, documentReferences[i]).label,
+      ];
+      final ok = labels.contains(value);
+      return ok ? null : 'Pick a document from the list';
     },
-  ),
-);
-
-formKey.currentState?.save();
-```
-
-`showShadowHint` defaults to `true`. It displays only while the field is focused,
-the caret is collapsed at the end, and the highlighted suggestion starts with
-the typed value (case-insensitive). The suffix is view-only and is excluded from
-the controller value, callbacks, validation, formatters, and form saving. Set
-`showShadowHint: false` to disable it, or override `shadowHintStyle` to change its
-appearance. Tab completes the real text from the visible suffix before focus
-traversal; set `completeShadowHintOnTab: false` to keep Tab traversal-only.
-Shift+Tab is unaffected. Enter continues to commit the highlighted suggestion.
-
-`onSubmitted` remains the legacy callback for accepted free text only.
-`onFieldSubmitted` is the general field callback: it runs for physical Enter and
-software-keyboard actions after the component applies its normal highlighted-row,
-inline-create, or free-text submit behavior.
-
-The complete ERP-oriented input surface also includes `textAlign`,
-`textAlignVertical`, `autofillHints`, `smartDashesType`, `smartQuotesType`,
-`maxLengthEnforcement`, `showCursor`, `cursorWidth`, `cursorHeight`,
-`cursorRadius`, `enableInteractiveSelection`, `selectionControls`,
-`scrollPadding`, `scrollPhysics`, `mouseCursor`, `canRequestFocus`, and
-`onTapAlwaysCalled`.
-
-### Validation (`required` · `validator`)
-
-Errors surface through a suffix **error badge** (hover / long-press for the
-tooltip) — never inline, matching `super_form_field`. Validation is silent until
-the field is first blurred (or `forceError: true`); `onValidity` reports the
-current error on every change.
-
-```dart
-AutoSuggestionsBox<String>(
-  items: accounts,
-  decoration: const InputDecoration(
-    labelText: 'Debit Account',
-    helperText: 'Pick an account from the chart',
-  ),
-  required: true,                       // red * on the label + "required" rule
-  requiredMessage: 'Choose an account', // optional custom copy
-  validator: (value) {
-    if (value.trim().isEmpty) return null;        // `required` handles empty
-    final ok = accounts.any((a) => a.label == value);
-    return ok ? null : 'Pick an account from the list';
-  },
-  onValidity: (error) => setState(() => _error = error),
-);
-```
-
-### Disabled
-
-```dart
-AutoSuggestionsBox<String>(
-  controller: lockedController, // pre-filled
-  decoration: const InputDecoration(labelText: 'Reconciliation Account'),
-  disabled: true, // dimmed, no typing, no overlay, no errors
-);
-```
-
-### Per-field theme + focused style
-
-Assign a theme directly to one box (overriding the ambient extension), and
-customise the focused state with `AutoSuggestionsBoxFocusedStyle` — any field you
-leave null falls back to the resting token.
-
-```dart
-AutoSuggestionsBox<String>(
-  items: accounts,
-  decoration: const InputDecoration(labelText: 'Ledger Account'),
-  theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
-    focusedStyle: const AutoSuggestionsBoxFocusedStyle(
-      fillColor: Color(0x141DB88A),
-      border: BorderSide(color: Color(0xFF1DB88A), width: 1.6),
-      fontStyle: TextStyle(fontWeight: FontWeight.w600),
-      cursorColor: Color(0xFF1DB88A),
-    ),
+    onFieldSubmitted: (value) {},
+    onSave: (value) {},
   ),
 );
 ```
 
-Set the default focused style for **every** box by baking it into the theme
-extension you register on `ThemeData` (via `.copyWith(focusedStyle: …)`).
+Validation errors surface through the suffix error badge tooltip, matching the
+GeniusLink form-field convention.
 
-### Suggestion sources
+## States And Embedding
 
-- `SuggestionSources.list(...)` / `.strings(...)` — static, in-memory.
-- `SuggestionSources.fuzzy(...)` — fuzzy-ranked matching (ordered by match quality).
-- `SuggestionSources.async(...)` — debounced purely-remote search.
-- `SuggestionSources.hybrid(...)` — single-phase local-first: filters the local
-  set and, when matches are thin, fetches once and merges (behind the field spinner).
-- `SuggestionSources.remoteFallback(...)` — local-first **progressive**: shows local
-  matches instantly and only calls `fetch` when local matches are
-  `remoteThreshold` or fewer, merging remote rows (de-duplicated) behind a
-  *loading more* indicator (`controller.isLoadingMore`).
-- `SuggestionSources.paged(fetch)` — **infinite scroll** for large master data:
-  returns one `SuggestionsPage(items, hasMore)` per `(query, page)`; the overlay
-  loads page 0 and appends the next page as you scroll near the bottom
-  (`controller.hasMore` / `isLoadingPage` / `loadNextPage()`).
+- `disabled`: dims and blocks interaction.
+- `readOnly`: blocks interaction but keeps full contrast for posted/review
+  states.
+- `allowFixed`: shows a lock/unlock action backed by `controller.isFixed`.
+- `advancedSearch`: opens a larger search surface with `Ctrl`/`Cmd` + `F`.
+- `bare`: removes outer chrome for table cells and compact host surfaces.
+- `restoreOnBlur`: restores the last committed raw value when the user leaves
+  without picking.
 
-### ERP features (0.7.0)
+## Migration
 
-**Recently-used** — pin recent picks to a *Recent* section on the empty field
-(build the controller yourself to enable it):
-
-```dart
-final box = AutoSuggestionsBoxController<String>(
-  source: SuggestionSources.list<String>(accounts),
-  showRecents: true,
-  maxRecents: 5,
-  initialRecents: savedRecents,               // restore from disk
-  onRecentsChanged: (r) => persist(r),        // persist on change
-);
-AutoSuggestionsBox<String>(
-  controller: box,
-  decoration: const InputDecoration(labelText: 'Account'),
-);
-```
-
-**Inline create** — offer a *＋ Create “…”* action for missing master data
-(Enter triggers it before a free-text submit; async-aware):
-
-```dart
-AutoSuggestionsBox<String>(
-  items: vendors,
-  onCreate: (query) async {
-    final created = await api.createVendor(query);   // POST
-    return AutoSuggestion(value: created.id, label: created.name);
-  },
-);
-```
-
-**Trailing meta column** — a right-aligned tabular-mono value (code · name · amount):
-
-```dart
-AutoSuggestion(value: '1020', label: 'Bank — Operating',
-    description: '1020 · Assets', trailing: '285,120.50');
-```
-
-**Record binding + read-only** — resolve a stored id to its row, and a view state:
-
-```dart
-box.selectByValue('4000');                    // bind a record's stored code
-AutoSuggestionsBox<String>(controller: box, readOnly: posted); // view mode
-```
-
-**Fixable controller field** — opt into a small lock/unlock action at the trailing
-edge of the label row. While fixed, editing, clearing, selection, and other
-controller mutations are blocked without dimming the field:
-
-```dart
-final focusNode = FocusNode();
-final fieldKey = GlobalKey<FormFieldState<String>>();
-final box = AutoSuggestionsBoxController<String>(
-  source: SuggestionSources.list<String>(accounts),
-  isFixed: false,
-  focusNode: focusNode,
-  formFieldKey: fieldKey,
-);
-
-AutoSuggestionsBox<String>(
-  controller: box,
-  decoration: const InputDecoration(labelText: 'Settlement Account'),
-  allowFixed: true,
-);
-
-focusNode.requestFocus();
-fieldKey.currentState?.validate();
-box.isFixed.value = true; // the field is now protected
-box.isHiden = true;       // rebuild the host to hide the field
-```
-
-`allowFixed` only controls whether the label action is displayed; the source of
-truth remains `controller.isFixed`. The spelling `isHiden` is intentionally
-preserved for API compatibility.
-
-### Input decoration
-
-Use `decoration` for the field label, supporting text, placeholder styling, and
-prefix icon. The legacy `label`, `hint`, and `leading` parameters are deprecated
-in 0.14.0; migrate them to `InputDecoration.labelText`,
-`InputDecoration.helperText`, and `InputDecoration.prefixIcon` respectively.
-`hintText` remains available for source compatibility, while
-`InputDecoration.hintText` takes precedence when both are supplied.
-
-```dart
-AutoSuggestionsBox<String>(
-  items: accounts,
-  decoration: const InputDecoration(
-    labelText: 'Debit Account',
-    helperText: 'Pick an account from the chart',
-    hintText: 'Search by code or name',
-    prefixIcon: Icon(Icons.account_balance_outlined),
-  ),
-);
-```
-
-### Behaviour to know
-
-- **Advanced search**: `advancedSearch: true` opens a modal search surface on
-  `Ctrl`/`⌘`+`F`; customise via `advancedSearchBuilder`.
-- **Restore on blur**: leaving without picking reverts unconfirmed typing to the
-  last committed value (unless none); disable with `restoreOnBlur: false`.
-- **Caret-anchored query**: matching uses text from the start up to the caret
-  (`controller.effectiveQuery`), so mid-string edits filter on the relevant prefix.
-
-### Embedding (`bare` mode)
-
-Set `bare: true`, pass a `fieldHeight`, and provide `onEscape` / `onTabNext` /
-`onTabPrev` when you place the box inside a cell or compact toolbar — this is exactly
-how `super_table_field` embeds it for `combo` columns.
-
-## Example
-
-A runnable gallery lives in `example/`:
-
-```bash
-cd example
-flutter run
-```
-
-## Architecture
-
-Clean Architecture, MVC-aligned, split per feature. `AutoSuggestionsBoxController`
-is a `ChangeNotifier` that owns all state and domain logic; the widget observes it
-and forwards intents; entities and usecases (matching, querying) are plain Dart.
-Shared tokens/widgets live in `lib/src/core/`. Import the single barrel:
-
-```dart
-import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
-```
-
-## License
-
-Internal GeniusLink design-system package.
+See [`migration_0.14.0_to_1.0.0`](migration_0.14.0_to_1.0.0) for before-and-after
+examples covering data sources, `initialItems`, fetch callbacks, controllers,
+`AutoSuggestionsBox`, `suggestionBuilder`, and removed `AutoSuggestion<T>`-based
+APIs.

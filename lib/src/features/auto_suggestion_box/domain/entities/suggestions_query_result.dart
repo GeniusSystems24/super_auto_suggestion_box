@@ -15,17 +15,15 @@
 
 import 'dart:async';
 
-import 'auto_suggestion.dart';
-
 /// The outcome of a progressive query (see [AutoSuggestionsSource.progressive]).
 class SuggestionsQueryResult<T> {
-  /// Matches available immediately (typically the local, in-memory hits).
-  final List<AutoSuggestion<T>> items;
+  /// Raw matches available immediately (typically the local, in-memory hits).
+  final List<T> items;
 
   /// When non-null, a lazy remote fetch the controller invokes (after its
   /// debounce) to load more rows. Its result is merged after [items],
   /// de-duplicated by value. When null, [items] is the complete answer.
-  final Future<List<AutoSuggestion<T>>> Function()? loadMore;
+  final Future<List<T>> Function()? loadMore;
 
   const SuggestionsQueryResult({required this.items, this.loadMore});
 

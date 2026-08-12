@@ -309,7 +309,7 @@ class AutoSuggestionsBoxThemeData
 
   /// A tint of the accent over the overlay surface (selected-row fill).
   Color accentWash([double pct = 0.12]) =>
-      Color.alphaBlend(accent.withOpacity(pct), overlayBg);
+      Color.alphaBlend(accent.withValues(alpha: pct), overlayBg);
 
   @override
   AutoSuggestionsBoxThemeData copyWith({

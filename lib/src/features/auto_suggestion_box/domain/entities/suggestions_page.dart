@@ -9,12 +9,10 @@
 // page when the user scrolls near the bottom of the overlay.
 // ============================================================
 
-import 'auto_suggestion.dart';
-
 /// One page of suggestions for a `(query, page)` request.
 class SuggestionsPage<T> {
-  /// The rows on this page (already ordered by the backend).
-  final List<AutoSuggestion<T>> items;
+  /// The raw rows on this page (already ordered by the backend).
+  final List<T> items;
 
   /// Whether at least one more page exists after this one. When false the
   /// controller stops requesting further pages for this query.

@@ -1,28 +1,29 @@
 // ============================================================
-// features/auto_suggestion_box/presentation/pages/auto_suggestion_box_demo.dart
+// example/lib/auto_suggestion_box_demo.dart
 // ------------------------------------------------------------
-// A self-contained gallery page for the AutoSuggestionsBox. Demonstrates:
-//   1.  single-select, grouped, highlighted, with a trailing balance column
-//   2.  multi-select
-//   3.  fuzzy match (ranked) over a small list
-//   4.  progressive REMOTE FALLBACK — local rows show instantly, and when the
-//       local match count is small a simulated network call streams more in
-//       behind a "loading more" indicator
-//   5.  ADVANCED SEARCH (Ctrl/⌘+F) — a modal search surface over a large dataset
-//   6.  required + validator   7. disabled   8. per-field theme + focusedStyle
-//   9.  RECENTS — recently-picked rows pin to a "Recent" section when empty
-//   10. INLINE CREATE — "＋ Create …" adds missing master data (onCreate)
-//   11. PAGED — infinite-scroll over a 64-row catalog, 12 rows per page
-//   12. RECORD BINDING (selectByValue) + READ-ONLY view mode
-//   13. ERP INPUT + FORM SAVE — keyboard, shadow hint, formatters and callbacks
-//   14. FIXABLE FIELD — controller-owned focus/form wiring and label lock action
-//   15. INPUT DECORATION — label, helper, and placeholder through Material API
-// Used by the example app and as a visual reference.
+// Runnable gallery for AutoSuggestionsBox. The examples use raw String values
+// for all source data and create AutoSuggestion metadata only in builders.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+
+class _DemoSuggestionMeta {
+  const _DemoSuggestionMeta({
+    required this.label,
+    this.description,
+    this.trailing,
+    this.group,
+    this.icon,
+  });
+
+  final String label;
+  final String? description;
+  final String? trailing;
+  final String? group;
+  final IconData? icon;
+}
 
 class AutoSuggestionBoxDemo extends StatefulWidget {
   const AutoSuggestionBoxDemo({super.key});
@@ -32,155 +33,232 @@ class AutoSuggestionBoxDemo extends StatefulWidget {
 }
 
 class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
-  static final List<AutoSuggestion<String>> _accounts = [
-    const AutoSuggestion(
-      value: '1010',
+  static const Map<String, _DemoSuggestionMeta> _accountMeta = {
+    '1010': _DemoSuggestionMeta(
       label: 'Cash on Hand',
-      description: '1010 · Current Assets',
+      description: '1010 - Current Assets',
       trailing: '12,400.00',
       group: 'Assets',
       icon: Icons.payments_outlined,
     ),
-    const AutoSuggestion(
-      value: '1020',
-      label: 'Bank — Operating',
-      description: '1020 · Current Assets',
+    '1020': _DemoSuggestionMeta(
+      label: 'Bank - Operating',
+      description: '1020 - Current Assets',
       trailing: '285,120.50',
       group: 'Assets',
       icon: Icons.account_balance_outlined,
     ),
-    const AutoSuggestion(
-      value: '1200',
+    '1200': _DemoSuggestionMeta(
       label: 'Accounts Receivable',
-      description: '1200 · Current Assets',
+      description: '1200 - Current Assets',
       trailing: '94,300.00',
       group: 'Assets',
       icon: Icons.receipt_long_outlined,
     ),
-    const AutoSuggestion(
-      value: '2010',
+    '2010': _DemoSuggestionMeta(
       label: 'Accounts Payable',
-      description: '2010 · Current Liabilities',
+      description: '2010 - Current Liabilities',
       trailing: '47,890.00',
       group: 'Liabilities',
       icon: Icons.request_quote_outlined,
     ),
-    const AutoSuggestion(
-      value: '2100',
+    '2100': _DemoSuggestionMeta(
       label: 'VAT Payable',
-      description: '2100 · Current Liabilities',
+      description: '2100 - Current Liabilities',
       trailing: '8,215.75',
       group: 'Liabilities',
       icon: Icons.account_balance_wallet_outlined,
     ),
-    const AutoSuggestion(
-      value: '3000',
+    '3000': _DemoSuggestionMeta(
       label: "Owner's Equity",
-      description: '3000 · Equity',
+      description: '3000 - Equity',
       trailing: '500,000.00',
       group: 'Equity',
       icon: Icons.savings_outlined,
     ),
-    const AutoSuggestion(
-      value: '4000',
+    '4000': _DemoSuggestionMeta(
       label: 'Sales Revenue',
-      description: '4000 · Income',
+      description: '4000 - Income',
       trailing: '612,540.00',
       group: 'Income',
       icon: Icons.trending_up_outlined,
     ),
-    const AutoSuggestion(
-      value: '5000',
+    '5000': _DemoSuggestionMeta(
       label: 'Cost of Goods Sold',
-      description: '5000 · Expenses',
+      description: '5000 - Expenses',
       trailing: '288,900.00',
       group: 'Expenses',
       icon: Icons.inventory_2_outlined,
     ),
-    const AutoSuggestion(
-      value: '5200',
+    '5200': _DemoSuggestionMeta(
       label: 'Salaries & Wages',
-      description: '5200 · Expenses',
+      description: '5200 - Expenses',
       trailing: '96,000.00',
       group: 'Expenses',
       icon: Icons.badge_outlined,
     ),
+  };
+
+  static const List<String> _accounts = [
+    '1010',
+    '1020',
+    '1200',
+    '2010',
+    '2100',
+    '3000',
+    '4000',
+    '5000',
+    '5200',
   ];
 
-  // Exact ERP document references for keyboard/input-formatter integration.
-  static const List<AutoSuggestion<String>> _documentReferences = [
-    AutoSuggestion(
-      value: 'INV-1001',
+  static String _accountLabel(String code) => _accountMeta[code]?.label ?? code;
+
+  static AutoSuggestion<String> _accountSuggestion(
+    List<String> items,
+    int index,
+    String code,
+  ) {
+    final meta = _accountMeta[code];
+    return AutoSuggestion<String>(
+      value: code,
+      label: meta?.label ?? code,
+      description: meta?.description,
+      trailing: meta?.trailing,
+      group: meta?.group,
+      icon: meta?.icon,
+      keywords: [code],
+    );
+  }
+
+  static const Map<String, _DemoSuggestionMeta> _documentReferenceMeta = {
+    'INV-1001': _DemoSuggestionMeta(
       label: 'INV-1001',
-      description: 'Sales invoice · Posted',
+      description: 'Sales invoice - Posted',
       icon: Icons.receipt_long_outlined,
     ),
-    AutoSuggestion(
-      value: 'INV-1042',
+    'INV-1042': _DemoSuggestionMeta(
       label: 'INV-1042',
-      description: 'Sales invoice · Draft',
+      description: 'Sales invoice - Draft',
       icon: Icons.receipt_long_outlined,
     ),
-    AutoSuggestion(
-      value: 'PO-2040',
+    'PO-2040': _DemoSuggestionMeta(
       label: 'PO-2040',
-      description: 'Purchase order · Approved',
+      description: 'Purchase order - Approved',
       icon: Icons.shopping_cart_outlined,
     ),
-    AutoSuggestion(
-      value: 'JV-0098',
+    'JV-0098': _DemoSuggestionMeta(
       label: 'JV-0098',
-      description: 'Journal voucher · Posted',
+      description: 'Journal voucher - Posted',
       icon: Icons.menu_book_outlined,
     ),
+  };
+
+  static const List<String> _documentReferences = [
+    'INV-1001',
+    'INV-1042',
+    'PO-2040',
+    'JV-0098',
   ];
 
-  // Existing project tags for the inline-create demo.
-  static final List<AutoSuggestion<String>> _projects = [
-    const AutoSuggestion(
-      value: 'p-north',
-      label: 'North Tower',
-      icon: Icons.sell_outlined,
-    ),
-    const AutoSuggestion(
-      value: 'p-marina',
-      label: 'Marina Retail',
-      icon: Icons.sell_outlined,
-    ),
-    const AutoSuggestion(
-      value: 'p-airport',
-      label: 'Airport Expansion',
-      icon: Icons.sell_outlined,
-    ),
+  static AutoSuggestion<String> _documentReferenceSuggestion(
+    List<String> items,
+    int index,
+    String reference,
+  ) {
+    final meta = _documentReferenceMeta[reference];
+    return AutoSuggestion<String>(
+      value: reference,
+      label: meta?.label ?? reference,
+      description: meta?.description,
+      icon: meta?.icon,
+    );
+  }
+
+  static const Map<String, String> _cityLabels = {
+    'RUH': 'Riyadh',
+    'JED': 'Jeddah',
+    'DMM': 'Dammam',
+    'MKC': 'Mecca',
+    'MED': 'Medina',
+    'KHB': 'Khobar',
+    'TUU': 'Tabuk',
+    'AHB': 'Abha',
+  };
+
+  static const List<String> _cities = [
+    'RUH',
+    'JED',
+    'DMM',
+    'MKC',
+    'MED',
+    'KHB',
+    'TUU',
+    'AHB',
   ];
 
-  // A large item catalog served one page at a time (simulated server).
-  static final List<AutoSuggestion<String>> _catalog = [
-    for (var i = 1; i <= 64; i++)
-      AutoSuggestion(
-        value: 'SKU-${i.toString().padLeft(4, '0')}',
-        label: 'Item ${i.toString().padLeft(4, '0')}',
-        description: 'SKU-${i.toString().padLeft(4, '0')} · Warehouse A',
-        trailing: '${(i * 7) % 90 + 3} in stock',
-        icon: Icons.inventory_2_outlined,
-      ),
+  static AutoSuggestion<String> _citySuggestion(
+    List<String> items,
+    int index,
+    String code,
+  ) => AutoSuggestion<String>(
+    value: code,
+    label: _cityLabels[code] ?? code,
+    description: code,
+    keywords: [code],
+  );
+
+  static const List<String> _projects = [
+    'North Tower',
+    'Marina Retail',
+    'Airport Expansion',
   ];
+
+  static AutoSuggestion<String> _projectSuggestion(
+    List<String> items,
+    int index,
+    String project,
+  ) => AutoSuggestion<String>(
+    value: project,
+    label: project,
+    description: 'Project tag',
+    icon: Icons.sell_outlined,
+  );
+
+  static final List<String> _catalog = [
+    for (var i = 1; i <= 64; i++) 'SKU-${i.toString().padLeft(4, '0')}',
+  ];
+
+  static String _catalogLabel(String sku) => 'Item ${sku.split('-').last}';
+
+  static AutoSuggestion<String> _catalogSuggestion(
+    List<String> items,
+    int index,
+    String sku,
+  ) {
+    final number = int.tryParse(sku.split('-').last) ?? index + 1;
+    return AutoSuggestion<String>(
+      value: sku,
+      label: _catalogLabel(sku),
+      description: '$sku - Warehouse A',
+      trailing: '${(number * 7) % 90 + 3} in stock',
+      icon: Icons.inventory_2_outlined,
+      keywords: [sku],
+    );
+  }
 
   Future<SuggestionsPage<String>> _fetchCatalogPage(
     String query,
     int page,
   ) async {
-    await Future<void>.delayed(
-      const Duration(milliseconds: 500),
-    ); // simulate latency
+    await Future<void>.delayed(const Duration(milliseconds: 500));
     const pageSize = 12;
     final q = query.trim().toLowerCase();
     final all = [
-      for (final s in _catalog)
+      for (final sku in _catalog)
         if (q.isEmpty ||
-            s.label.toLowerCase().contains(q) ||
-            s.value.toLowerCase().contains(q))
-          s,
+            _catalogLabel(sku).toLowerCase().contains(q) ||
+            sku.toLowerCase().contains(q))
+          sku,
     ];
     final start = page * pageSize;
     if (start >= all.length) return const SuggestionsPage<String>.empty();
@@ -191,27 +269,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     );
   }
 
-  // A handful of "local" vendors held in memory; the long tail lives "on the
-  // server" and is fetched only when the local matches run thin.
-  static final List<AutoSuggestion<String>> _localVendors = [
-    const AutoSuggestion(
-      value: 'V-001',
-      label: 'Al-Faisal Trading',
-      description: 'Local · Riyadh',
-      icon: Icons.storefront_outlined,
-    ),
-    const AutoSuggestion(
-      value: 'V-002',
-      label: 'Najd Logistics',
-      description: 'Local · Riyadh',
-      icon: Icons.local_shipping_outlined,
-    ),
-    const AutoSuggestion(
-      value: 'V-003',
-      label: 'Gulf Steel Co.',
-      description: 'Local · Dammam',
-      icon: Icons.factory_outlined,
-    ),
+  static const List<String> _localVendors = [
+    'Al-Faisal Trading',
+    'Najd Logistics',
+    'Gulf Steel Co.',
   ];
 
   static const List<String> _remoteVendors = [
@@ -229,53 +290,55 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     'Northern Pipes & Fittings',
   ];
 
-  // A larger directory for the advanced-search example.
-  static final List<AutoSuggestion<String>> _directory = [
-    for (var i = 0; i < _remoteVendors.length; i++)
-      AutoSuggestion(
-        value: 'D-${i + 1}',
-        label: _remoteVendors[i],
-        description: 'Directory entry',
-        icon: Icons.business_outlined,
-      ),
-    ..._localVendors,
-  ];
+  static final List<String> _directory = [..._remoteVendors, ..._localVendors];
 
-  Future<List<AutoSuggestion<String>>> _fetchRemote(String query) async {
-    await Future<void>.delayed(
-      const Duration(milliseconds: 650),
-    ); // simulate latency
+  static AutoSuggestion<String> _vendorSuggestion(
+    List<String> items,
+    int index,
+    String vendor,
+  ) {
+    final local = _localVendors.contains(vendor);
+    return AutoSuggestion<String>(
+      value: vendor,
+      label: vendor,
+      description: local ? 'Local - Riyadh' : 'Server - remote',
+      icon: local ? Icons.storefront_outlined : Icons.cloud_outlined,
+    );
+  }
+
+  static AutoSuggestion<String> _directorySuggestion(
+    List<String> items,
+    int index,
+    String vendor,
+  ) => AutoSuggestion<String>(
+    value: vendor,
+    label: vendor,
+    description: 'Directory entry',
+    icon: Icons.business_outlined,
+  );
+
+  Future<List<String>> _fetchRemote(String query) async {
+    await Future<void>.delayed(const Duration(milliseconds: 650));
     final q = query.trim().toLowerCase();
     return [
       for (final name in _remoteVendors)
-        if (name.toLowerCase().contains(q))
-          AutoSuggestion(
-            value: 'R-$name',
-            label: name,
-            description: 'Server · remote',
-            icon: Icons.cloud_outlined,
-          ),
+        if (name.toLowerCase().contains(q)) name,
     ];
   }
 
-  // Live validity of the "Post To Account (required)" field, surfaced beneath it.
   String? _accountError;
-
-  // Whether the "Bound Account" field is locked to its read-only view.
   bool _boundReadOnly = false;
 
   final GlobalKey<FormState> _erpFormKey = GlobalKey<FormState>();
   String? _savedDocumentReference;
   String _lastInputEvent = 'No input event yet';
 
-  // A stable, pre-filled controller for the disabled-field example.
   late final AutoSuggestionsBoxController<String> _lockedController =
       AutoSuggestionsBoxController<String>(
         source: SuggestionSources.list<String>(_accounts),
         initialValue: _accounts.first,
       );
 
-  // Recents-enabled controller: picks pin to a “Recent” section on the empty field.
   late final AutoSuggestionsBoxController<String> _recentsController =
       AutoSuggestionsBoxController<String>(
         source: SuggestionSources.list<String>(_accounts),
@@ -283,22 +346,19 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
         maxRecents: 4,
       );
 
-  // A bound field for the read-only / selectByValue example.
   late final AutoSuggestionsBoxController<String> _boundController =
       AutoSuggestionsBoxController<String>(
         source: SuggestionSources.list<String>(_accounts),
-        initialValue: _accounts.firstWhere((a) => a.value == '4000'),
+        initialValue: '4000',
       );
 
-  // Controller metadata used by the fixable-field example. `allowFixed` exposes
-  // the controller's isFixed state as a compact action beside the field label.
   final FocusNode _fixableFocusNode = FocusNode();
   final GlobalKey<FormFieldState<String>> _fixableFormFieldKey =
       GlobalKey<FormFieldState<String>>();
   late final AutoSuggestionsBoxController<String> _fixableController =
       AutoSuggestionsBoxController<String>(
         source: SuggestionSources.list<String>(_accounts),
-        initialValue: _accounts.firstWhere((a) => a.value == '1020'),
+        initialValue: '1020',
         focusNode: _fixableFocusNode,
         formFieldKey: _fixableFormFieldKey,
       );
@@ -335,7 +395,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v0.14.0',
+                'v1.0.0',
                 style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -346,8 +406,6 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 style: typography.h1.copyWith(color: t.fg1),
               ),
               SizedBox(height: spacing.space8),
-
-              // 1 — Single-select, grouped, with highlight.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Post To Account',
@@ -355,95 +413,81 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
+                  suggestionBuilder: _accountSuggestion,
                   hintText: 'e.g. Accounts Receivable',
-                  onSelected: (s) {},
+                  onSelected: (code) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 2 — Multi-select.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Tag Cost Centers',
                 subtitle: 'Assign one or more cost centers to this entry',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
-                child: AutoSuggestionsBox<String>(
+                child: const AutoSuggestionsBox<String>(
                   items: _accounts,
+                  suggestionBuilder: _accountSuggestion,
                   multiSelect: true,
-                  hintText: 'Select cost centers…',
+                  hintText: 'Select cost centers...',
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 3 — Fuzzy strategy over plain strings.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Quick Filter',
-                subtitle: 'Fuzzy match — type loosely',
+                subtitle: 'Fuzzy match - type loosely',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: AutoSuggestionsBox<String>(
-                  source: SuggestionSources.fuzzy<String>(const [
-                    AutoSuggestion(value: 'RUH', label: 'Riyadh'),
-                    AutoSuggestion(value: 'JED', label: 'Jeddah'),
-                    AutoSuggestion(value: 'DMM', label: 'Dammam'),
-                    AutoSuggestion(value: 'MKC', label: 'Mecca'),
-                    AutoSuggestion(value: 'MED', label: 'Medina'),
-                    AutoSuggestion(value: 'KHB', label: 'Khobar'),
-                    AutoSuggestion(value: 'TUU', label: 'Tabuk'),
-                    AutoSuggestion(value: 'AHB', label: 'Abha'),
-                  ]),
+                  source: SuggestionSources.fuzzy<String>(_cities),
+                  suggestionBuilder: _citySuggestion,
                   highlightMatch: AutoSuggestionMatch.fuzzy,
                   hintText: 'e.g. rdh',
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 4 — Progressive remote fallback.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Select Vendor',
                 subtitle:
-                    'Local vendors show instantly; the server is queried only when local matches are few',
+                    'Local vendors show instantly; server search runs when local matches are few',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: AutoSuggestionsBox<String>(
                   source: SuggestionSources.remoteFallback<String>(
                     initialItems: _localVendors,
                     fetch: _fetchRemote,
-                    remoteThreshold: 3, // fetch when ≤ 3 local matches
+                    remoteThreshold: 3,
                     remoteMinChars: 1,
                   ),
-                  hintText: 'e.g. cement, freight, glass…',
-                  onSelected: (s) {},
+                  suggestionBuilder: _vendorSuggestion,
+                  hintText: 'e.g. cement, freight, glass...',
+                  onSelected: (vendor) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 5 — Advanced search (Ctrl/⌘+F).
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Vendor Directory',
                 subtitle:
-                    'Focus the field and press Ctrl / ⌘ + F to open Advanced Search',
+                    'Focus the field and press Ctrl / Cmd + F to open Advanced Search',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: AutoSuggestionsBox<String>(
                   items: _directory,
+                  suggestionBuilder: _directorySuggestion,
                   advancedSearch: true,
-                  hintText: 'Search the directory…  (⌘F)',
-                  onSelected: (s) {},
+                  hintText: 'Search the directory... (Cmd/Ctrl+F)',
+                  onSelected: (vendor) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 6 — Required + validator (v0.6.0). Validity surfaces through
-              // the suffix error badge; onValidity feeds a live status line.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Post To Account',
                 subtitle:
-                    'Required field with a custom validator — leave it empty and tab away',
+                    'Required field with a custom validator - leave it empty and tab away',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
+                  suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Debit Account',
                     helperText:
@@ -451,22 +495,22 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   ),
                   required: true,
                   validator: (value) {
-                    if (value.trim().isEmpty) {
-                      return null; // required handles empty
-                    }
-                    final match = _accounts.any((a) => a.label == value);
+                    if (value.trim().isEmpty) return null;
+                    final match = _accounts.any(
+                      (code) => _accountLabel(code) == value,
+                    );
                     return match ? null : 'Pick an account from the list';
                   },
                   onValidity: (err) => setState(() => _accountError = err),
                   hintText: 'e.g. Accounts Receivable',
-                  onSelected: (s) {},
+                  onSelected: (code) {},
                 ),
               ),
               SizedBox(height: spacing.space2),
               Text(
                 _accountError == null
-                    ? 'STATUS · VALID'
-                    : 'STATUS · ${_accountError!.toUpperCase()}',
+                    ? 'STATUS - VALID'
+                    : 'STATUS - ${_accountError!.toUpperCase()}',
                 style: typography.label.copyWith(
                   color: _accountError == null
                       ? t.tokens.success
@@ -474,8 +518,6 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 7 — Disabled (v0.6.0). Dimmed, non-interactive, no errors.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Locked Account',
@@ -483,25 +525,24 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'A disabled field blocks typing and opening the overlay',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: AutoSuggestionsBox<String>(
-                  items: _accounts,
+                  controller: _lockedController,
+                  suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Reconciliation Account',
                   ),
                   disabled: true,
-                  controller: _lockedController,
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 8 — Field-level custom theme + focusedStyle (v0.6.0).
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Themed Field',
                 subtitle:
-                    'A theme assigned directly to one box — green focused fill, border & bold text',
+                    'A theme assigned directly to one box - green focused fill, border and bold text',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
+                  suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Ledger Account',
                   ),
@@ -514,93 +555,82 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       cursorColor: t.tokens.success,
                     ),
                   ),
-                  onSelected: (s) {},
+                  onSelected: (code) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 9 — Recently-used (recents pin to the top on the empty field).
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Recent Accounts',
                 subtitle:
-                    'Pick a few, clear the field (×) and reopen — your recent picks pin to the top',
+                    'Pick a few, clear the field and reopen - recent picks pin to the top',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: AutoSuggestionsBox<String>(
                   controller: _recentsController,
+                  suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(labelText: 'Account'),
-                  hintText: 'Search accounts…',
-                  onSelected: (s) {},
+                  hintText: 'Search accounts...',
+                  onSelected: (code) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 10 — Inline create (add missing master data without leaving).
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Project Tag',
-                subtitle:
-                    'Type a name that does not exist and press Enter to “＋ Create” it',
+                subtitle: 'Type a missing name and press Enter to create it',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: AutoSuggestionsBox<String>(
                   items: _projects,
+                  suggestionBuilder: _projectSuggestion,
                   decoration: const InputDecoration(labelText: 'Project'),
                   hintText: 'e.g. Seafront Villas',
-                  onCreate: (q) async {
+                  onCreate: (query) async {
                     await Future<void>.delayed(
                       const Duration(milliseconds: 400),
-                    ); // simulate a POST
-                    return AutoSuggestion<String>(
-                      value:
-                          'p-${q.toLowerCase().replaceAll(RegExp(r"\s+"), "-")}',
-                      label: q,
-                      description: 'New project',
-                      icon: Icons.sell_outlined,
                     );
+                    return query;
                   },
-                  onSelected: (s) {},
+                  onSelected: (project) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 11 — Server-side pagination / infinite scroll over a big catalog.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Item Catalog',
                 subtitle:
-                    'Large master data — 12 rows per page; scroll the dropdown to load more',
+                    'Large master data - 12 rows per page; scroll the dropdown to load more',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: AutoSuggestionsBox<String>(
                   source: SuggestionSources.paged<String>(
                     _fetchCatalogPage,
                     resolveFrom: _catalog,
                   ),
+                  suggestionBuilder: _catalogSuggestion,
                   decoration: const InputDecoration(labelText: 'Item'),
                   maxVisibleRows: 7,
-                  hintText: 'Search 64 items…',
-                  onSelected: (s) {},
+                  hintText: 'Search 64 items...',
+                  onSelected: (sku) {},
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 12 — Record binding (selectByValue) + read-only view mode.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Bound Account',
                 subtitle:
-                    'Bind by stored code, then lock to a read-only (posted) view',
+                    'Bind by stored code, then lock to a read-only posted view',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AutoSuggestionsBox<String>(
                       controller: _boundController,
+                      suggestionBuilder: _accountSuggestion,
                       decoration: const InputDecoration(
                         labelText: 'Ledger Account',
                       ),
                       readOnly: _boundReadOnly,
                       hintText: 'Pick or bind by code',
-                      onSelected: (s) {},
+                      onSelected: (code) {},
                     ),
                     SizedBox(height: spacing.space3),
                     Wrap(
@@ -631,13 +661,11 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 13 — ERP keyboard, formatter, callbacks, and FormState.save.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'ERP Document Reference',
                 subtitle:
-                    'Type a prefix, press Tab to accept the shadow completion, then Tab again to move focus',
+                    'Type a prefix, press Tab to accept completion, then Tab again to move focus',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: Form(
                   key: _erpFormKey,
@@ -646,6 +674,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     children: [
                       AutoSuggestionsBox<String>(
                         items: _documentReferences,
+                        suggestionBuilder: _documentReferenceSuggestion,
                         decoration: const InputDecoration(
                           labelText: 'Document Reference',
                         ),
@@ -699,7 +728,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                           Text(
                             _savedDocumentReference == null
                                 ? _lastInputEvent
-                                : 'Saved: $_savedDocumentReference · $_lastInputEvent',
+                                : 'Saved: $_savedDocumentReference - $_lastInputEvent',
                             style: typography.label.copyWith(color: t.fg2),
                           ),
                         ],
@@ -709,8 +738,6 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 14 — Controller metadata + opt-in fix/unfix label action.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Fixable Account',
@@ -722,6 +749,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   children: [
                     AutoSuggestionsBox<String>(
                       controller: _fixableController,
+                      suggestionBuilder: _accountSuggestion,
                       decoration: const InputDecoration(
                         labelText: 'Settlement Account',
                         helperText: 'Lock the field after selecting an account',
@@ -751,24 +779,25 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 ),
               ),
               SizedBox(height: spacing.section),
-
-              // 15 — Standard InputDecoration replaces legacy label / hint.
               SuperSectionCard2(
                 collapsible: false,
                 title: 'Input Decoration',
                 subtitle:
-                    'Label, helper, and placeholder copy use Flutter’s standard API',
+                    'Label, helper, and placeholder copy use Flutter standard InputDecoration',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: AutoSuggestionsBox<String>(
                   items: _accounts,
+                  suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
-                    labelText: 'Contra Account',
-                    helperText: 'Select the balancing ledger account',
-                    hintText: 'Search by code or name',
+                    labelText: 'Cash Account',
+                    helperText: 'Standard InputDecoration helper text',
+                    hintText: 'Search by account code or name',
                     prefixIcon: Icon(Icons.account_balance_outlined),
                   ),
+                  onSelected: (code) {},
                 ),
               ),
+              SizedBox(height: spacing.section),
             ],
           ),
         ),

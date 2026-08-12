@@ -14,6 +14,15 @@ Widget _themedApp(Widget home) {
   );
 }
 
+AutoSuggestion<String> _suggestion(
+  List<String> items,
+  int index,
+  String element,
+) => AutoSuggestion<String>(
+  value: element,
+  label: element == 'A' ? 'Alpha' : element,
+);
+
 void main() {
   testWidgets('allowFixed toggles a compact label action and protects text', (
     tester,
@@ -21,9 +30,7 @@ void main() {
     final focusNode = FocusNode();
     final formFieldKey = GlobalKey<FormFieldState<String>>();
     final controller = AutoSuggestionsBoxController<String>(
-      source: SuggestionSources.list(const [
-        AutoSuggestion(value: 'A', label: 'Alpha'),
-      ]),
+      source: SuggestionSources.list(const ['A']),
       focusNode: focusNode,
       formFieldKey: formFieldKey,
     );
@@ -35,6 +42,7 @@ void main() {
         Scaffold(
           body: AutoSuggestionsBox<String>(
             controller: controller,
+            suggestionBuilder: _suggestion,
             decoration: const InputDecoration(
               labelText: 'Account',
               helperText: 'Choose an account',
@@ -68,62 +76,60 @@ void main() {
     expect(controller.text.text, 'editable');
   });
 
-  testWidgets('forwards ERP input configuration and participates in Form.save', (
-    tester,
-  ) async {
-    final formKey = GlobalKey<FormState>();
-    String? savedValue;
-    String? submittedValue;
-    var tapCount = 0;
+  testWidgets(
+    'forwards ERP input configuration and participates in Form.save',
+    (tester) async {
+      final formKey = GlobalKey<FormState>();
+      String? savedValue;
+      String? submittedValue;
+      var tapCount = 0;
 
-    await tester.pumpWidget(
-      _themedApp(
-        Scaffold(
-          body: Form(
-            key: formKey,
-            child: AutoSuggestionsBox<String>(
-              items: const [
-                AutoSuggestion(value: '1234', label: '1234'),
-              ],
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.end,
-              textInputAction: TextInputAction.done,
-              keyboardAppearance: Brightness.dark,
-              autocorrect: false,
-              enableSuggestions: false,
-              enableIMEPersonalizedLearning: false,
-              maxLength: 8,
-              onTap: () => tapCount++,
-              onFieldSubmitted: (value) => submittedValue = value,
-              onSave: (value) => savedValue = value,
+      await tester.pumpWidget(
+        _themedApp(
+          Scaffold(
+            body: Form(
+              key: formKey,
+              child: AutoSuggestionsBox<String>(
+                items: const ['1234'],
+                suggestionBuilder: _suggestion,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.end,
+                textInputAction: TextInputAction.done,
+                keyboardAppearance: Brightness.dark,
+                autocorrect: false,
+                enableSuggestions: false,
+                enableIMEPersonalizedLearning: false,
+                maxLength: 8,
+                onTap: () => tapCount++,
+                onFieldSubmitted: (value) => submittedValue = value,
+                onSave: (value) => savedValue = value,
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    final textField = tester.widget<TextField>(find.byType(TextField));
-    expect(textField.keyboardType, TextInputType.number);
-    expect(textField.textDirection, TextDirection.ltr);
-    expect(textField.textAlign, TextAlign.end);
-    expect(textField.textInputAction, TextInputAction.done);
-    expect(textField.maxLength, 8);
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.keyboardType, TextInputType.number);
+      expect(textField.textDirection, TextDirection.ltr);
+      expect(textField.textAlign, TextAlign.end);
+      expect(textField.textInputAction, TextInputAction.done);
+      expect(textField.maxLength, 8);
 
-    await tester.tap(find.byType(TextField));
-    await tester.enterText(find.byType(TextField), '1234');
-    expect(tapCount, 1);
+      await tester.tap(find.byType(TextField));
+      await tester.enterText(find.byType(TextField), '1234');
+      expect(tapCount, 1);
 
-    formKey.currentState!.save();
-    expect(savedValue, '1234');
+      formKey.currentState!.save();
+      expect(savedValue, '1234');
 
-    tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pump();
-    expect(submittedValue, '1234');
-  });
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(submittedValue, '1234');
+    },
+  );
 
   testWidgets('shows highlighted prefix remainder as a visual shadow hint', (
     tester,
@@ -137,10 +143,8 @@ void main() {
           body: Form(
             key: formKey,
             child: AutoSuggestionsBox<String>(
-              items: const [
-                AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
-                AutoSuggestion(value: 'INV-1100', label: 'INV-1100'),
-              ],
+              items: const ['INV-1042', 'INV-1100'],
+              suggestionBuilder: _suggestion,
               textDirection: TextDirection.ltr,
               onSave: (value) => savedValue = value,
             ),
@@ -178,52 +182,53 @@ void main() {
     expect(exactSpan.toPlainText(), 'INV-1042');
   });
 
-  testWidgets('keeps an external text controller synchronized with shadow text', (
-    tester,
-  ) async {
-    final textController = TextEditingController();
-    final controller = AutoSuggestionsBoxController<String>(
-      source: SuggestionSources.list<String>(const [
-        AutoSuggestion(value: 'ACC-1000', label: 'ACC-1000'),
-      ]),
-      textController: textController,
-    );
-    addTearDown(() {
-      controller.dispose();
-      textController.dispose();
-    });
+  testWidgets(
+    'keeps an external text controller synchronized with shadow text',
+    (tester) async {
+      final textController = TextEditingController();
+      final controller = AutoSuggestionsBoxController<String>(
+        source: SuggestionSources.list<String>(const ['ACC-1000']),
+        textController: textController,
+      );
+      addTearDown(() {
+        controller.dispose();
+        textController.dispose();
+      });
 
-    await tester.pumpWidget(
-      _themedApp(
-        Scaffold(
-          body: AutoSuggestionsBox<String>(controller: controller),
+      await tester.pumpWidget(
+        _themedApp(
+          Scaffold(
+            body: AutoSuggestionsBox<String>(
+              controller: controller,
+              suggestionBuilder: _suggestion,
+            ),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.byType(TextField));
-    await tester.enterText(find.byType(TextField), 'ACC-1');
-    await tester.pump();
+      await tester.tap(find.byType(TextField));
+      await tester.enterText(find.byType(TextField), 'ACC-1');
+      await tester.pump();
 
-    final editable = tester.widget<EditableText>(find.byType(EditableText));
-    final span = editable.controller.buildTextSpan(
-      context: tester.element(find.byType(EditableText)),
-      style: editable.style,
-      withComposing: false,
-    );
+      final editable = tester.widget<EditableText>(find.byType(EditableText));
+      final span = editable.controller.buildTextSpan(
+        context: tester.element(find.byType(EditableText)),
+        style: editable.style,
+        withComposing: false,
+      );
 
-    expect(textController.text, 'ACC-1');
-    expect(span.toPlainText(), 'ACC-1000');
-  });
+      expect(textController.text, 'ACC-1');
+      expect(span.toPlainText(), 'ACC-1000');
+    },
+  );
 
   testWidgets('can disable the visual shadow hint', (tester) async {
     await tester.pumpWidget(
       _themedApp(
         const Scaffold(
           body: AutoSuggestionsBox<String>(
-            items: [
-              AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
-            ],
+            items: ['INV-1042'],
+            suggestionBuilder: _suggestion,
             showShadowHint: false,
           ),
         ),
@@ -253,10 +258,8 @@ void main() {
       _themedApp(
         Scaffold(
           body: AutoSuggestionsBox<String>(
-            items: const [
-              AutoSuggestion(value: 'INV-1042', label: 'INV-1042'),
-              AutoSuggestion(value: 'INV-1100', label: 'INV-1100'),
-            ],
+            items: const ['INV-1042', 'INV-1100'],
+            suggestionBuilder: _suggestion,
             textDirection: TextDirection.ltr,
             onTabNext: () => tabNextCount++,
             onSelected: (_) => selectedCount++,
@@ -288,9 +291,8 @@ void main() {
       _themedApp(
         const Scaffold(
           body: AutoSuggestionsBox<String>(
-            items: [
-              AutoSuggestion(value: 'ACC-1000', label: 'ACC-1000'),
-            ],
+            items: ['ACC-1000'],
+            suggestionBuilder: _suggestion,
             completeShadowHintOnTab: false,
           ),
         ),
@@ -307,5 +309,103 @@ void main() {
 
     final editable = tester.widget<EditableText>(find.byType(EditableText));
     expect(editable.controller.text, 'ACC-1');
+  });
+
+  test('controller exposes raw initial, recents, and bound selections', () {
+    final changedRecents = <List<String>>[];
+    final controller = AutoSuggestionsBoxController<String>(
+      source: SuggestionSources.list<String>(const ['A', 'B', 'C']),
+      initialValue: 'A',
+      showRecents: true,
+      onRecentsChanged: (items) => changedRecents.add(items),
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.selected, 'A');
+    expect(controller.selectedSuggestion?.label, 'A');
+    expect(controller.text.text, 'A');
+
+    expect(controller.selectByValue('B'), 'B');
+    expect(controller.selected, 'B');
+    expect(controller.recents, ['B']);
+    expect(changedRecents.single, ['B']);
+
+    controller.setRecents(const ['C']);
+    expect(controller.recents, ['C']);
+  });
+
+  test('controller multi-select collections use raw values', () {
+    final controller = AutoSuggestionsBoxController<String>(
+      source: SuggestionSources.list<String>(const ['A', 'B']),
+      multiSelect: true,
+      initialSelected: const ['A'],
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.selectedItems, ['A']);
+    expect(controller.selectedValues, ['A']);
+
+    expect(controller.toggleSelected('B'), isTrue);
+    expect(controller.selectedItems, ['A', 'B']);
+
+    controller.removeSelectedValue('A');
+    expect(controller.selectedItems, ['B']);
+
+    controller.setSelectedItems(const ['A']);
+    expect(controller.selectedItems, ['A']);
+  });
+
+  testWidgets('onSelected receives the picked raw value', (tester) async {
+    String? selected;
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: AutoSuggestionsBox<String>(
+            items: const ['A', 'B'],
+            suggestionBuilder: _suggestion,
+            onSelected: (value) => selected = value,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(selected, 'A');
+  });
+
+  testWidgets('onCreate returns and commits a raw value', (tester) async {
+    String? selected;
+    String? createQuery;
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: AutoSuggestionsBox<String>(
+            items: const [],
+            suggestionBuilder: _suggestion,
+            onCreate: (query) async {
+              createQuery = query;
+              return 'created:$query';
+            },
+            onSelected: (value) => selected = value,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'North Tower');
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.pump();
+
+    expect(createQuery, 'North Tower');
+    expect(selected, 'created:North Tower');
   });
 }
