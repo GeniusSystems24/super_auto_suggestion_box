@@ -306,7 +306,7 @@ GeniusLink form-field convention.
 
 ## Migration
 
-See [`migration_0.14.0_to_1.0.0`](migration_0.14.0_to_1.0.0) for before-and-after
+See [`migration_0.14.0_to_1.0.0.md`](migration_0.14.0_to_1.0.0.md) for before-and-after
 examples covering data sources, `initialItems`, fetch callbacks, controllers,
 `AutoSuggestionsBox`, `suggestionBuilder`, and removed `AutoSuggestion<T>`-based
 APIs.

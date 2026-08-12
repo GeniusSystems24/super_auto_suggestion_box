@@ -39,7 +39,7 @@ follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 
 - Updated `README.md`, `SKILL.md`, `example/README.md`, runnable examples, and
   test coverage for the raw `T` API and widget-owned `suggestionBuilder`.
-- Added `migration_0.14.0_to_1.0.0` with before-and-after examples for data
+- Added `migration_0.14.0_to_1.0.0.md` with before-and-after examples for data
   sources, `initialItems`, fetch callbacks, controllers, `AutoSuggestionsBox`,
   `suggestionBuilder`, selection, creation, recents, and removed
   `AutoSuggestion<T>`-based APIs.
