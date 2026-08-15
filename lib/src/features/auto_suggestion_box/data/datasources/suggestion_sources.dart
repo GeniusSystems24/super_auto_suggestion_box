@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import '../../domain/entities/auto_suggestion.dart';
+import '../../domain/entities/super_auto_suggestions_item.dart';
 import '../../domain/entities/match_strategy.dart';
-import '../../domain/entities/suggestions_page.dart';
+import '../../domain/entities/super_suggestions_page.dart';
 import '../../domain/entities/suggestions_query_result.dart';
-import '../../domain/repositories/suggestions_source.dart';
+import '../../domain/repositories/super_auto_suggestions_source.dart';
 
 /// Factory helpers for common suggestion data source patterns.
 abstract final class SuggestionSources {
   /// Creates an in-memory source backed by raw [items].
-  static AutoSuggestionsSource<T> list<T>(
+  static SuperAutoSuggestionsSource<T> list<T>(
     List<T> items, {
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
     bool caseSensitive = false,
@@ -20,13 +20,13 @@ abstract final class SuggestionSources {
   );
 
   /// Creates a convenience string source where the label and value are equal.
-  static AutoSuggestionsSource<String> strings(
+  static SuperAutoSuggestionsSource<String> strings(
     List<String> values, {
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
   }) => ListSuggestionsSource<String>(values, match: match);
 
   /// Creates an in-memory source that uses fuzzy matching.
-  static AutoSuggestionsSource<T> fuzzy<T>(
+  static SuperAutoSuggestionsSource<T> fuzzy<T>(
     List<T> items, {
     bool caseSensitive = false,
   }) => ListSuggestionsSource<T>(
@@ -36,14 +36,14 @@ abstract final class SuggestionSources {
   );
 
   /// Creates an async source backed by [fetch].
-  static AutoSuggestionsSource<T> async<T>(
+  static SuperAutoSuggestionsSource<T> async<T>(
     Future<List<T>> Function(String query) fetch, {
     List<T> initialItems = const [],
   }) => AsyncSuggestionsSource<T>(fetch, initialItems: initialItems);
 
   /// Creates a source that returns local matches immediately and can then merge
   /// remote results when [remoteThreshold] and [remoteMinChars] allow it.
-  static AutoSuggestionsSource<T> hybrid<T>({
+  static SuperAutoSuggestionsSource<T> hybrid<T>({
     required List<T> initialItems,
     required Future<List<T>> Function(String query) fetch,
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
@@ -61,7 +61,7 @@ abstract final class SuggestionSources {
 
   /// Creates a source that uses local data first and falls back to remote
   /// fetching when local matches are below [remoteThreshold].
-  static AutoSuggestionsSource<T> remoteFallback<T>({
+  static SuperAutoSuggestionsSource<T> remoteFallback<T>({
     required List<T> initialItems,
     required Future<List<T>> Function(String query) fetch,
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
@@ -78,8 +78,8 @@ abstract final class SuggestionSources {
   );
 
   /// Creates a paged source backed by [fetch].
-  static AutoSuggestionsSource<T> paged<T>(
-    Future<SuggestionsPage<T>> Function(String query, int page) fetch, {
+  static SuperAutoSuggestionsSource<T> paged<T>(
+    Future<SuperSuggestionsPage<T>> Function(String query, int page) fetch, {
     List<T> resolveFrom = const [],
   }) => PagedSuggestionsSource<T>(fetch, resolveFrom: resolveFrom);
 }
@@ -88,7 +88,7 @@ class _SuggestionRow<T> {
   const _SuggestionRow(this.item, this.suggestion);
 
   final T item;
-  final AutoSuggestion<T> suggestion;
+  final SuperAutoSuggestionsItem<T> suggestion;
 }
 
 List<_SuggestionRow<T>> _buildRows<T>(
@@ -114,8 +114,8 @@ List<T> _localMatches<T>({
     return [for (final row in rows) row.item];
   }
 
-  String haystackOf(AutoSuggestion<T> suggestion) => caseSensitive
-      ? [suggestion.label, ...suggestion.keywords].join(' ')
+  String haystackOf(SuperAutoSuggestionsItem<T> suggestion) => caseSensitive
+      ? [suggestion.displayText, ...suggestion.keywords].join(' ')
       : suggestion.haystack;
 
   final matched = [
@@ -144,16 +144,16 @@ List<T> _localMatches<T>({
           );
       return byScore != 0
           ? byScore
-          : a.suggestion.label.length - b.suggestion.label.length;
+          : a.suggestion.displayText.length - b.suggestion.displayText.length;
     });
   } else {
     matched.sort((a, b) {
       final aLabel = caseSensitive
-          ? a.suggestion.label
-          : a.suggestion.label.toLowerCase();
+          ? a.suggestion.displayText
+          : a.suggestion.displayText.toLowerCase();
       final bLabel = caseSensitive
-          ? b.suggestion.label
-          : b.suggestion.label.toLowerCase();
+          ? b.suggestion.displayText
+          : b.suggestion.displayText.toLowerCase();
       final aIndex = aLabel.indexOf(normalizedQuery);
       final bIndex = bLabel.indexOf(normalizedQuery);
       final aRank = aIndex < 0 ? 1 << 20 : aIndex;
@@ -209,7 +209,7 @@ T? _resolveByValue<T>(
 }
 
 /// In-memory source backed by raw [items].
-class ListSuggestionsSource<T> extends AutoSuggestionsSource<T> {
+class ListSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   ListSuggestionsSource(
     this.items, {
     this.match = AutoSuggestionMatch.contains,
@@ -235,7 +235,7 @@ class ListSuggestionsSource<T> extends AutoSuggestionsSource<T> {
 }
 
 /// Async source backed by a fetch callback returning raw values.
-class AsyncSuggestionsSource<T> extends AutoSuggestionsSource<T> {
+class AsyncSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   AsyncSuggestionsSource(this.fetch, {List<T> initialItems = const []})
     : cachedItems = List<T>.of(initialItems);
 
@@ -264,7 +264,7 @@ class AsyncSuggestionsSource<T> extends AutoSuggestionsSource<T> {
 }
 
 /// Source that combines local results with remote results.
-class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
+class HybridSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   HybridSuggestionsSource({
     required List<T> initialItems,
     required this.fetch,
@@ -340,7 +340,7 @@ class HybridSuggestionsSource<T> extends AutoSuggestionsSource<T> {
 
 /// Source that returns local matches and only requests remote fallback when
 /// local matches are sparse.
-class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
+class RemoteFallbackSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   RemoteFallbackSuggestionsSource({
     required List<T> initialItems,
     required this.fetch,
@@ -415,11 +415,11 @@ class RemoteFallbackSuggestionsSource<T> extends AutoSuggestionsSource<T> {
 }
 
 /// Source backed by page-based fetching.
-class PagedSuggestionsSource<T> extends AutoSuggestionsSource<T> {
+class PagedSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   PagedSuggestionsSource(this.fetch, {List<T> resolveFrom = const []})
     : cachedItems = List<T>.of(resolveFrom);
 
-  final Future<SuggestionsPage<T>> Function(String query, int page) fetch;
+  final Future<SuperSuggestionsPage<T>> Function(String query, int page) fetch;
   final List<T> cachedItems;
 
   @override
@@ -433,7 +433,7 @@ class PagedSuggestionsSource<T> extends AutoSuggestionsSource<T> {
       fetchPage(query, 0).then((page) => page.items);
 
   @override
-  Future<SuggestionsPage<T>> fetchPage(String query, int page) =>
+  Future<SuperSuggestionsPage<T>> fetchPage(String query, int page) =>
       fetch(query, page).then((result) {
         cachedItems.addAll(result.items);
         return result;

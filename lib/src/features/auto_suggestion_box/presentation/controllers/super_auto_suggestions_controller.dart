@@ -1,5 +1,5 @@
 // ============================================================
-// features/auto_suggestion_box/presentation/controllers/auto_suggestions_box_controller.dart
+// features/auto_suggestion_box/presentation/controllers/super_auto_suggestions_controller.dart
 // ------------------------------------------------------------
 // The MVC controller: the single source of truth for one box. Its public API is
 // raw `T` values. The widget attaches the view metadata builder needed for
@@ -10,106 +10,77 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../../domain/entities/auto_suggestion.dart';
-import '../../domain/repositories/suggestions_source.dart';
+import '../../domain/entities/super_auto_suggestions_item.dart';
+import '../../domain/repositories/super_auto_suggestions_source.dart';
 
-class AutoSuggestionsBoxController<T> extends ChangeNotifier {
-  AutoSuggestionsBoxController({
-    required AutoSuggestionsSource<T> source,
+class SuperAutoSuggestionsController<T> extends ChangeNotifier {
+  SuperAutoSuggestionsController({
     TextEditingController? textController,
-    String? initialText,
     T? initialValue,
-    this.debounce = const Duration(milliseconds: 180),
-    this.minChars = 0,
-    this.maxResults = 50,
     this.allowFreeText = true,
-    this.multiSelect = false,
     List<T>? initialSelected,
-    this.showRecents = false,
-    this.maxRecents = 5,
-    List<T>? initialRecents,
-    this.recentsGroupLabel = 'Recent',
-    this.onRecentsChanged,
     bool isFixed = false,
     this.focusNode,
     this.isHiden = false,
     this.formFieldKey,
-  }) : _source = source,
-       _suggestionBuilder = _defaultSuggestionBuilder<T>,
+  }) : _initialValue = initialValue,
        _ownsText = textController == null,
        isFixed = ValueNotifier<bool>(isFixed),
-       text =
-           textController ??
-           TextEditingController(
-             text: _initialDisplayText(
-               source,
-               _defaultSuggestionBuilder<T>,
-               initialValue,
-               initialText,
-             ),
-           ) {
-    final initialItem = _resolveInitialItem(
-      source,
-      _defaultSuggestionBuilder<T>,
-      initialValue,
-    );
-    _selected = initialItem;
-    _committed = initialItem;
-    _committedText = initialItem == null
-        ? initialText
-        : source.suggestionFor(initialItem).label;
+       text = textController ?? TextEditingController() {
     if (initialSelected != null) _selectedItems.addAll(initialSelected);
-    if (initialRecents != null) {
-      _recents.addAll(initialRecents.take(maxRecents));
-    }
     text.addListener(_onTextChanged);
     this.isFixed.addListener(_onFixedChanged);
     _lastText = text.text;
-    // Seed the initial (empty-query) result set so opening shows everything.
-    _run(_queryString(), immediate: true);
   }
 
-  static AutoSuggestion<T> _defaultSuggestionBuilder<T>(
-    List<T> items,
-    int index,
-    T element,
-  ) => AutoSuggestion<T>(value: element, label: element.toString());
-
-  static T? _resolveInitialItem<T>(
-    AutoSuggestionsSource<T> source,
-    AutoSuggestionBuilder<T> suggestionBuilder,
-    T? initialValue,
-  ) {
-    if (initialValue == null) return null;
-    bindAutoSuggestionsSourceView(source, suggestionBuilder);
-    return source.resolve(initialValue) ?? initialValue;
-  }
-
-  static String _initialDisplayText<T>(
-    AutoSuggestionsSource<T> source,
-    AutoSuggestionBuilder<T> suggestionBuilder,
-    T? initialValue,
-    String? initialText,
-  ) {
-    final item = _resolveInitialItem(source, suggestionBuilder, initialValue);
-    return item == null ? initialText ?? '' : source.suggestionFor(item).label;
-  }
-
-  AutoSuggestionsSource<T> _source;
+  late SuperAutoSuggestionsSource<T> _source;
+  final T? _initialValue;
+  bool _viewBound = false;
   final bool _ownsText;
 
-  AutoSuggestionBuilder<T> _suggestionBuilder;
-
-  void _bindViewAdapter(AutoSuggestionBuilder<T> builder) {
-    if (identical(_suggestionBuilder, builder)) return;
-    _suggestionBuilder = builder;
-    bindAutoSuggestionsSourceView(_source, builder);
+  void _bindViewAdapter(
+    SuperAutoSuggestionsSource<T> source,
+    AutoSuggestionBuilder<T> builder, {
+    required Duration debounce,
+    required int minChars,
+    required int maxResults,
+    required bool multiSelect,
+    required bool showRecents,
+    required int maxRecents,
+    required List<T>? initialRecents,
+    required String recentsGroupLabel,
+    required ValueChanged<List<T>>? onRecentsChanged,
+  }) {
+    _source = source;
+    _debounce = debounce;
+    _minChars = minChars;
+    _maxResults = maxResults;
+    _multiSelect = multiSelect;
+    _showRecents = showRecents;
+    _maxRecents = maxRecents;
+    _recentsGroupLabel = recentsGroupLabel;
+    _onRecentsChanged = onRecentsChanged;
+    bindSuperAutoSuggestionsSourceView(_source, builder);
+    if (!_viewBound) {
+      _viewBound = true;
+      if (initialRecents != null) {
+        _recents.addAll(initialRecents.take(_maxRecents));
+      }
+      final initialValue = _initialValue;
+      if (initialValue != null) {
+        final resolved = _source.resolve(initialValue) ?? initialValue;
+        _selected = resolved;
+        _committed = resolved;
+        _committedText = _source.suggestionFor(resolved).displayText;
+        _setTextInternal(_committedText!);
+      }
+    }
     final committed = _committed;
     if (committed != null) {
       final resolved = _source.resolve(committed) ?? committed;
       _selected = resolved;
       _committed = resolved;
-      _committedText = _source.suggestionFor(resolved).label;
+      _committedText = _source.suggestionFor(resolved).displayText;
       _setTextInternal(_committedText!);
     }
     _run(_queryString(), immediate: true);
@@ -133,35 +104,35 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   bool isHiden;
 
   /// Debounce window before an async query fires (sync sources ignore it).
-  final Duration debounce;
+  Duration _debounce = const Duration(milliseconds: 180);
 
   /// Do not query until at least this many characters are typed (0 = always).
-  final int minChars;
+  int _minChars = 0;
 
   /// Hard cap on how many rows the overlay shows.
-  final int maxResults;
+  int _maxResults = 50;
 
   /// Whether committing arbitrary typed text (not a suggestion) is allowed.
   bool allowFreeText;
 
   /// When true the box keeps a set of chosen raw items.
-  final bool multiSelect;
+  bool _multiSelect = false;
 
   /// Surface a Recent section while the query is empty.
-  final bool showRecents;
+  bool _showRecents = false;
 
   /// How many recents to retain (most-recent-first). 0 disables tracking.
-  final int maxRecents;
+  int _maxRecents = 5;
 
   /// The group header shown above the recents section.
-  final String recentsGroupLabel;
+  String _recentsGroupLabel = 'Recent';
 
   /// Fired whenever the raw recents list changes.
-  final ValueChanged<List<T>>? onRecentsChanged;
+  ValueChanged<List<T>>? _onRecentsChanged;
 
   // -- state ---------------------------------------------------------------
   List<T> _results = const [];
-  List<AutoSuggestion<T>> _suggestions = const [];
+  List<SuperAutoSuggestionsItem<T>> _suggestions = const [];
   int _highlighted = -1;
   bool _open = false;
   bool _loading = false;
@@ -198,7 +169,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   List<T> get results => List.unmodifiable(_results);
 
   /// Built suggestion rows for the current [results].
-  List<AutoSuggestion<T>> get suggestions => List.unmodifiable(_suggestions);
+  List<SuperAutoSuggestionsItem<T>> get suggestions => List.unmodifiable(_suggestions);
 
   bool get hasResults => _results.isNotEmpty;
   int get highlightedIndex => _highlighted;
@@ -209,7 +180,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
       : null;
 
   /// The highlighted render/search metadata, if any.
-  AutoSuggestion<T>? get highlightedSuggestion =>
+  SuperAutoSuggestionsItem<T>? get highlightedSuggestion =>
       (_highlighted >= 0 && _highlighted < _suggestions.length)
       ? _suggestions[_highlighted]
       : null;
@@ -221,11 +192,11 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   bool get isLoadingMore => _loadingMore;
   Object? get error => _error;
 
-  /// Recently committed raw items (most-recent-first), when [showRecents] is on.
+  /// Recently committed raw items (most-recent-first), when [_showRecents] is on.
   List<T> get recents => List.unmodifiable(_recents);
 
   /// Built suggestion rows for [recents].
-  List<AutoSuggestion<T>> get recentSuggestions =>
+  List<SuperAutoSuggestionsItem<T>> get recentSuggestions =>
       List.unmodifiable(_buildSuggestions(_recents));
 
   /// Whether the backing source paginates (infinite scroll).
@@ -241,14 +212,14 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   T? get selected => _selected;
 
   /// The built suggestion row for [selected], if any.
-  AutoSuggestion<T>? get selectedSuggestion =>
+  SuperAutoSuggestionsItem<T>? get selectedSuggestion =>
       _selected == null ? null : suggestionFor(_selected as T);
 
   /// The last committed raw selection restored on blur.
   T? get committed => _committed;
 
   /// The built suggestion row for [committed], if any.
-  AutoSuggestion<T>? get committedSuggestion =>
+  SuperAutoSuggestionsItem<T>? get committedSuggestion =>
       _committed == null ? null : suggestionFor(_committed as T);
 
   /// The committed payload value. With the raw API this is the selected value.
@@ -263,10 +234,10 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   bool isHighlighted(int i) => i == _highlighted;
 
   /// Build the suggestion metadata for the current result at [index].
-  AutoSuggestion<T> suggestionAt(int index) => _suggestions[index];
+  SuperAutoSuggestionsItem<T> suggestionAt(int index) => _suggestions[index];
 
   /// Build suggestion metadata for a raw [item].
-  AutoSuggestion<T> suggestionFor(T item) {
+  SuperAutoSuggestionsItem<T> suggestionFor(T item) {
     final resultIndex = _indexOfRaw(_results, item);
     if (resultIndex >= 0 && resultIndex < _suggestions.length) {
       return _suggestions[resultIndex];
@@ -290,7 +261,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     return -1;
   }
 
-  List<AutoSuggestion<T>> _buildSuggestions(List<T> items) =>
+  List<SuperAutoSuggestionsItem<T>> _buildSuggestions(List<T> items) =>
       _source.suggestionsFor(items);
 
   T _valueFor(T item) => suggestionFor(item).value;
@@ -351,23 +322,23 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   // -- recents ------------------------------------------------------------
   void _pushRecent(T item) {
-    if (!showRecents || maxRecents <= 0) return;
+    if (!_showRecents || _maxRecents <= 0) return;
     final value = _valueFor(item);
     final i = _indexBySuggestionValue(_recents, value);
     if (i >= 0) _recents.removeAt(i);
     _recents.insert(0, item);
-    while (_recents.length > maxRecents) {
+    while (_recents.length > _maxRecents) {
       _recents.removeLast();
     }
-    onRecentsChanged?.call(recents);
+    _onRecentsChanged?.call(recents);
   }
 
   /// Replace the recents list.
   void setRecents(List<T> items) {
     _recents
       ..clear()
-      ..addAll(items.take(maxRecents));
-    onRecentsChanged?.call(recents);
+      ..addAll(items.take(_maxRecents));
+    _onRecentsChanged?.call(recents);
     if (_activeQuery.trim().isEmpty) refresh();
   }
 
@@ -375,7 +346,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   void clearRecents() {
     if (_recents.isEmpty) return;
     _recents.clear();
-    onRecentsChanged?.call(recents);
+    _onRecentsChanged?.call(recents);
     if (_activeQuery.trim().isEmpty) refresh();
   }
 
@@ -386,7 +357,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     T? found = _source.resolve(value);
     found ??= _firstByValue(_results, value) ?? _firstByValue(_recents, value);
     if (found == null) return null;
-    if (multiSelect) {
+    if (_multiSelect) {
       if (!isSelectedValue(value)) {
         _selectedItems.add(found);
         _notify();
@@ -405,16 +376,16 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
   void _setResults(List<T> list) {
     final resultItems = <T>[];
-    final resultSuggestions = <AutoSuggestion<T>>[];
+    final resultSuggestions = <SuperAutoSuggestionsItem<T>>[];
 
-    if (showRecents && _recents.isNotEmpty && _activeQuery.trim().isEmpty) {
+    if (_showRecents && _recents.isNotEmpty && _activeQuery.trim().isEmpty) {
       final recentSuggestions = _buildSuggestions(_recents);
       final recentValues = <T>{};
       for (var i = 0; i < _recents.length; i++) {
         final suggestion = recentSuggestions[i];
         recentValues.add(suggestion.value);
         resultItems.add(_recents[i]);
-        resultSuggestions.add(suggestion.copyWith(group: recentsGroupLabel));
+        resultSuggestions.add(suggestion.copyWith(group: _recentsGroupLabel));
       }
 
       final baseSuggestions = _buildSuggestions(list);
@@ -431,23 +402,14 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
       resultSuggestions.addAll(_buildSuggestions(list));
     }
 
-    if (!_source.isPaged && resultItems.length > maxResults) {
-      _results = resultItems.sublist(0, maxResults);
-      _suggestions = resultSuggestions.sublist(0, maxResults);
+    if (!_source.isPaged && resultItems.length > _maxResults) {
+      _results = resultItems.sublist(0, _maxResults);
+      _suggestions = resultSuggestions.sublist(0, _maxResults);
     } else {
       _results = resultItems;
       _suggestions = resultSuggestions;
     }
   }
-
-  /// Swap the data source at runtime and re-run.
-  set source(AutoSuggestionsSource<T> s) {
-    _source = s;
-    bindAutoSuggestionsSourceView(_source, _suggestionBuilder);
-    _run(text.text, immediate: true);
-  }
-
-  AutoSuggestionsSource<T> get source => _source;
 
   // -- opening / closing --------------------------------------------------
   void open() {
@@ -470,14 +432,18 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
   // -- typing -------------------------------------------------------------
   void _onTextChanged() {
     if (_muteText) return;
-    if (text.text == _lastText) return;
+    final query = _queryString();
+    final textChanged = text.text != _lastText;
+    if (!textChanged && query == _activeQuery) return;
     _lastText = text.text;
-    final selected = _selected;
-    if (selected != null && suggestionFor(selected).label != text.text) {
-      _selected = null;
+    if (textChanged) {
+      final selected = _selected;
+      if (selected != null && suggestionFor(selected).displayText != text.text) {
+        _selected = null;
+      }
     }
     if (!_open) _open = true;
-    _run(_queryString());
+    _run(query);
   }
 
   /// Programmatically set the field text without triggering a query churn loop.
@@ -502,7 +468,7 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     _debounceTimer?.cancel();
     _activeQuery = raw;
     final q = raw.trim();
-    if (q.length < minChars) {
+    if (q.length < _minChars) {
       _setResults(const []);
       _highlighted = _results.isEmpty ? -1 : 0;
       _loading = false;
@@ -552,10 +518,10 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
               });
         }
 
-        if (immediate || debounce == Duration.zero) {
+        if (immediate || _debounce == Duration.zero) {
           fire();
         } else {
-          _debounceTimer = Timer(debounce, fire);
+          _debounceTimer = Timer(_debounce, fire);
         }
       } else {
         _loadingMore = false;
@@ -579,10 +545,10 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
         });
       }
 
-      if (immediate || debounce == Duration.zero) {
+      if (immediate || _debounce == Duration.zero) {
         fire();
       } else {
-        _debounceTimer = Timer(debounce, fire);
+        _debounceTimer = Timer(_debounce, fire);
       }
     } else {
       _loadingMore = false;
@@ -624,10 +590,10 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
           });
     }
 
-    if (immediate || debounce == Duration.zero) {
+    if (immediate || _debounce == Duration.zero) {
       fire();
     } else {
-      _debounceTimer = Timer(debounce, fire);
+      _debounceTimer = Timer(_debounce, fire);
     }
   }
 
@@ -699,8 +665,8 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
     final suggestion = suggestionFor(item);
     _selected = item;
     _committed = item;
-    _committedText = suggestion.label;
-    setText(suggestion.label);
+    _committedText = suggestion.displayText;
+    setText(suggestion.displayText);
     _open = false;
     _highlighted = -1;
     _pushRecent(item);
@@ -773,12 +739,38 @@ class AutoSuggestionsBoxController<T> extends ChangeNotifier {
 
 /// Binds the widget-owned metadata builder to a controller.
 ///
-/// This is hidden from the package barrel and is used by `AutoSuggestionsBox`
-/// so `AutoSuggestionsBoxController` does not expose `suggestionBuilder` in its
+/// This is hidden from the package barrel and is used by `SuperAutoSuggestionsBox`
+/// so `SuperAutoSuggestionsController` does not expose `suggestionBuilder` in its
 /// public constructor or class API.
-void bindAutoSuggestionsBoxControllerView<T>(
-  AutoSuggestionsBoxController<T> controller,
-  AutoSuggestionBuilder<T> builder,
-) {
-  controller._bindViewAdapter(builder);
+void bindSuperAutoSuggestionsControllerView<T>(
+  SuperAutoSuggestionsController<T> controller,
+  SuperAutoSuggestionsSource<T> source,
+  AutoSuggestionBuilder<T> builder, {
+  required Duration debounce,
+  required int minChars,
+  required int maxResults,
+  required bool multiSelect,
+  required bool showRecents,
+  required int maxRecents,
+  required List<T>? initialRecents,
+  required String recentsGroupLabel,
+  required ValueChanged<List<T>>? onRecentsChanged,
+}) {
+  controller._bindViewAdapter(
+    source,
+    builder,
+    debounce: debounce,
+    minChars: minChars,
+    maxResults: maxResults,
+    multiSelect: multiSelect,
+    showRecents: showRecents,
+    maxRecents: maxRecents,
+    initialRecents: initialRecents,
+    recentsGroupLabel: recentsGroupLabel,
+    onRecentsChanged: onRecentsChanged,
+  );
 }
+
+/// Deprecated name for [SuperAutoSuggestionsController].
+@Deprecated('Use SuperAutoSuggestionsController instead.')
+typedef AutoSuggestionsBoxController<T> = SuperAutoSuggestionsController<T>;

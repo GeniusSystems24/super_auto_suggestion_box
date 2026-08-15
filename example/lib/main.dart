@@ -3,13 +3,20 @@
 // ------------------------------------------------------------
 // Gallery launcher for super_auto_suggestion_box. Uses the super_core 3.3.0
 // theme and responsive layout primitives, exposes Light/Dark + LTR/RTL toggles,
-// and opens the shipped AutoSuggestionsBox demo.
+// and opens the shipped SuperAutoSuggestionsBox demo.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 import 'auto_suggestion_box_demo.dart';
+import 'sources/async_source_screen.dart';
+import 'sources/fuzzy_source_screen.dart';
+import 'sources/hybrid_source_screen.dart';
+import 'sources/list_source_screen.dart';
+import 'sources/paged_source_screen.dart';
+import 'sources/remote_fallback_source_screen.dart';
+import 'sources/strings_source_screen.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -96,6 +103,48 @@ class _Launcher extends StatelessWidget {
       'Typeahead · recents · create · paged · multi-select · fuzzy',
       Icons.manage_search_outlined,
       (_) => const AutoSuggestionBoxDemo(),
+    ),
+    _Demo(
+      'String source',
+      'Label-equals-value convenience source · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const StringsSourceScreen(),
+    ),
+    _Demo(
+      'List source',
+      'In-memory contains matching · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const ListSourceScreen(),
+    ),
+    _Demo(
+      'Fuzzy source',
+      'Typo-tolerant in-memory ranking · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const FuzzySourceScreen(),
+    ),
+    _Demo(
+      'Async source',
+      'Server-style asynchronous lookup · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const AsyncSourceScreen(),
+    ),
+    _Demo(
+      'Hybrid source',
+      'Local results merged with remote data · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const HybridSourceScreen(),
+    ),
+    _Demo(
+      'Remote fallback',
+      'Local-first lookup with remote fallback · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const RemoteFallbackSourceScreen(),
+    ),
+    _Demo(
+      'Paged source',
+      'Infinite scrolling through server pages · basic · controlled · multi-select · recents',
+      Icons.source_outlined,
+      (_) => const PagedSourceScreen(),
     ),
   ];
 

@@ -2,34 +2,40 @@
 
 [![style: flutter_lints](https://img.shields.io/badge/style-flutter__lints-blue)](https://pub.dev/packages/flutter_lints)
 
-`super_auto_suggestion_box` provides the GeniusLink `AutoSuggestionsBox<T>`:
+`super_auto_suggestion_box` provides the GeniusLink `SuperAutoSuggestionsBox<T>`:
 a themed typeahead / combobox with local and remote sources, fuzzy matching,
 single- and multi-select, free-text entry, progressive remote fallback,
 server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.0.0` uses raw `T` values as the public data model. Callers pass raw
+Version `1.1.0` uses raw `T` values as the public data model. Callers pass raw
 items and provide a `suggestionBuilder` only to describe how each item should be
 rendered and searched.
 
+Every `SuperAutoSuggestionsBox<T>` requires a
+`SuperAutoSuggestionsSource<T>`. Use `SuggestionSources.list<T>(values)` for a
+local collection. Initial multi-select values belong to
+`SuperAutoSuggestionsController.initialSelected`; query, recents, and
+multi-select configuration belong to the widget.
+
 ```dart
-AutoSuggestion<T> suggestionBuilder(
+SuperAutoSuggestionsItem<T> suggestionBuilder(
   List<T> items,
   int index,
   T element,
 )
 ```
 
-`AutoSuggestion<T>` remains public because builders return it, but callers no
-longer wrap every collection item, fetch result, selected item, recent item, or
-created item in `AutoSuggestion<T>`.
+`SuperAutoSuggestionsItem<T>` remains public because builders return it, but
+callers no longer wrap every collection item, fetch result, selected item,
+recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
 ## Setup
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.0.0
+  super_auto_suggestion_box: ^1.1.0
 ```
 
 ```dart
@@ -54,22 +60,22 @@ MaterialApp(
 ```dart
 final units = ['each', 'box', 'carton'];
 
-AutoSuggestion<String> unitSuggestion(
+SuperAutoSuggestionsItem<String> unitSuggestion(
   List<String> items,
   int index,
   String unit,
-) => AutoSuggestion<String>(
+) => SuperAutoSuggestionsItem<String>(
   value: unit,
-  label: unit,
+  titleText: unit,
 );
 
-final box = AutoSuggestionsBoxController<String>(
-  source: SuggestionSources.list<String>(units),
+final box = SuperAutoSuggestionsController<String>(
   allowFreeText: true,
 );
 
-AutoSuggestionsBox<String>(
+SuperAutoSuggestionsBox<String>(
   controller: box,
+  source: SuggestionSources.list<String>(units),
   suggestionBuilder: unitSuggestion,
   hintText: 'Type or pick...',
   onSelected: (unit) {
@@ -81,11 +87,11 @@ AutoSuggestionsBox<String>(
 );
 ```
 
-You can also let the widget create the source:
+You can omit the controller, but the source remains required:
 
 ```dart
-AutoSuggestionsBox<String>(
-  items: units,
+SuperAutoSuggestionsBox<String>(
+  source: SuggestionSources.list<String>(units),
   suggestionBuilder: unitSuggestion,
   onSelected: (unit) {},
 );
@@ -98,22 +104,22 @@ Keep domain data raw and derive row metadata in the builder:
 ```dart
 final accounts = ['1010', '1020', '4000'];
 
-AutoSuggestion<String> accountSuggestion(
+SuperAutoSuggestionsItem<String> accountSuggestion(
   List<String> items,
   int index,
   String code,
-) => AutoSuggestion<String>(
+) => SuperAutoSuggestionsItem<String>(
   value: code,
-  label: switch (code) {
+  titleText: switch (code) {
     '1010' => 'Cash on Hand',
     '1020' => 'Bank - Operating',
     '4000' => 'Sales Revenue',
     _ => code,
   },
-  description: 'Account $code',
-  trailing: code == '1020' ? '285,120.50' : null,
+  descriptionText: 'Account $code',
+  trailingText: code == '1020' ? '285,120.50' : null,
   group: code.startsWith('1') ? 'Assets' : 'Income',
-  icon: Icons.account_balance_outlined,
+  iconData: Icons.account_balance_outlined,
   keywords: [code],
 );
 ```
@@ -121,20 +127,35 @@ AutoSuggestion<String> accountSuggestion(
 Custom rows receive both the raw item and the built suggestion:
 
 ```dart
-AutoSuggestionsBox<String>(
-  items: accounts,
+SuperAutoSuggestionsBox<String>(
+  source: SuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   itemBuilder: (context, code, suggestion, highlighted) {
-    return Text('${suggestion.label} ($code)');
+    return Text('${suggestion.displayText} ($code)');
   },
 );
 ```
 
+For fully custom suggestion content, use the widget-based constructor:
+
+```dart
+SuperAutoSuggestionsItem<String>.build(
+  value: '1020',
+  title: const Text('Bank - Operating'),
+  description: const Text('1020 - Current Assets'),
+  trailing: const Chip(label: Text('Active')),
+  icon: const Icon(Icons.account_balance_outlined),
+);
+```
+
+Widget-built items use `value.toString()` as their searchable and committed
+text. Supply `keywords` to add other search terms.
+
 ## Suggestion Sources
 
 All built-in sources accept raw values and source-specific matching or fetch
-configuration only. Pass `suggestionBuilder` to `AutoSuggestionsBox`; it owns
-the conversion to `AutoSuggestion<T>` for both widget-created and external
+configuration only. Pass `suggestionBuilder` to `SuperAutoSuggestionsBox`; it owns
+the conversion to `SuperAutoSuggestionsItem<T>` for both widget-created and external
 controllers.
 
 ```dart
@@ -164,7 +185,7 @@ final remoteFallbackSource = SuggestionSources.remoteFallback<String>(
 final pagedSource = SuggestionSources.paged<String>(
   (query, page) async {
     final response = await api.searchAccountsPage(query, page);
-    return SuggestionsPage<String>(
+    return SuperSuggestionsPage<String>(
       items: response.codes,
       hasMore: response.hasMore,
     );
@@ -182,13 +203,9 @@ owns the `suggestionBuilder`.
 Controller selections, result lists, recents, and callbacks use raw values:
 
 ```dart
-final controller = AutoSuggestionsBoxController<String>(
-  source: staticSource,
+final controller = SuperAutoSuggestionsController<String>(
   initialValue: '1020',
   initialSelected: const ['1010'],
-  showRecents: true,
-  initialRecents: const ['4000'],
-  onRecentsChanged: (recentCodes) {},
 );
 
 controller.selected;          // String?
@@ -204,33 +221,38 @@ controller.setRecents(['1020']);
 controller.selectByValue('4000');
 ```
 
-When using an external controller, provide the builder on the widget:
+When using an external controller, provide the source and builder on the
+widget. The controller owns interaction state, not suggestion data or row
+presentation:
 
 ```dart
-AutoSuggestionsBox<String>(
+SuperAutoSuggestionsBox<String>(
   controller: controller,
+  source: staticSource,
   suggestionBuilder: accountSuggestion,
+  showRecents: true,
+  initialRecents: const ['4000'],
+  onRecentsChanged: (recentCodes) {},
 );
 ```
 
-After the controller is attached to an `AutoSuggestionsBox`, UI metadata is
+After the controller is attached to an `SuperAutoSuggestionsBox`, UI metadata is
 available through the render-facing accessors:
 
 ```dart
-controller.suggestions;            // List<AutoSuggestion<String>>
-controller.suggestionAt(0);        // AutoSuggestion<String>
-controller.highlightedSuggestion;  // AutoSuggestion<String>?
-controller.selectedSuggestion;     // AutoSuggestion<String>?
+controller.suggestions;            // List<SuperAutoSuggestionsItem<String>>
+controller.suggestionAt(0);        // SuperAutoSuggestionsItem<String>
+controller.highlightedSuggestion;  // SuperAutoSuggestionsItem<String>?
+controller.selectedSuggestion;     // SuperAutoSuggestionsItem<String>?
 ```
 
 ## Widget Callbacks
 
 ```dart
-AutoSuggestionsBox<String>(
-  items: accounts,
+SuperAutoSuggestionsBox<String>(
+  source: SuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   multiSelect: true,
-  initialSelected: const ['1010'],
   onSelected: (code) {},
   onSelectionChanged: (codes) {},
 );
@@ -239,8 +261,8 @@ AutoSuggestionsBox<String>(
 Inline create returns a raw value:
 
 ```dart
-AutoSuggestionsBox<String>(
-  items: vendors,
+SuperAutoSuggestionsBox<String>(
+  source: SuggestionSources.list<String>(vendors),
   suggestionBuilder: vendorSuggestion,
   onCreate: (query) async {
     final vendor = await api.createVendor(query);
@@ -252,14 +274,14 @@ AutoSuggestionsBox<String>(
 
 ## ERP Input And Validation
 
-`AutoSuggestionsBox` forwards ERP-style text input controls and participates in
+`SuperAutoSuggestionsBox` forwards ERP-style text input controls and participates in
 `FormState.save()` through `onSave`.
 
 ```dart
 Form(
   key: formKey,
-  child: AutoSuggestionsBox<String>(
-    items: documentReferences,
+  child: SuperAutoSuggestionsBox<String>(
+    source: SuggestionSources.list<String>(documentReferences),
     suggestionBuilder: documentSuggestion,
     decoration: const InputDecoration(
       labelText: 'Document Reference',
@@ -279,7 +301,7 @@ Form(
       if (value.trim().isEmpty) return null;
       final labels = [
         for (var i = 0; i < documentReferences.length; i++)
-          documentSuggestion(documentReferences, i, documentReferences[i]).label,
+          documentSuggestion(documentReferences, i, documentReferences[i]).titleText,
       ];
       final ok = labels.contains(value);
       return ok ? null : 'Pick a document from the list';
@@ -306,7 +328,7 @@ GeniusLink form-field convention.
 
 ## Migration
 
-See [`migration_0.14.0_to_1.0.0.md`](migration_0.14.0_to_1.0.0.md) for before-and-after
-examples covering data sources, `initialItems`, fetch callbacks, controllers,
-`AutoSuggestionsBox`, `suggestionBuilder`, and removed `AutoSuggestion<T>`-based
-APIs.
+See [`migration_1.0.0_to_1.1.0.md`](migration_1.0.0_to_1.1.0.md) for the
+controller rename and widget-owned source migration. For the earlier raw-value
+API migration, see
+[`migration_0.14.0_to_1.0.0.md`](migration_0.14.0_to_1.0.0.md).

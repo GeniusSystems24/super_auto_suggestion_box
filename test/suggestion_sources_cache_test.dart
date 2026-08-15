@@ -1,9 +1,60 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 List<String> _values(Iterable<String> items) => items.toList();
 
 void main() {
+  test('paged results use the renamed page type', () {
+    const page = SuperSuggestionsPage<String>(
+      items: ['A'],
+      hasMore: true,
+    );
+    const lastPage = SuperSuggestionsPage<String>.last(['B']);
+    const emptyPage = SuperSuggestionsPage<String>.empty();
+
+    expect(page.items, ['A']);
+    expect(page.hasMore, isTrue);
+    expect(lastPage.hasMore, isFalse);
+    expect(emptyPage.items, isEmpty);
+  });
+
+  test('source factories expose the renamed source contract', () {
+    final SuperAutoSuggestionsSource<String> source =
+        SuggestionSources.strings(const ['A']);
+
+    expect(source.query('A'), ['A']);
+  });
+
+  test('suggestion items expose renamed display properties', () {
+    const item = SuperAutoSuggestionsItem<String>(
+      value: '1000',
+      titleText: 'Cash',
+      descriptionText: 'Current asset',
+      trailingText: '12,400.00',
+    );
+
+    expect(item.titleText, 'Cash');
+    expect(item.descriptionText, 'Current asset');
+    expect(item.trailingText, '12,400.00');
+    expect(item.iconData, isNull);
+    expect(item.copyWith(titleText: 'Petty Cash').titleText, 'Petty Cash');
+
+    const built = SuperAutoSuggestionsItem<String>.build(
+      value: 'custom',
+      title: Text('Custom title'),
+      description: Text('Custom description'),
+      trailing: Chip(label: Text('Active')),
+      icon: Icon(Icons.star),
+    );
+    expect(built.titleText, isNull);
+    expect(built.title, isA<Text>());
+    expect(built.description, isA<Text>());
+    expect(built.trailing, isA<Chip>());
+    expect(built.icon, isA<Icon>());
+    expect(built.displayText, 'custom');
+  });
+
   group('AsyncSuggestionsSource cachedItems', () {
     test('copies initial items and accumulates unique fetched items', () async {
       final source = AsyncSuggestionsSource<String>(
@@ -18,7 +69,7 @@ void main() {
       expect(_values(returned), ['b', 'c', 'c']);
       expect(_values(source.cachedItems), ['a', 'b', 'c']);
       expect(source.resolve('c'), 'c');
-      expect(source.suggestionFor(source.resolve('c')!).label, 'c');
+      expect(source.suggestionFor(source.resolve('c')!).titleText, 'c');
     });
   });
 

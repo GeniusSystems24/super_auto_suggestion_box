@@ -2,24 +2,25 @@
 name: super-auto-suggestion-box
 description: >
   Use the super_auto_suggestion_box Flutter package to build GeniusLink
-  design-system typeahead / combobox inputs. Version 1.0.0 accepts raw T values
-  and uses suggestionBuilder to derive AutoSuggestion metadata for rendering,
-  search, filtering, selection, paging, recents, and inline create.
+  design-system typeahead / combobox inputs. Version 1.1.0 accepts raw T values
+  and uses suggestionBuilder to derive SuperAutoSuggestionsItem metadata for
+  rendering, search, filtering, selection, paging, recents, and inline create.
 ---
 
 # Super Auto Suggestion Box - Agent Skill
 
-Use `super_auto_suggestion_box` for GeniusLink `AutoSuggestionsBox<T>` fields:
-local and remote sources, prefix/contains/words/fuzzy matching, shadow-hint
-completion, single/multi-select, free text, progressive remote fallback,
-server-side paging, recents, inline create, trailing metadata, record binding,
+Use `super_auto_suggestion_box` for GeniusLink
+`SuperAutoSuggestionsBox<T>` fields: local and remote sources,
+prefix/contains/words/fuzzy matching, shadow-hint completion,
+single/multi-select, free text, progressive remote fallback, server-side
+paging, recents, inline create, trailing metadata, record binding,
 read-only/fixable states, validation, advanced search, and bare embedding.
 
 ## Install
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.0.0
+  super_auto_suggestion_box: ^1.1.0
 ```
 
 ```dart
@@ -41,42 +42,48 @@ darkTheme: SuperMaterialThemeData.dark(
 ),
 ```
 
-## Required 1.0.0 Pattern
+## Required 1.1.0 Pattern
 
-Public APIs use raw `T` values. Do not build `List<AutoSuggestion<T>>` as source
-data. Create `AutoSuggestion<T>` only inside `suggestionBuilder` or custom
+Public APIs use raw `T` values. Do not build
+`List<SuperAutoSuggestionsItem<T>>` as source data. Create
+`SuperAutoSuggestionsItem<T>` only inside `suggestionBuilder` or custom
 render-description helpers.
 
 ```dart
 final accounts = ['1010', '1020', '4000'];
 
-AutoSuggestion<String> accountSuggestion(
+SuperAutoSuggestionsItem<String> accountSuggestion(
   List<String> items,
   int index,
   String code,
-) => AutoSuggestion<String>(
+) => SuperAutoSuggestionsItem<String>(
   value: code,
-  label: switch (code) {
+  titleText: switch (code) {
     '1010' => 'Cash on Hand',
     '1020' => 'Bank - Operating',
     '4000' => 'Sales Revenue',
     _ => code,
   },
-  description: 'Account $code',
+  descriptionText: 'Account $code',
   keywords: [code],
 );
 
-AutoSuggestionsBox<String>(
-  items: accounts,
+SuperAutoSuggestionsBox<String>(
+  source: SuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   onSelected: (code) {},
 );
 ```
 
+Use `SuperAutoSuggestionsItem.build` instead when title, description, trailing,
+or icon content must be a custom widget. Widget-built rows fall back to
+`value.toString()` for searchable/committed text, so add `keywords` for any
+additional matching terms.
+
 ## Sources
 
 Built-in sources accept raw data/fetch configuration only. Provide
-`suggestionBuilder` to `AutoSuggestionsBox`; it owns metadata conversion for
+`suggestionBuilder` to `SuperAutoSuggestionsBox`; it owns metadata conversion for
 both widget-created and external controllers:
 
 ```dart
@@ -100,7 +107,7 @@ SuggestionSources.remoteFallback<String>(
 SuggestionSources.paged<String>(
   (query, page) async {
     final result = await api.searchAccountsPage(query, page);
-    return SuggestionsPage<String>(
+    return SuperSuggestionsPage<String>(
       items: result.codes,
       hasMore: result.hasMore,
     );
@@ -117,13 +124,9 @@ label. The source still receives no builder.
 Controller state is raw:
 
 ```dart
-final controller = AutoSuggestionsBoxController<String>(
-  source: SuggestionSources.list<String>(accounts),
+final controller = SuperAutoSuggestionsController<String>(
   initialValue: '1020',
   initialSelected: const ['1010'],
-  initialRecents: const ['4000'],
-  showRecents: true,
-  onRecentsChanged: (codes) {},
 );
 
 controller.results;           // List<String>
@@ -140,14 +143,18 @@ controller.selectByValue('1020');
 Pass the builder on the widget when rendering that controller:
 
 ```dart
-AutoSuggestionsBox<String>(
+SuperAutoSuggestionsBox<String>(
   controller: controller,
+  source: SuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
+  initialRecents: const ['4000'],
+  showRecents: true,
+  onRecentsChanged: (codes) {},
 );
 ```
 
-After the controller is attached to an `AutoSuggestionsBox`, use render-facing
-accessors only when a UI needs metadata:
+After the controller is attached to a `SuperAutoSuggestionsBox`, use
+render-facing accessors only when a UI needs metadata:
 
 ```dart
 controller.suggestions;
@@ -159,11 +166,10 @@ controller.selectedSuggestion;
 Widget callbacks are raw:
 
 ```dart
-AutoSuggestionsBox<String>(
-  items: accounts,
+SuperAutoSuggestionsBox<String>(
+  source: SuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   multiSelect: true,
-  initialSelected: const ['1010'],
   onSelected: (code) {},
   onSelectionChanged: (codes) {},
   onCreate: (query) async {
@@ -171,7 +177,7 @@ AutoSuggestionsBox<String>(
     return created.code;
   },
   itemBuilder: (context, code, suggestion, highlighted) {
-    return Text('${suggestion.label} ($code)');
+    return Text('${suggestion.displayText} ($code)');
   },
 );
 ```
@@ -193,12 +199,15 @@ AutoSuggestionsBox<String>(
 
 ## Common Mistakes
 
-- Passing `List<AutoSuggestion<T>>` to `items`, `initialItems`, fetch callbacks,
-  `initialSelected`, `initialRecents`, or `onCreate`. Use raw `T` values.
-- Omitting `suggestionBuilder` on `AutoSuggestionsBox`.
+- Passing `List<SuperAutoSuggestionsItem<T>>` to source `initialItems`, fetch
+  callbacks, controller `initialSelected`, widget `initialRecents`, or
+  `onCreate`. Use raw `T` values.
+- Omitting the required `source` on `SuperAutoSuggestionsBox`. Wrap local data
+  with `SuggestionSources.list<T>(values)`.
+- Omitting `suggestionBuilder` on `SuperAutoSuggestionsBox`.
 - Reading `controller.results` as suggestions. Use `controller.suggestions` or
   `controller.suggestionAt(index)` for metadata.
-- Returning `AutoSuggestion<T>` from `onCreate`. Return the raw created item.
+- Returning `SuperAutoSuggestionsItem<T>` from `onCreate`. Return the raw created item.
 - Using `.async` for mostly-local data. Prefer `.remoteFallback`.
 - Recreating a controller in `build` for pre-filled or fixed fields. Keep it in
   state and dispose it.

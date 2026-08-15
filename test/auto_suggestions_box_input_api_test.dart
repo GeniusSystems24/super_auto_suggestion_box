@@ -14,13 +14,13 @@ Widget _themedApp(Widget home) {
   );
 }
 
-AutoSuggestion<String> _suggestion(
+SuperAutoSuggestionsItem<String> _suggestion(
   List<String> items,
   int index,
   String element,
-) => AutoSuggestion<String>(
+) => SuperAutoSuggestionsItem<String>(
   value: element,
-  label: element == 'A' ? 'Alpha' : element,
+  titleText: element == 'A' ? 'Alpha' : element,
 );
 
 void main() {
@@ -29,8 +29,7 @@ void main() {
   ) async {
     final focusNode = FocusNode();
     final formFieldKey = GlobalKey<FormFieldState<String>>();
-    final controller = AutoSuggestionsBoxController<String>(
-      source: SuggestionSources.list(const ['A']),
+    final controller = SuperAutoSuggestionsController<String>(
       focusNode: focusNode,
       formFieldKey: formFieldKey,
     );
@@ -40,8 +39,9 @@ void main() {
     await tester.pumpWidget(
       _themedApp(
         Scaffold(
-          body: AutoSuggestionsBox<String>(
+          body: SuperAutoSuggestionsBox<String>(
             controller: controller,
+            source: SuggestionSources.list<String>(const ['A']),
             suggestionBuilder: _suggestion,
             decoration: const InputDecoration(
               labelText: 'Account',
@@ -89,8 +89,8 @@ void main() {
           Scaffold(
             body: Form(
               key: formKey,
-              child: AutoSuggestionsBox<String>(
-                items: const ['1234'],
+              child: SuperAutoSuggestionsBox<String>(
+                source: SuggestionSources.list<String>(const ['1234']),
                 suggestionBuilder: _suggestion,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -142,8 +142,8 @@ void main() {
         Scaffold(
           body: Form(
             key: formKey,
-            child: AutoSuggestionsBox<String>(
-              items: const ['INV-1042', 'INV-1100'],
+            child: SuperAutoSuggestionsBox<String>(
+              source: SuggestionSources.list<String>(const ['INV-1042', 'INV-1100']),
               suggestionBuilder: _suggestion,
               textDirection: TextDirection.ltr,
               onSave: (value) => savedValue = value,
@@ -186,8 +186,7 @@ void main() {
     'keeps an external text controller synchronized with shadow text',
     (tester) async {
       final textController = TextEditingController();
-      final controller = AutoSuggestionsBoxController<String>(
-        source: SuggestionSources.list<String>(const ['ACC-1000']),
+      final controller = SuperAutoSuggestionsController<String>(
         textController: textController,
       );
       addTearDown(() {
@@ -198,8 +197,9 @@ void main() {
       await tester.pumpWidget(
         _themedApp(
           Scaffold(
-            body: AutoSuggestionsBox<String>(
+            body: SuperAutoSuggestionsBox<String>(
               controller: controller,
+              source: SuggestionSources.list<String>(const ['ACC-1000']),
               suggestionBuilder: _suggestion,
             ),
           ),
@@ -225,9 +225,9 @@ void main() {
   testWidgets('can disable the visual shadow hint', (tester) async {
     await tester.pumpWidget(
       _themedApp(
-        const Scaffold(
-          body: AutoSuggestionsBox<String>(
-            items: ['INV-1042'],
+        Scaffold(
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(['INV-1042']),
             suggestionBuilder: _suggestion,
             showShadowHint: false,
           ),
@@ -257,8 +257,8 @@ void main() {
     await tester.pumpWidget(
       _themedApp(
         Scaffold(
-          body: AutoSuggestionsBox<String>(
-            items: const ['INV-1042', 'INV-1100'],
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(const ['INV-1042', 'INV-1100']),
             suggestionBuilder: _suggestion,
             textDirection: TextDirection.ltr,
             onTabNext: () => tabNextCount++,
@@ -289,9 +289,9 @@ void main() {
   testWidgets('can opt out of accepting shadow hints with Tab', (tester) async {
     await tester.pumpWidget(
       _themedApp(
-        const Scaffold(
-          body: AutoSuggestionsBox<String>(
-            items: ['ACC-1000'],
+        Scaffold(
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(['ACC-1000']),
             suggestionBuilder: _suggestion,
             completeShadowHintOnTab: false,
           ),
@@ -311,18 +311,28 @@ void main() {
     expect(editable.controller.text, 'ACC-1');
   });
 
-  test('controller exposes raw initial, recents, and bound selections', () {
+  testWidgets('controller exposes raw initial, recents, and bound selections', (
+    tester,
+  ) async {
     final changedRecents = <List<String>>[];
-    final controller = AutoSuggestionsBoxController<String>(
-      source: SuggestionSources.list<String>(const ['A', 'B', 'C']),
+    final controller = SuperAutoSuggestionsController<String>(
       initialValue: 'A',
-      showRecents: true,
-      onRecentsChanged: (items) => changedRecents.add(items),
     );
     addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _themedApp(
+        SuperAutoSuggestionsBox<String>(
+          controller: controller,
+          source: SuggestionSources.list<String>(const ['A', 'B', 'C']),
+          suggestionBuilder: _suggestion,
+          showRecents: true,
+          onRecentsChanged: (items) => changedRecents.add(items),
+        ),
+      ),
+    );
 
     expect(controller.selected, 'A');
-    expect(controller.selectedSuggestion?.label, 'A');
+    expect(controller.selectedSuggestion?.titleText, 'A');
     expect(controller.text.text, 'A');
 
     expect(controller.selectByValue('B'), 'B');
@@ -334,13 +344,23 @@ void main() {
     expect(controller.recents, ['C']);
   });
 
-  test('controller multi-select collections use raw values', () {
-    final controller = AutoSuggestionsBoxController<String>(
-      source: SuggestionSources.list<String>(const ['A', 'B']),
-      multiSelect: true,
+  testWidgets('controller multi-select collections use raw values', (
+    tester,
+  ) async {
+    final controller = SuperAutoSuggestionsController<String>(
       initialSelected: const ['A'],
     );
     addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      _themedApp(
+        SuperAutoSuggestionsBox<String>(
+          controller: controller,
+          source: SuggestionSources.list<String>(const ['A', 'B']),
+          suggestionBuilder: _suggestion,
+          multiSelect: true,
+        ),
+      ),
+    );
 
     expect(controller.selectedItems, ['A']);
     expect(controller.selectedValues, ['A']);
@@ -355,14 +375,48 @@ void main() {
     expect(controller.selectedItems, ['A']);
   });
 
+  testWidgets('widget binds query limits and recent configuration', (
+    tester,
+  ) async {
+    final controller = SuperAutoSuggestionsController<String>();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: SuperAutoSuggestionsBox<String>(
+            controller: controller,
+            source: SuggestionSources.list<String>(const ['A', 'B', 'C']),
+            suggestionBuilder: _suggestion,
+            debounce: Duration.zero,
+            minChars: 0,
+            maxResults: 1,
+            showRecents: true,
+            maxRecents: 1,
+            initialRecents: const ['C'],
+            recentsGroupLabel: 'Recently used',
+          ),
+        ),
+      ),
+    );
+
+    expect(controller.recents, ['C']);
+    expect(controller.suggestions.single.group, 'Recently used');
+
+    await tester.enterText(find.byType(TextField), 'A');
+    await tester.pump();
+    expect(controller.effectiveQuery, 'A');
+    expect(controller.results, ['A']);
+  });
+
   testWidgets('onSelected receives the picked raw value', (tester) async {
     String? selected;
 
     await tester.pumpWidget(
       _themedApp(
         Scaffold(
-          body: AutoSuggestionsBox<String>(
-            items: const ['A', 'B'],
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(const ['A', 'B']),
             suggestionBuilder: _suggestion,
             onSelected: (value) => selected = value,
           ),
@@ -378,6 +432,71 @@ void main() {
     expect(selected, 'A');
   });
 
+  testWidgets('build suggestions render custom widget content', (tester) async {
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(const ['A']),
+            suggestionBuilder: (items, index, value) =>
+                SuperAutoSuggestionsItem<String>.build(
+                  value: value,
+                  title: const Text('Widget title'),
+                  description: const Text('Widget description'),
+                  trailing: const Text('Widget trailing'),
+                  icon: const Icon(Icons.star),
+                ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+
+    expect(find.text('Widget title'), findsOneWidget);
+    expect(find.text('Widget description'), findsOneWidget);
+    expect(find.text('Widget trailing'), findsOneWidget);
+    expect(find.byIcon(Icons.star), findsOneWidget);
+  });
+
+  testWidgets('caret navigation updates the effective search query', (
+    tester,
+  ) async {
+    final controller = SuperAutoSuggestionsController<String>();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: SuperAutoSuggestionsBox<String>(
+            controller: controller,
+            source: SuggestionSources.list<String>(const ['alpha', 'alpine', 'beta']),
+            suggestionBuilder: _suggestion,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), 'alpha');
+    await tester.pump();
+    expect(controller.effectiveQuery, 'alpha');
+    expect(controller.results, ['alpha']);
+
+    for (var i = 0; i < 3; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    }
+    await tester.pump();
+    expect(controller.effectiveQuery, 'al');
+    expect(controller.results, ['alpha', 'alpine']);
+
+    controller.text.selection = const TextSelection.collapsed(offset: 1);
+    await tester.pump();
+    expect(controller.effectiveQuery, 'a');
+    expect(controller.results, ['alpha', 'alpine', 'beta']);
+  });
+
   testWidgets('onCreate returns and commits a raw value', (tester) async {
     String? selected;
     String? createQuery;
@@ -385,8 +504,8 @@ void main() {
     await tester.pumpWidget(
       _themedApp(
         Scaffold(
-          body: AutoSuggestionsBox<String>(
-            items: const [],
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(const []),
             suggestionBuilder: _suggestion,
             onCreate: (query) async {
               createQuery = query;

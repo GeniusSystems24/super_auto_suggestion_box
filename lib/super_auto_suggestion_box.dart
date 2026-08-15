@@ -1,5 +1,5 @@
 /// Super Auto Suggestion Box — a GeniusLink design-system Flutter package that
-/// ships the **AutoSuggestionsBox** typeahead / combobox: local + remote
+/// ships the **SuperAutoSuggestionsBox** typeahead / combobox: local + remote
 /// sources, prefix / contains / words / fuzzy-ranked matching, single- and
 /// multi-select, free-text entry, a local-first progressive `remoteFallback`
 /// source, server-side **paged** infinite-scroll, **recently-used** suggestions,
@@ -11,7 +11,7 @@
 /// tokens, `ThemeExtension`s, text styles and a handful of design-system
 /// widgets) that the box is built on. The companion `super_table_field` package
 /// depends on this one and re-exports it, so a `SuperTable`'s `combo` columns
-/// can be edited through the real `AutoSuggestionsBox`.
+/// can be edited through the real `SuperAutoSuggestionsBox`.
 ///
 /// Architecture: Clean Architecture per feature
 ///   data/        — datasources, models (DTOs), repository implementations

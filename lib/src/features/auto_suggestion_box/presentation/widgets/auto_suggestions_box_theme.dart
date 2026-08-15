@@ -234,7 +234,7 @@ class AutoSuggestionsBoxThemeData
   ///     textTheme: typography,
   ///     primaryTextTheme: typography,
   ///   ),
-  ///   // AutoSuggestionsBox adapts automatically — no extra registration needed.
+  ///   // SuperAutoSuggestionsBox adapts automatically — no extra registration needed.
   /// );
   /// ```
   factory AutoSuggestionsBoxThemeData.fromColorScheme(ColorScheme cs) {

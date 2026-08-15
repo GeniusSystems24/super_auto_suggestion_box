@@ -15,7 +15,7 @@
 
 import 'dart:async';
 
-/// The outcome of a progressive query (see [AutoSuggestionsSource.progressive]).
+/// The outcome of a progressive query (see [SuperAutoSuggestionsSource.progressive]).
 class SuggestionsQueryResult<T> {
   /// Raw matches available immediately (typically the local, in-memory hits).
   final List<T> items;

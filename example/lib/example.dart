@@ -19,15 +19,15 @@ class TryExampleScreen extends StatelessWidget {
     'Ahmed Mohamed',
   ];
 
-  static AutoSuggestion<String> _documentSuggestion(
+  static SuperAutoSuggestionsItem<String> _documentSuggestion(
     List<String> items,
     int index,
     String element,
-  ) => AutoSuggestion<String>(
+  ) => SuperAutoSuggestionsItem<String>(
     value: element,
-    label: element,
-    description: 'Directory entry ${index + 1}',
-    icon: Icons.account_box_rounded,
+    titleText: element,
+    descriptionText: 'Directory entry ${index + 1}',
+    iconData: Icons.account_box_rounded,
   );
 
   static List<String> _matches(String query) {
@@ -40,7 +40,7 @@ class TryExampleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sources = <String, AutoSuggestionsSource<String>>{
+    final sources = <String, SuperAutoSuggestionsSource<String>>{
       'list': SuggestionSources.list<String>(
         documentReferences,
         match: AutoSuggestionMatch.fuzzy,
@@ -60,7 +60,7 @@ class TryExampleScreen extends StatelessWidget {
         await Future<void>.delayed(const Duration(seconds: 1));
         final all = _matches(query);
         final items = all.skip(page * 5).take(5).toList();
-        return SuggestionsPage<String>(
+        return SuperSuggestionsPage<String>(
           items: items,
           hasMore: (page + 1) * 5 < all.length,
         );
@@ -96,9 +96,10 @@ class TryExampleScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
-          AutoSuggestionsBox<String>(
+          SuperAutoSuggestionsBox<String>(
+            source: source,
             suggestionBuilder: _documentSuggestion,
-            controller: AutoSuggestionsBoxController<String>(source: source),
+            controller: SuperAutoSuggestionsController<String>(),
             decoration: const InputDecoration(
               labelText: 'Document Reference',
               prefixIcon: Icon(Icons.account_box_rounded),

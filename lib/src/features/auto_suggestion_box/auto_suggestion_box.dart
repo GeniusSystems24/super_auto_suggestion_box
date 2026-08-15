@@ -1,26 +1,26 @@
 // ============================================================
 // features/auto_suggestion_box/auto_suggestion_box.dart
 // ------------------------------------------------------------
-// Public barrel for the AutoSuggestionsBox feature. Exports the domain
+// Public barrel for the SuperAutoSuggestionsBox feature. Exports the domain
 // entities + match strategy, the source contract and built-in source factory
 // (SuggestionSources), the controller, and the view + theme.
 // ============================================================
 
 // Domain
-export 'domain/entities/auto_suggestion.dart';
+export 'domain/entities/super_auto_suggestions_item.dart';
 export 'domain/entities/match_strategy.dart';
 export 'domain/entities/suggestions_query_result.dart';
-export 'domain/entities/suggestions_page.dart';
-export 'domain/repositories/suggestions_source.dart'
-    hide bindAutoSuggestionsSourceView;
+export 'domain/entities/super_suggestions_page.dart';
+export 'domain/repositories/super_auto_suggestions_source.dart'
+    hide bindSuperAutoSuggestionsSourceView;
 export 'domain/usecases/query_suggestions.dart';
 
 // Data
 export 'data/datasources/suggestion_sources.dart';
 
 // Presentation
-export 'presentation/controllers/auto_suggestions_box_controller.dart'
-    hide bindAutoSuggestionsBoxControllerView;
+export 'presentation/controllers/super_auto_suggestions_controller.dart'
+    hide bindSuperAutoSuggestionsControllerView;
 export 'presentation/widgets/auto_suggestions_box_theme.dart';
 export 'presentation/widgets/auto_suggestions_highlight.dart';
-export 'presentation/widgets/auto_suggestions_box.dart';
+export 'presentation/widgets/super_auto_suggestions_box.dart';

@@ -4,6 +4,64 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.1.0 - 2026-08-15
+
+### Changed
+
+- Renamed `AutoSuggestionsBoxController<T>` to
+  `SuperAutoSuggestionsController<T>`.
+- Renamed `AutoSuggestionsBox<T>` to `SuperAutoSuggestionsBox<T>` and the
+  suggestion row model to `SuperAutoSuggestionsItem<T>`.
+- Renamed suggestion item display properties to `titleText`,
+  `descriptionText`, `trailingText`, and `iconData`.
+- Added `SuperAutoSuggestionsItem.build` for widget-based titles,
+  descriptions, trailing content, and icons while retaining the default
+  string-based constructor.
+- Renamed `AutoSuggestionsSource<T>` to `SuperAutoSuggestionsSource<T>` and
+  retained the old name as a deprecated compatibility typedef.
+- Renamed `SuggestionsPage<T>` to `SuperSuggestionsPage<T>` and retained the
+  old name as a deprecated compatibility typedef.
+- Removed `source` and `suggestionBuilder` from the controller API. The widget
+  now owns and internally binds both dependencies.
+- Moved query timing, result limits, recents configuration, and multi-select
+  configuration from `SuperAutoSuggestionsController` to
+  `SuperAutoSuggestionsBox`.
+- Made `SuperAutoSuggestionsBox.source` required and removed its `items` and
+  `initialSelected` shorthands. Local lists now use `SuggestionSources.list`,
+  while initial multi-selection is configured on the controller.
+- Removed `initialText` from `SuperAutoSuggestionsController`; provide a
+  pre-populated `TextEditingController` when initial free text is required.
+- Updated the package documentation, skill, tests, and runnable example screens
+  for the widget-owned source API.
+- Added dedicated runnable gallery screens for string, list, fuzzy, async,
+  hybrid, remote-fallback, and paged sources. Each screen demonstrates basic,
+  externally controlled, multi-select, and recent-selection scenarios, and is
+  maintained in its own example file.
+- Aligned every source example screen with the main gallery's `SuperAppBar`,
+  `SuperScaffold`, typography, spacing, markers, and `SuperSectionCard2` style.
+
+### Deprecated
+
+- Deprecated `AutoSuggestionsBoxController<T>` as a compatibility typedef for
+  `SuperAutoSuggestionsController<T>`.
+- Deprecated `AutoSuggestionsBox<T>` and `AutoSuggestions<T>` as compatibility
+  typedefs for their new `Super`-prefixed names.
+- Deprecated `AutoSuggestion<T>`, `AutoSuggestionsSource<T>`, and
+  `SuggestionsPage<T>` in favor of `SuperAutoSuggestionsItem<T>`,
+  `SuperAutoSuggestionsSource<T>`, and `SuperSuggestionsPage<T>`.
+
+### Fixed
+
+- Re-run suggestion matching when only the text-field caret changes. The active
+  query is always the text from offset zero through the current caret position,
+  including after mouse clicks, arrow keys, and programmatic cursor navigation.
+
+### Documentation
+
+- Added `migration_1.0.0_to_1.1.0.md` covering renamed types and fields,
+  deprecated aliases, required source wiring, controller configuration moves,
+  widget-built rows, paging, and initial-value migrations.
+
 ## 1.0.0 - 2026-08-12
 
 ### Changed

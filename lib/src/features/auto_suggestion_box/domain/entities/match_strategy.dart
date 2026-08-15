@@ -7,7 +7,7 @@
 // (where, for highlighting?). Shared by every data source and the view.
 // ============================================================
 
-import 'auto_suggestion.dart';
+import 'super_auto_suggestions_item.dart';
 
 /// How a query string is tested against a suggestion's haystack.
 enum AutoSuggestionMatch {

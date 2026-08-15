@@ -1,5 +1,5 @@
 // ============================================================
-// features/auto_suggestion_box/presentation/widgets/auto_suggestions_box.dart
+// features/auto_suggestion_box/presentation/widgets/super_auto_suggestions_box.dart
 // ------------------------------------------------------------
 // The VIEW. A text field with an anchored suggestions overlay. Type to filter,
 // up/down to move through matches, Tab to complete, Enter / tap to pick, and
@@ -11,9 +11,6 @@
 // forwarded there and the widget rebuilds from its state. The overlay is an
 // OverlayPortal linked to the field via CompositedTransform*, so it tracks
 // scroll/resize and auto-flips above when there isn't room below.
-//
-// As the component's composition root, this layer may construct concrete data
-// sources (SuggestionSources) for the convenience `items` shorthand.
 // ============================================================
 
 import 'dart:async';
@@ -22,11 +19,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../../../core/core.dart';
-import '../../data/datasources/suggestion_sources.dart';
-import '../../domain/entities/auto_suggestion.dart';
+import '../../domain/entities/super_auto_suggestions_item.dart';
 import '../../domain/entities/match_strategy.dart';
-import '../../domain/repositories/suggestions_source.dart';
-import '../controllers/auto_suggestions_box_controller.dart';
+import '../../domain/repositories/super_auto_suggestions_source.dart';
+import '../controllers/super_auto_suggestions_controller.dart';
 import 'auto_suggestions_box_theme.dart';
 import 'auto_suggestions_highlight.dart';
 
@@ -106,19 +102,16 @@ class _ShadowHintTextEditingController extends TextEditingController {
   }
 }
 
-class AutoSuggestionsBox<T> extends StatefulWidget {
-  /// Provide a [source] (or [items]) — or a fully-owned [controller].
-  final AutoSuggestionsSource<T>? source;
-
-  /// Shorthand static source: raw items filtered by `contains`.
-  final List<T>? items;
+class SuperAutoSuggestionsBox<T> extends StatefulWidget {
+  /// Required source of raw suggestion data.
+  final SuperAutoSuggestionsSource<T> source;
 
   /// Builds suggestion metadata for raw values.
   final AutoSuggestionBuilder<T> suggestionBuilder;
 
-  /// An externally-owned controller. When null, one is created from
-  /// [source]/[items] and disposed with the widget.
-  final AutoSuggestionsBoxController<T>? controller;
+  /// An externally-owned controller. When null, one is created and disposed
+  /// with the widget. Suggestion data remains configured through [source].
+  final SuperAutoSuggestionsController<T>? controller;
 
   /// Fired when a row is picked (tap or Enter on a highlighted match).
   final ValueChanged<T>? onSelected;
@@ -128,8 +121,29 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// from the controller's `selectedItems`, or listen via [onSelectionChanged].
   final bool multiSelect;
 
-  /// Pre-selected rows for [multiSelect] (ignored when a [controller] is given).
-  final List<T>? initialSelected;
+  /// Delay before asynchronous source queries are fired.
+  final Duration debounce;
+
+  /// Minimum query length required before suggestions are requested.
+  final int minChars;
+
+  /// Maximum number of non-paged suggestions displayed.
+  final int maxResults;
+
+  /// Whether recent selections are shown for an empty query.
+  final bool showRecents;
+
+  /// Maximum number of recent selections retained.
+  final int maxRecents;
+
+  /// Initial recent raw values.
+  final List<T>? initialRecents;
+
+  /// Group title applied to recent suggestions.
+  final String recentsGroupLabel;
+
+  /// Called whenever the recent raw values change.
+  final ValueChanged<List<T>>? onRecentsChanged;
 
   /// Fired (multi-select) whenever the chosen set changes, with the full set.
   final ValueChanged<List<T>>? onSelectionChanged;
@@ -178,7 +192,7 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   final String? label;
 
   /// Shows a compact lock/unlock action at the trailing edge of the label row.
-  /// The action toggles [AutoSuggestionsBoxController.isFixed].
+  /// The action toggles [SuperAutoSuggestionsController.isFixed].
   final bool allowFixed;
 
   /// Leading widget inside the field (defaults to a search icon).
@@ -408,14 +422,14 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
 
   /// Custom builder for the advanced-search surface (defaults to a built-in
   /// dialog). Receives the live controller; commit via `controller.select(...)`.
-  final Widget Function(BuildContext, AutoSuggestionsBoxController<T>)?
+  final Widget Function(BuildContext, SuperAutoSuggestionsController<T>)?
   advancedSearchBuilder;
 
   /// Custom row renderer (overrides the default label/description/icon row).
   final Widget Function(
     BuildContext,
     T item,
-    AutoSuggestion<T> suggestion,
+    SuperAutoSuggestionsItem<T> suggestion,
     bool highlighted,
   )?
   itemBuilder;
@@ -440,15 +454,21 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
   /// query itself, rendered as `Create “…”`).
   final String Function(String query)? createLabelBuilder;
 
-  const AutoSuggestionsBox({
+  const SuperAutoSuggestionsBox({
     super.key,
-    this.source,
-    this.items,
+    required this.source,
     required this.suggestionBuilder,
     this.controller,
     this.onSelected,
     this.multiSelect = false,
-    this.initialSelected,
+    this.debounce = const Duration(milliseconds: 180),
+    this.minChars = 0,
+    this.maxResults = 50,
+    this.showRecents = false,
+    this.maxRecents = 5,
+    this.initialRecents,
+    this.recentsGroupLabel = 'Recent',
+    this.onRecentsChanged,
     this.onSelectionChanged,
     this.onChanged,
     this.onSubmitted,
@@ -527,17 +547,21 @@ class AutoSuggestionsBox<T> extends StatefulWidget {
     this.loadingBuilder,
     this.onCreate,
     this.createLabelBuilder,
-  }) : assert(
-         source != null || items != null || controller != null,
-         'Provide one of: source, items, or controller',
-       );
+  }) : assert(minChars >= 0),
+       assert(maxResults >= 0),
+       assert(maxRecents >= 0);
 
   @override
-  State<AutoSuggestionsBox<T>> createState() => _AutoSuggestionsBoxState<T>();
+  State<SuperAutoSuggestionsBox<T>> createState() =>
+      _AutoSuggestionsBoxState<T>();
 }
 
-class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
-  late AutoSuggestionsBoxController<T> _c;
+/// Deprecated name for [SuperAutoSuggestionsBox].
+@Deprecated('Use SuperAutoSuggestionsBox instead.')
+typedef AutoSuggestionsBox<T> = SuperAutoSuggestionsBox<T>;
+
+class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
+  late SuperAutoSuggestionsController<T> _c;
   bool _ownsController = false;
 
   /// The editable controller mounted in TextFormField. It mirrors the public
@@ -569,7 +593,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     super.initState();
     _c = widget.controller ?? _buildController();
     _ownsController = widget.controller == null;
-    bindAutoSuggestionsBoxControllerView(_c, widget.suggestionBuilder);
+    _bindController();
     _c.addListener(_onModel);
     _attachFieldTextController();
 
@@ -585,19 +609,24 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     });
   }
 
-  AutoSuggestionsBoxController<T> _buildController() {
-    final src = _buildSource();
-    return AutoSuggestionsBoxController<T>(
-      source: src,
-      multiSelect: widget.multiSelect,
-      initialSelected: widget.initialSelected,
-    );
-  }
+  SuperAutoSuggestionsController<T> _buildController() =>
+      SuperAutoSuggestionsController<T>();
 
-  AutoSuggestionsSource<T> _buildSource() {
-    final explicit = widget.source;
-    if (explicit != null) return explicit;
-    return SuggestionSources.list<T>(widget.items ?? const []);
+  void _bindController() {
+    bindSuperAutoSuggestionsControllerView(
+      _c,
+      widget.source,
+      widget.suggestionBuilder,
+      debounce: widget.debounce,
+      minChars: widget.minChars,
+      maxResults: widget.maxResults,
+      multiSelect: widget.multiSelect,
+      showRecents: widget.showRecents,
+      maxRecents: widget.maxRecents,
+      initialRecents: widget.initialRecents,
+      recentsGroupLabel: widget.recentsGroupLabel,
+      onRecentsChanged: widget.onRecentsChanged,
+    );
   }
 
   void _attachFieldTextController() {
@@ -666,7 +695,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     final suggestion = _c.highlightedSuggestion;
     if (suggestion == null || !suggestion.enabled) return '';
 
-    final completion = suggestion.label;
+    final completion = suggestion.displayText;
 
     if (completion.length <= query.length ||
         !completion.toLowerCase().startsWith(query.toLowerCase())) {
@@ -846,7 +875,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   }
 
   @override
-  void didUpdateWidget(covariant AutoSuggestionsBox<T> oldWidget) {
+  void didUpdateWidget(covariant SuperAutoSuggestionsBox<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller &&
         widget.controller != null) {
@@ -856,19 +885,22 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
       if (_ownsController) _c.dispose();
       _c = widget.controller!;
       _ownsController = false;
-      bindAutoSuggestionsBoxControllerView(_c, widget.suggestionBuilder);
+      _bindController();
       _c.addListener(_onModel);
       _attachFieldTextController();
       _c.text.addListener(_onTextForValidity);
-    } else if (_ownsController &&
-        widget.controller == null &&
-        (widget.source != oldWidget.source ||
-            widget.items != oldWidget.items ||
-            widget.suggestionBuilder != oldWidget.suggestionBuilder)) {
-      bindAutoSuggestionsBoxControllerView(_c, widget.suggestionBuilder);
-      _c.source = _buildSource();
-    } else if (widget.suggestionBuilder != oldWidget.suggestionBuilder) {
-      bindAutoSuggestionsBoxControllerView(_c, widget.suggestionBuilder);
+    } else if (widget.source != oldWidget.source ||
+        widget.suggestionBuilder != oldWidget.suggestionBuilder ||
+        widget.debounce != oldWidget.debounce ||
+        widget.minChars != oldWidget.minChars ||
+        widget.maxResults != oldWidget.maxResults ||
+        widget.multiSelect != oldWidget.multiSelect ||
+        widget.showRecents != oldWidget.showRecents ||
+        widget.maxRecents != oldWidget.maxRecents ||
+        widget.initialRecents != oldWidget.initialRecents ||
+        widget.recentsGroupLabel != oldWidget.recentsGroupLabel ||
+        widget.onRecentsChanged != oldWidget.onRecentsChanged) {
+      _bindController();
     }
   }
 
@@ -945,7 +977,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
   void _pick(T item) => _choose(item);
 
   /// Applies the component's submit semantics, then reports the resulting query
-  /// through [AutoSuggestionsBox.onFieldSubmitted]. This path is shared by
+  /// through [SuperAutoSuggestionsBox.onFieldSubmitted]. This path is shared by
   /// physical Enter keys and software-keyboard actions.
   void _handleFieldSubmitted(String _) {
     if (widget.disabled ||
@@ -1046,7 +1078,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     if (q.isEmpty) return false;
     final lower = q.toLowerCase();
     for (final s in _c.suggestions) {
-      if (s.label.toLowerCase() == lower) return false;
+      if (s.displayText.toLowerCase() == lower) return false;
     }
     return true;
   }
@@ -1073,7 +1105,7 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
     _choose(created);
   }
 
-  /// Resolve the effective theme: a directly-assigned [AutoSuggestionsBox.theme]
+  /// Resolve the effective theme: a directly-assigned [SuperAutoSuggestionsBox.theme]
   /// wins over the ambient extension (which falls back to the dark preset).
   AutoSuggestionsBoxThemeData _resolveTheme(BuildContext context) =>
       widget.theme ?? AutoSuggestionsBoxThemeData.of(context);
@@ -1497,12 +1529,12 @@ class _AutoSuggestionsBoxState<T> extends State<AutoSuggestionsBox<T>> {
 class AutoSuggestionsPanel<T> extends StatelessWidget {
   final double width;
   final AutoSuggestionsBoxThemeData theme;
-  final AutoSuggestionsBoxController<T> controller;
+  final SuperAutoSuggestionsController<T> controller;
   final ScrollController scroll;
   final int maxVisibleRows;
   final AutoSuggestionMatch highlightMatch;
   final bool highlightMatches;
-  final Widget Function(BuildContext, T, AutoSuggestion<T>, bool)? itemBuilder;
+  final Widget Function(BuildContext, T, SuperAutoSuggestionsItem<T>, bool)? itemBuilder;
   final Widget Function(BuildContext, String)? emptyBuilder;
   final Widget Function(BuildContext, String)? loadingBuilder;
   final GlobalKey hlKey;
@@ -1765,12 +1797,12 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
 class _Row<T> extends StatelessWidget {
   final AutoSuggestionsBoxThemeData theme;
   final T item;
-  final AutoSuggestion<T> suggestion;
+  final SuperAutoSuggestionsItem<T> suggestion;
   final String query;
   final bool highlighted;
   final AutoSuggestionMatch highlightMatch;
   final bool highlightMatches;
-  final Widget Function(BuildContext, T, AutoSuggestion<T>, bool)? custom;
+  final Widget Function(BuildContext, T, SuperAutoSuggestionsItem<T>, bool)? custom;
   final bool multiSelect;
   final bool selected;
   final VoidCallback onTap;
@@ -1821,14 +1853,15 @@ class _Row<T> extends StatelessWidget {
         custom?.call(context, item, s, highlighted) ??
         Row(
           children: [
-            if (s.icon != null) ...[
-              Icon(
-                s.icon,
-                size: 17,
-                color: highlighted
-                    ? Theme.of(context).colorScheme.primary
-                    : t.fg3,
-              ),
+            if (s.icon != null || s.iconData != null) ...[
+              s.icon ??
+                  Icon(
+                    s.iconData,
+                    size: 17,
+                    color: highlighted
+                        ? Theme.of(context).colorScheme.primary
+                        : t.fg3,
+                  ),
               const SizedBox(width: 10),
             ],
             Expanded(
@@ -1836,54 +1869,58 @@ class _Row<T> extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AutoSuggestionsHighlight(
-                    text: s.label,
-                    query: query,
-                    match: highlightMatch,
-                    enabled: highlightMatches,
-                    baseStyle: TextStyle(
-                      fontFamily: (SuperMaterialThemeData.of(
-                        context,
-                      ).textTheme).bodyMedium?.fontFamily,
-                      fontSize: 13.5,
-                      height: 1.2,
-                      color: enabled ? t.fg1 : t.fg3,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (s.description != null) ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      s.description!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: (SuperMaterialThemeData.of(
-                          context,
-                        ).textTheme).bodyMedium?.fontFamily,
-                        fontSize: 11.5,
-                        height: 1.2,
-                        color: t.fg2,
+                  s.title ??
+                      AutoSuggestionsHighlight(
+                        text: s.displayText,
+                        query: query,
+                        match: highlightMatch,
+                        enabled: highlightMatches,
+                        baseStyle: TextStyle(
+                          fontFamily: (SuperMaterialThemeData.of(
+                            context,
+                          ).textTheme).bodyMedium?.fontFamily,
+                          fontSize: 13.5,
+                          height: 1.2,
+                          color: enabled ? t.fg1 : t.fg3,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
+                  if (s.description != null ||
+                      s.descriptionText != null) ...[
+                    const SizedBox(height: 1),
+                    s.description ??
+                        Text(
+                          s.descriptionText!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: (SuperMaterialThemeData.of(
+                              context,
+                            ).textTheme).bodyMedium?.fontFamily,
+                            fontSize: 11.5,
+                            height: 1.2,
+                            color: t.fg2,
+                          ),
+                        ),
                   ],
                 ],
               ),
             ),
-            if (s.trailing != null) ...[
+            if (s.trailing != null || s.trailingText != null) ...[
               const SizedBox(width: 10),
-              Text(
-                s.trailing!,
-                style: TextStyle(
-                  fontFamily: (SuperMaterialThemeData.of(
-                    context,
-                  ).textTheme).mono.fontFamily,
-                  fontSize: 12,
-                  height: 1.2,
-                  color: enabled ? t.fg2 : t.fg3,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
+              s.trailing ??
+                  Text(
+                    s.trailingText!,
+                    style: TextStyle(
+                      fontFamily: (SuperMaterialThemeData.of(
+                        context,
+                      ).textTheme).mono.fontFamily,
+                      fontSize: 12,
+                      height: 1.2,
+                      color: enabled ? t.fg2 : t.fg3,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
             ],
             if (highlighted && enabled) ...[
               const SizedBox(width: 8),
@@ -1937,7 +1974,7 @@ class _Row<T> extends StatelessWidget {
   }
 }
 
-// ── the "＋ Create …" footer (inline create; see AutoSuggestionsBox.onCreate) ──
+// ── the "＋ Create …" footer (inline create; see SuperAutoSuggestionsBox.onCreate) ──
 class _CreateFooter extends StatefulWidget {
   final AutoSuggestionsBoxThemeData theme;
   final String label;
@@ -2167,7 +2204,7 @@ class _FieldLabel extends StatelessWidget {
 class _FixedButton<T> extends StatelessWidget {
   const _FixedButton({required this.controller, required this.color});
 
-  final AutoSuggestionsBoxController<T> controller;
+  final SuperAutoSuggestionsController<T> controller;
   final Color color;
 
   @override
@@ -2239,7 +2276,7 @@ class _ErrorBadge extends StatelessWidget {
 // multi-select keeps it open and toggles the set).
 // ============================================================
 class _AdvancedSearchDialog<T> extends StatefulWidget {
-  final AutoSuggestionsBoxController<T> controller;
+  final SuperAutoSuggestionsController<T> controller;
   final AutoSuggestionsBoxThemeData theme;
   final String title;
   final bool multiSelect;
@@ -2264,7 +2301,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
   final FocusNode _focus = FocusNode(debugLabel: 'AdvancedSearch');
   final ScrollController _scroll = ScrollController();
 
-  AutoSuggestionsBoxController<T> get _c => widget.controller;
+  SuperAutoSuggestionsController<T> get _c => widget.controller;
 
   @override
   void initState() {

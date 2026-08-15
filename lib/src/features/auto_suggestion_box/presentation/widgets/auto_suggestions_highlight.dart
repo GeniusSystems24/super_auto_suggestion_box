@@ -8,7 +8,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../domain/entities/auto_suggestion.dart';
+import '../../domain/entities/super_auto_suggestions_item.dart';
 import '../../domain/entities/match_strategy.dart';
 import 'auto_suggestions_box_theme.dart';
 
