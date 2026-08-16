@@ -10,6 +10,7 @@ description: >
 
 # package version
 version: 1.1.0+2
+# cd example; flutter build web --release --base-href "/super_auto_suggestion_box/"
 
 # package homepage, repository, and issue tracker URLs
 homepage: https://geniussystems24.github.io/super_auto_suggestion_box
