@@ -28,6 +28,9 @@
 ///   `import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';`
 library super_auto_suggestion_box;
 
+// ── Localization ────────────────────────────────────────────────────────────
+export 'localization/super_auto_suggestions_localizations.dart';
+
 // ── Core (theme tokens, shared widgets, utils — from super_core) ─────────────
 export 'src/core/core.dart';
 

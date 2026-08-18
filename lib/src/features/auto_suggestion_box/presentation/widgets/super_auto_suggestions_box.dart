@@ -19,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 
 import '../../../../core/core.dart';
+import '../../../../../localization/super_auto_suggestions_localizations.dart';
 import '../../domain/entities/super_auto_suggestions_item.dart';
 import '../../domain/entities/match_strategy.dart';
 import '../../domain/repositories/super_auto_suggestions_source.dart';
@@ -28,10 +29,7 @@ import 'auto_suggestions_highlight.dart';
 
 /// A synchronous validator for the box: returns an error message, or null when
 /// valid. Receives the field's current committed / typed text.
-typedef AutoSuggestionsValidator = String? Function(String value);
-
-/// Reports the field's current error (null == valid) to a host on every change.
-typedef AutoSuggestionsValidityChanged = void Function(String? error);
+typedef SuperAutoSuggestionsValidator<T> = String? Function(T? value);
 
 /// A view-only text controller that paints the remaining characters of the
 /// active suggestion after the real editable value. The shadow text is never
@@ -113,9 +111,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// with the widget. Suggestion data remains configured through [source].
   final SuperAutoSuggestionsController<T>? controller;
 
-  /// Fired when a row is picked (tap or Enter on a highlighted match).
-  final ValueChanged<T>? onSelected;
-
   /// Enable multi-select: tapping / Enter toggles a row in a set and the overlay
   /// stays open (rows show a checkbox; a count shows in the field). Read the set
   /// from the controller's `selectedItems`, or listen via [onSelectionChanged].
@@ -145,15 +140,11 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// Called whenever the recent raw values change.
   final ValueChanged<List<T>>? onRecentsChanged;
 
-  /// Fired (multi-select) whenever the chosen set changes, with the full set.
+  /// Fired whenever the selection changes.
+  ///
+  /// In multi-select mode this is the full chosen set. In single-select mode
+  /// it contains either the selected item or is empty after de-selection.
   final ValueChanged<List<T>>? onSelectionChanged;
-
-  /// Fired on every text change.
-  final ValueChanged<String>? onChanged;
-
-  /// Fired when Enter is pressed with no highlighted match and free text is
-  /// allowed (a "submit raw query" affordance).
-  final ValueChanged<String>? onSubmitted;
 
   /// Placeholder shown when empty.
   final String? hintText;
@@ -163,7 +154,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   ///
   /// For example, typing `INV-1` while `INV-1042` is highlighted renders
   /// `042` as a non-editable shadow hint. The shadow is only visual: it is not
-  /// included in [onChanged], validation, [onSave], or the controller value.
+  /// included in validation or the controller value.
   /// Pressing Enter keeps the existing behavior and commits the highlighted row.
   final bool showShadowHint;
 
@@ -237,14 +228,10 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// A custom validator run against the field text. Its message (or the
   /// [required] message) surfaces through the suffix error badge — never inline,
   /// matching the `super_form_field` rule.
-  final AutoSuggestionsValidator? validator;
+  final SuperAutoSuggestionsValidator<T>? validator;
 
   /// Message used by the [required] validator.
   final String requiredMessage;
-
-  /// Fired whenever the field's validity changes, with the current error (or
-  /// null when valid).
-  final AutoSuggestionsValidityChanged? onValidity;
 
   /// Show the error before the field has been touched (e.g. on a submit sweep).
   final bool forceError;
@@ -293,12 +280,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// Capitalization behavior for newly entered text.
   final TextCapitalization textCapitalization;
 
-  /// Called whenever the platform submits the field, including software-keyboard
-  /// actions. Unlike the legacy [onSubmitted], this callback is invoked after
-  /// any submit attempt, whether it selects a highlighted row, creates a row,
-  /// or accepts free text.
-  final ValueChanged<String>? onFieldSubmitted;
-
   /// Called when the editable field is tapped. The suggestions overlay still
   /// opens automatically when the field is interactive.
   final GestureTapCallback? onTap;
@@ -310,16 +291,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
 
   /// Called for pointer-up events outside the underlying text field.
   final TapRegionUpCallback? onTapUpOutside;
-
-  /// Called when editing completes. When null, Flutter applies its default
-  /// focus behavior for the selected [textInputAction].
-  final VoidCallback? onEditingComplete;
-
-  /// Called by `FormState.save()` with the current query/committed label.
-  ///
-  /// The public name intentionally follows the package convention while it is
-  /// forwarded to `TextFormField.onSaved`.
-  final FormFieldSetter<String>? onSave;
 
   /// Keyboard brightness override, primarily for iOS.
   final Brightness? keyboardAppearance;
@@ -459,7 +430,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     required this.source,
     required this.suggestionBuilder,
     this.controller,
-    this.onSelected,
     this.multiSelect = false,
     this.debounce = const Duration(milliseconds: 180),
     this.minChars = 0,
@@ -470,8 +440,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.recentsGroupLabel = 'Recent',
     this.onRecentsChanged,
     this.onSelectionChanged,
-    this.onChanged,
-    this.onSubmitted,
     this.hintText,
     this.showShadowHint = true,
     this.completeShadowHintOnTab = true,
@@ -492,7 +460,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.required = false,
     this.validator,
     this.requiredMessage = 'This field is required',
-    this.onValidity,
     this.forceError = false,
     this.hint,
     this.density = FieldDensity.comfortable,
@@ -506,12 +473,9 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.textAlignVertical,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
-    this.onFieldSubmitted,
     this.onTap,
     this.onTapOutside,
     this.onTapUpOutside,
-    this.onEditingComplete,
-    this.onSave,
     this.keyboardAppearance,
     this.onTapAlwaysCalled = false,
     this.autocorrect = true,
@@ -585,8 +549,17 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       false; // skip openOnFocus once (after a pick re-focuses)
   bool _advancedOpen = false; // the advanced-search dialog is showing
   bool _touched = false; // has the field been blurred at least once
-  String? _lastReportedError; // last error handed to onValidity
   bool _creating = false; // an onCreate call is in flight
+  String _resolvedRecentsGroupLabel = 'Recent';
+  Locale? _resolvedLocale;
+
+  /// The outer form field owns validation for the selected raw value.
+  final GlobalKey<FormFieldState<T>> _internalFormFieldKey =
+      GlobalKey<FormFieldState<T>>();
+
+  /// Last public selection snapshot, used to emit [onSelectionChanged] exactly
+  /// once for controller-driven and user-driven selection mutations.
+  List<T> _lastSelection = <T>[];
 
   @override
   void initState() {
@@ -594,19 +567,13 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     _c = widget.controller ?? _buildController();
     _ownsController = widget.controller == null;
     _bindController();
+    _lastSelection = _selectionSnapshot;
     _c.addListener(_onModel);
     _attachFieldTextController();
 
     _focus = widget.focusNode ?? _c.focusNode ?? FocusNode();
     _ownsFocus = widget.focusNode == null && _c.focusNode == null;
     _focus.addListener(_onFocus);
-
-    _c.text.addListener(_onTextForValidity);
-    // Report initial validity after the first frame (so a host onValidity that
-    // calls setState never runs during build).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _reportValidity();
-    });
   }
 
   SuperAutoSuggestionsController<T> _buildController() =>
@@ -624,7 +591,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       showRecents: widget.showRecents,
       maxRecents: widget.maxRecents,
       initialRecents: widget.initialRecents,
-      recentsGroupLabel: widget.recentsGroupLabel,
+      recentsGroupLabel: _resolvedRecentsGroupLabel,
       onRecentsChanged: widget.onRecentsChanged,
     );
   }
@@ -727,18 +694,47 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     return true;
   }
 
-  // ── validation ──
-  /// The raw error for the current value (independent of touched state).
-  String? get _error {
-    final text = _c.query;
+  // ── form + validation ──
+  GlobalKey<FormFieldState<T>> get _formFieldKey =>
+      _c.formFieldKey ?? _internalFormFieldKey;
+
+  T? get _formValue {
+    if (!widget.multiSelect) return _c.selected;
+    final items = _c.selectedItems;
+    return items.isEmpty ? null : items.last;
+  }
+
+  List<T> get _selectionSnapshot {
+    if (widget.multiSelect) return List<T>.of(_c.selectedItems);
+    final selected = _c.selected;
+    return selected == null ? <T>[] : <T>[selected];
+  }
+
+  bool _sameSelection(List<T> a, List<T> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  String? _validateFormValue(T? value) {
     if (widget.required) {
       final empty = widget.multiSelect
           ? _c.selectedItems.isEmpty
-          : text.trim().isEmpty;
-      if (empty) return widget.requiredMessage;
+          : value == null;
+      if (empty) {
+        final l10n = SuperAutoSuggestionsLocalization.of(context);
+        return widget.requiredMessage == 'This field is required'
+            ? l10n.requiredMessage
+            : widget.requiredMessage;
+      }
     }
-    return widget.validator?.call(text);
+    return widget.validator?.call(value);
   }
+
+  /// The raw error for the current selected value.
+  String? get _error => _validateFormValue(_formValue);
 
   /// The error to actually display — gated on touched / forceError, suppressed
   /// while disabled.
@@ -748,14 +744,17 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     return _error;
   }
 
-  void _onTextForValidity() => _reportValidity();
-
-  void _reportValidity() {
-    final e = _error;
-    if (e != _lastReportedError) {
-      _lastReportedError = e;
-      widget.onValidity?.call(e);
+  void _syncSelectionState() {
+    final next = _selectionSnapshot;
+    if (_sameSelection(_lastSelection, next)) return;
+    _lastSelection = next;
+    final formState = _formFieldKey.currentState;
+    final hadFormError = formState?.errorText != null;
+    formState?.didChange(_formValue);
+    if (_touched || widget.forceError || hadFormError) {
+      formState?.validate();
     }
+    widget.onSelectionChanged?.call(List<T>.unmodifiable(next));
   }
 
   void _onFocus() {
@@ -813,13 +812,13 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   }
 
   void _onModel() {
+    _syncSelectionState();
     if (_c.isOpen && !_overlay.isShowing) {
       _overlay.show();
     } else if (!_c.isOpen && _overlay.isShowing) {
       _overlay.hide();
     }
     if (_c.isOpen) _ensureHighlightVisible();
-    _reportValidity();
     if (mounted) setState(() {});
   }
 
@@ -875,20 +874,35 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = Localizations.localeOf(context);
+    if (_resolvedLocale == locale) return;
+    _resolvedLocale = locale;
+    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final next = widget.recentsGroupLabel == 'Recent'
+        ? l10n.recent
+        : widget.recentsGroupLabel;
+    if (_resolvedRecentsGroupLabel != next) {
+      _resolvedRecentsGroupLabel = next;
+      _bindController();
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant SuperAutoSuggestionsBox<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller &&
         widget.controller != null) {
       _c.removeListener(_onModel);
-      _c.text.removeListener(_onTextForValidity);
       _detachFieldTextController();
       if (_ownsController) _c.dispose();
       _c = widget.controller!;
       _ownsController = false;
       _bindController();
+      _lastSelection = _selectionSnapshot;
       _c.addListener(_onModel);
       _attachFieldTextController();
-      _c.text.addListener(_onTextForValidity);
     } else if (widget.source != oldWidget.source ||
         widget.suggestionBuilder != oldWidget.suggestionBuilder ||
         widget.debounce != oldWidget.debounce ||
@@ -900,6 +914,10 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         widget.initialRecents != oldWidget.initialRecents ||
         widget.recentsGroupLabel != oldWidget.recentsGroupLabel ||
         widget.onRecentsChanged != oldWidget.onRecentsChanged) {
+      final l10n = SuperAutoSuggestionsLocalization.of(context);
+      _resolvedRecentsGroupLabel = widget.recentsGroupLabel == 'Recent'
+          ? l10n.recent
+          : widget.recentsGroupLabel;
       _bindController();
     }
   }
@@ -907,7 +925,6 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   @override
   void dispose() {
     _blurTimer?.cancel();
-    _c.text.removeListener(_onTextForValidity);
     _c.removeListener(_onModel);
     _detachFieldTextController();
     if (_ownsController) _c.dispose();
@@ -976,9 +993,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
 
   void _pick(T item) => _choose(item);
 
-  /// Applies the component's submit semantics, then reports the resulting query
-  /// through [SuperAutoSuggestionsBox.onFieldSubmitted]. This path is shared by
-  /// physical Enter keys and software-keyboard actions.
+  /// Applies the component's submit semantics for physical Enter keys and
+  /// software-keyboard actions.
   void _handleFieldSubmitted(String _) {
     if (widget.disabled ||
         widget.readOnly ||
@@ -997,11 +1013,9 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       _startCreate(); // “＋ Create …” takes submit before free-text acceptance.
     } else if (_c.allowFreeText && !widget.multiSelect) {
       _c.acceptFreeText();
-      widget.onSubmitted?.call(_c.query);
+      _syncSelectionState();
       _c.close();
     }
-
-    widget.onFieldSubmitted?.call(_c.query);
   }
 
   /// Open the Advanced Search surface (Ctrl/⌘+F). Reuses the live controller so
@@ -1011,6 +1025,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     _advancedOpen = true;
     _c.open();
     final t = _resolveTheme(context);
+    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    var focusNextAfterPick = false;
     await showDialog<void>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.55),
@@ -1024,17 +1040,16 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
                 // ignore: deprecated_member_use_from_same_package
                 widget.label ??
                 widget.hintText ??
-                'Advanced Search',
+                l10n.advancedSearch,
             multiSelect: widget.multiSelect,
             highlightMatch: widget.highlightMatch,
             onPick: (item) {
               if (widget.multiSelect) {
                 _c.toggleSelected(item);
-                widget.onSelectionChanged?.call(_c.selectedItems);
-                widget.onSelected?.call(item);
               } else {
                 _c.select(item);
-                widget.onSelected?.call(item);
+                focusNextAfterPick =
+                    widget.textInputAction == TextInputAction.next;
                 Navigator.of(ctx).pop();
               }
             },
@@ -1042,9 +1057,30 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     );
     _advancedOpen = false;
     if (mounted) {
-      _suppressReopen = true; // don't auto-pop the inline overlay on refocus
-      _focus.requestFocus();
+      if (focusNextAfterPick) {
+        _focus.nextFocus();
+      } else {
+        _suppressReopen = true; // don't auto-pop the inline overlay on refocus
+        _focus.requestFocus();
+      }
     }
+  }
+
+  /// Apply the field's keyboard action after a committed single selection.
+  ///
+  /// `TextInputAction.next` behaves like a normal form field: once a suggestion
+  /// is selected, focus advances from this field to the next focusable field.
+  /// Other actions preserve the existing behavior and keep focus here.
+  void _focusAfterSingleSelection() {
+    if (widget.textInputAction == TextInputAction.next) {
+      _focus.nextFocus();
+      return;
+    }
+
+    if (!_focus.hasFocus) {
+      _suppressReopen = true; // a mouse pick will re-focus
+    }
+    _focus.requestFocus();
   }
 
   /// Unified selection entry point for both tap and Enter. In multi-select it
@@ -1056,16 +1092,10 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     _blurTimer?.cancel();
     if (widget.multiSelect) {
       _c.toggleSelected(item);
-      widget.onSelectionChanged?.call(_c.selectedItems);
-      widget.onSelected?.call(item);
       _focus.requestFocus(); // keep searching; overlay stays open
     } else {
       _c.select(item); // writes the label + closes the overlay
-      widget.onSelected?.call(item);
-      if (!_focus.hasFocus) {
-        _suppressReopen = true; // a mouse pick will re-focus
-      }
-      _focus.requestFocus();
+      _focusAfterSingleSelection();
     }
   }
 
@@ -1114,8 +1144,6 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   Widget build(BuildContext context) {
     if (_c.isHiden) return const SizedBox.shrink();
     final t = _resolveTheme(context);
-    final error = _visibleError;
-    final field = _buildField(t, error);
     final label =
         widget.decoration?.labelText ??
         // ignore: deprecated_member_use_from_same_package
@@ -1124,60 +1152,71 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         widget.decoration?.helperText ??
         // ignore: deprecated_member_use_from_same_package
         widget.hint;
-    return SizedBox(
-      width: widget.width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (label != null || widget.allowFixed) ...[
-            Row(
-              children: [
-                if (label != null)
-                  Expanded(
-                    child: _FieldLabel(
-                      text: label,
-                      required: widget.required,
-                      color: t.fg2,
-                    ),
-                  )
-                else
-                  const Spacer(),
-                if (widget.allowFixed)
-                  _FixedButton(controller: _c, color: t.fg3),
+    return FormField<T>(
+      key: _formFieldKey,
+      initialValue: _formValue,
+      validator: _validateFormValue,
+      builder: (formState) {
+        final error = widget.disabled
+            ? null
+            : formState.errorText ?? _visibleError;
+        final field = _buildField(t, error);
+        return SizedBox(
+          width: widget.width,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (label != null || widget.allowFixed) ...[
+                Row(
+                  children: [
+                    if (label != null)
+                      Expanded(
+                        child: _FieldLabel(
+                          text: label,
+                          required: widget.required,
+                          color: t.fg2,
+                        ),
+                      )
+                    else
+                      const Spacer(),
+                    if (widget.allowFixed)
+                      _FixedButton(controller: _c, color: t.fg3),
+                  ],
+                ),
+                const SizedBox(height: 8),
               ],
-            ),
-            const SizedBox(height: 8),
-          ],
-          CompositedTransformTarget(
-            link: _link,
-            child: OverlayPortal(
-              controller: _overlay,
-              overlayChildBuilder: (ctx) => _buildOverlay(ctx, t),
-              child: field,
-            ),
-          ),
-          // Hint sits beneath the control and is hidden whenever an error shows
-          // (errors surface only through the suffix badge — never inline).
-          if (helper != null && error == null) ...[
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: 2),
-              child: Text(
-                helper,
-                style: TextStyle(
-                  fontFamily: (SuperMaterialThemeData.of(
-                    context,
-                  ).textTheme).bodyMedium?.fontFamily,
-                  fontSize: 12,
-                  height: 1.35,
-                  color: t.fg3,
+              CompositedTransformTarget(
+                link: _link,
+                child: OverlayPortal(
+                  controller: _overlay,
+                  overlayChildBuilder: (ctx) => _buildOverlay(ctx, t),
+                  child: field,
                 ),
               ),
-            ),
-          ],
-        ],
-      ),
+              // Hint sits beneath the control and is hidden whenever an error shows
+              // (errors surface only through the suffix badge — never inline).
+              if (helper != null && error == null) ...[
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 2),
+                  child: Text(
+                    helper,
+                    style: TextStyle(
+                      fontFamily: (SuperMaterialThemeData.of(
+                        context,
+                      ).textTheme).bodyMedium?.fontFamily,
+                      fontSize: 12,
+                      height: 1.35,
+                      color: t.fg3,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1309,8 +1348,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       key: _fieldKey,
       child: Focus(
         onKeyEvent: _onKey,
-        child: TextFormField(
-          key: _c.formFieldKey,
+        child: TextField(
           controller: _fieldText,
           focusNode: _focus,
           enabled: widget.enabled && !disabled,
@@ -1343,10 +1381,6 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           scrollPhysics: widget.scrollPhysics,
           mouseCursor: widget.mouseCursor,
           canRequestFocus: widget.canRequestFocus,
-          onChanged: (v) {
-            widget.onChanged?.call(v);
-            if (interactive && !_c.isOpen) _c.open();
-          },
           onTap: widget.enabled && !disabled
               ? () {
                   widget.onTap?.call();
@@ -1355,9 +1389,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
               : null,
           onTapOutside: widget.onTapOutside,
           onTapUpOutside: widget.onTapUpOutside,
-          onEditingComplete: widget.onEditingComplete,
-          onFieldSubmitted: _handleFieldSubmitted,
-          onSaved: widget.onSave,
+          onSubmitted: _handleFieldSubmitted,
           style: baseStyle,
           cursorColor: fs.cursorColor ?? t.borderFocus,
           decoration: decoration,
@@ -1534,7 +1566,8 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
   final int maxVisibleRows;
   final AutoSuggestionMatch highlightMatch;
   final bool highlightMatches;
-  final Widget Function(BuildContext, T, SuperAutoSuggestionsItem<T>, bool)? itemBuilder;
+  final Widget Function(BuildContext, T, SuperAutoSuggestionsItem<T>, bool)?
+  itemBuilder;
   final Widget Function(BuildContext, String)? emptyBuilder;
   final Widget Function(BuildContext, String)? loadingBuilder;
   final GlobalKey hlKey;
@@ -1575,6 +1608,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
+    final l10n = SuperAutoSuggestionsLocalization.of(context);
     final results = controller.results;
     final q = controller.effectiveQuery;
     final maxH = maxVisibleRows * AutoSuggestionsBoxThemeData.rowHeight + 10;
@@ -1598,7 +1632,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  q.trim().isEmpty ? 'Loading…' : 'Searching “$q”…',
+                  q.trim().isEmpty ? l10n.loading : l10n.searchingQuery(q),
                   style: TextStyle(
                     fontFamily: (SuperMaterialThemeData.of(
                       context,
@@ -1621,7 +1655,9 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    q.trim().isEmpty ? 'Type to search' : 'No matches for “$q”',
+                    q.trim().isEmpty
+                        ? l10n.typeToSearch
+                        : l10n.noMatchesForQuery(q),
                     style: TextStyle(
                       fontFamily: (SuperMaterialThemeData.of(
                         context,
@@ -1664,7 +1700,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
                     ),
                     const SizedBox(width: 9),
                     Text(
-                      'Loading more from server…',
+                      l10n.loadingMoreFromServer,
                       style: TextStyle(
                         fontFamily: (SuperMaterialThemeData.of(
                           context,
@@ -1802,7 +1838,8 @@ class _Row<T> extends StatelessWidget {
   final bool highlighted;
   final AutoSuggestionMatch highlightMatch;
   final bool highlightMatches;
-  final Widget Function(BuildContext, T, SuperAutoSuggestionsItem<T>, bool)? custom;
+  final Widget Function(BuildContext, T, SuperAutoSuggestionsItem<T>, bool)?
+  custom;
   final bool multiSelect;
   final bool selected;
   final VoidCallback onTap;
@@ -1885,8 +1922,7 @@ class _Row<T> extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                  if (s.description != null ||
-                      s.descriptionText != null) ...[
+                  if (s.description != null || s.descriptionText != null) ...[
                     const SizedBox(height: 1),
                     s.description ??
                         Text(
@@ -1998,6 +2034,7 @@ class _CreateFooterState extends State<_CreateFooter> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
+    final l10n = SuperAutoSuggestionsLocalization.of(context);
     return MouseRegion(
       cursor: widget.creating
           ? SystemMouseCursors.wait
@@ -2034,7 +2071,7 @@ class _CreateFooterState extends State<_CreateFooter> {
               Expanded(
                 child: Text.rich(
                   TextSpan(
-                    text: 'Create ',
+                    text: '${l10n.create} ',
                     style: TextStyle(
                       fontFamily: (SuperMaterialThemeData.of(
                         context,
@@ -2063,7 +2100,7 @@ class _CreateFooterState extends State<_CreateFooter> {
               const SizedBox(width: 8),
               if (widget.showEnterHint)
                 Text(
-                  'ENTER',
+                  l10n.enter,
                   style: TextStyle(
                     fontFamily: (SuperMaterialThemeData.of(
                       context,
@@ -2089,6 +2126,7 @@ class _PageLoadingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
+    final l10n = SuperAutoSuggestionsLocalization.of(context);
     return Container(
       height: AutoSuggestionsBoxThemeData.rowHeight,
       alignment: Alignment.center,
@@ -2106,7 +2144,7 @@ class _PageLoadingRow extends StatelessWidget {
           ),
           const SizedBox(width: 9),
           Text(
-            'Loading more…',
+            l10n.loadingMore,
             style: TextStyle(
               fontFamily: (SuperMaterialThemeData.of(
                 context,
@@ -2211,18 +2249,21 @@ class _FixedButton<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: controller.isFixed,
-      builder: (context, fixed, _) => Tooltip(
-        message: fixed ? 'Unfix' : 'Fix',
-        child: IconButton(
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 26, height: 26),
-          padding: EdgeInsets.zero,
-          iconSize: 14,
-          color: fixed ? Theme.of(context).colorScheme.primary : color,
-          onPressed: () => controller.isFixed.value = !fixed,
-          icon: Icon(fixed ? Icons.lock_rounded : Icons.lock_open_rounded),
-        ),
-      ),
+      builder: (context, fixed, _) {
+        final l10n = SuperAutoSuggestionsLocalization.of(context);
+        return Tooltip(
+          message: fixed ? l10n.unfix : l10n.fix,
+          child: IconButton(
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 26, height: 26),
+            padding: EdgeInsets.zero,
+            iconSize: 14,
+            color: fixed ? Theme.of(context).colorScheme.primary : color,
+            onPressed: () => controller.isFixed.value = !fixed,
+            icon: Icon(fixed ? Icons.lock_rounded : Icons.lock_open_rounded),
+          ),
+        );
+      },
     );
   }
 }
@@ -2355,6 +2396,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
+    final l10n = SuperAutoSuggestionsLocalization.of(context);
     final results = _c.results;
     final q = _c.effectiveQuery;
     return Center(
@@ -2387,7 +2429,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'ADVANCED SEARCH',
+                                l10n.advancedSearch.toUpperCase(),
                                 style: TextStyle(
                                   fontFamily: (SuperMaterialThemeData.of(
                                     context,
@@ -2466,7 +2508,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                                 decoration: InputDecoration(
                                   isCollapsed: true,
                                   border: InputBorder.none,
-                                  hintText: 'Search…',
+                                  hintText: l10n.search,
                                   hintStyle: TextStyle(
                                     fontSize: 15,
                                     color: t.fg3,
@@ -2508,7 +2550,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                           ),
                           const SizedBox(width: 9),
                           Text(
-                            'Loading more from server…',
+                            l10n.loadingMoreFromServer,
                             style: TextStyle(
                               fontFamily: (SuperMaterialThemeData.of(
                                 context,
@@ -2527,7 +2569,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                         ? Padding(
                             padding: const EdgeInsets.symmetric(vertical: 48),
                             child: Text(
-                              _c.isLoading ? 'Searching…' : 'No matches',
+                              _c.isLoading ? l10n.searching : l10n.noMatches,
                               style: TextStyle(
                                 fontFamily: (SuperMaterialThemeData.of(
                                   context,
@@ -2578,7 +2620,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                       border: Border(top: BorderSide(color: t.border)),
                     ),
                     child: Text(
-                      '↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE',
+                      l10n.advancedSearchKeyboardHint,
                       style: TextStyle(
                         fontFamily: (SuperMaterialThemeData.of(
                           context,

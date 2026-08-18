@@ -9,12 +9,13 @@ server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.1.0` uses raw `T` values as the public data model. Callers pass raw
-items and provide a `suggestionBuilder` only to describe how each item should be
-rendered and searched.
+Version `1.2.0` keeps raw `T` values as the public data model and integrates
+`SuperAutoSuggestionsBox<T>` with Flutter forms through `FormField<T>`. The
+validator receives the selected raw `T?`, and `onSelectionChanged` is the
+selection callback for both select and de-select operations.
 
 Every `SuperAutoSuggestionsBox<T>` requires a
-`SuperAutoSuggestionsSource<T>`. Use `SuggestionSources.list<T>(values)` for a
+`SuperAutoSuggestionsSource<T>`. Use `SuperAutoSuggestionSources.list<T>(values)` for a
 local collection. Initial multi-select values belong to
 `SuperAutoSuggestionsController.initialSelected`; query, recents, and
 multi-select configuration belong to the widget.
@@ -35,7 +36,7 @@ recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.1.0
+  super_auto_suggestion_box: ^1.2.0
 ```
 
 ```dart
@@ -52,6 +53,12 @@ MaterialApp(
     textTheme: typography,
     primaryTextTheme: typography,
   ),
+  localizationsDelegates: const [
+        // ...
+        SuperAutoSuggestionsTranslation.delegate,
+      ],
+  supportedLocales:
+      SuperAutoSuggestionsTranslation.delegate.supportedLocales,
 );
 ```
 
@@ -75,14 +82,12 @@ final box = SuperAutoSuggestionsController<String>(
 
 SuperAutoSuggestionsBox<String>(
   controller: box,
-  source: SuggestionSources.list<String>(units),
+  source: SuperAutoSuggestionSources.list<String>(units),
   suggestionBuilder: unitSuggestion,
   hintText: 'Type or pick...',
-  onSelected: (unit) {
-    // unit is the raw String.
-  },
-  onSubmitted: (raw) {
-    // Free-text Enter.
+  onSelectionChanged: (selected) {
+    final unit = selected.isEmpty ? null : selected.last;
+    // unit is the selected raw String?, or null after de-selection.
   },
 );
 ```
@@ -91,9 +96,9 @@ You can omit the controller, but the source remains required:
 
 ```dart
 SuperAutoSuggestionsBox<String>(
-  source: SuggestionSources.list<String>(units),
+  source: SuperAutoSuggestionSources.list<String>(units),
   suggestionBuilder: unitSuggestion,
-  onSelected: (unit) {},
+  onSelectionChanged: (selected) {},
 );
 ```
 
@@ -128,7 +133,7 @@ Custom rows receive both the raw item and the built suggestion:
 
 ```dart
 SuperAutoSuggestionsBox<String>(
-  source: SuggestionSources.list<String>(accounts),
+  source: SuperAutoSuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   itemBuilder: (context, code, suggestion, highlighted) {
     return Text('${suggestion.displayText} ($code)');
@@ -159,30 +164,30 @@ the conversion to `SuperAutoSuggestionsItem<T>` for both widget-created and exte
 controllers.
 
 ```dart
-final staticSource = SuggestionSources.list<String>(accounts);
+final staticSource = SuperAutoSuggestionSources.list<String>(accounts);
 
-final fuzzySource = SuggestionSources.fuzzy<String>(accounts);
+final fuzzySource = SuperAutoSuggestionSources.fuzzy<String>(accounts);
 
-final asyncSource = SuggestionSources.async<String>(
+final asyncSource = SuperAutoSuggestionSources.async<String>(
   (query) => api.searchAccounts(query), // Future<List<String>>
   initialItems: accounts.take(5).toList(),
 );
 
-final hybridSource = SuggestionSources.hybrid<String>(
+final hybridSource = SuperAutoSuggestionSources.hybrid<String>(
   initialItems: accounts,
   fetch: (query) => api.searchAccounts(query), // Future<List<String>>
   remoteThreshold: 1,
   remoteMinChars: 2,
 );
 
-final remoteFallbackSource = SuggestionSources.remoteFallback<String>(
+final remoteFallbackSource = SuperAutoSuggestionSources.remoteFallback<String>(
   initialItems: accounts,
   fetch: (query) => api.searchAccounts(query), // Future<List<String>>
   remoteThreshold: 5,
   remoteMinChars: 1,
 );
 
-final pagedSource = SuggestionSources.paged<String>(
+final pagedSource = SuperAutoSuggestionSources.paged<String>(
   (query, page) async {
     final response = await api.searchAccountsPage(query, page);
     return SuperSuggestionsPage<String>(
@@ -194,9 +199,25 @@ final pagedSource = SuggestionSources.paged<String>(
 );
 ```
 
-`SuggestionSources.strings(values)` is still available for the simple
+`SuperAutoSuggestionSources.strings(values)` is still available for the simple
 label-equals-value case. The source itself does not take a builder; the widget
 owns the `suggestionBuilder`.
+
+### Concrete Source Classes
+
+The factory methods above return these public implementations:
+
+| Factory | Concrete source |
+| --- | --- |
+| `list` / `strings` / `fuzzy` | `SuperAutoListSuggestionsSource<T>` |
+| `async` | `SuperAutoAsyncSuggestionsSource<T>` |
+| `hybrid` | `SuperAutoHybridSuggestionsSource<T>` |
+| `remoteFallback` | `SuperAutoRemoteFallbackSuggestionsSource<T>` |
+| `paged` | `SuperAutoPagedSuggestionsSource<T>` |
+
+Prefer `SuperAutoSuggestionSources` for normal construction. Instantiate a
+concrete source directly only when its public source-specific API is needed.
+The pre-1.2.0 concrete class names are no longer canonical.
 
 ## Controller API
 
@@ -246,14 +267,17 @@ controller.highlightedSuggestion;  // SuperAutoSuggestionsItem<String>?
 controller.selectedSuggestion;     // SuperAutoSuggestionsItem<String>?
 ```
 
-## Widget Callbacks
+## Selection Callback
+
+`onSelectionChanged` fires after every selection mutation. Single-select emits
+`[item]` on selection and `[]` on de-selection; multi-select emits the complete
+selected list.
 
 ```dart
 SuperAutoSuggestionsBox<String>(
-  source: SuggestionSources.list<String>(accounts),
+  source: SuperAutoSuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   multiSelect: true,
-  onSelected: (code) {},
   onSelectionChanged: (codes) {},
 );
 ```
@@ -262,30 +286,34 @@ Inline create returns a raw value:
 
 ```dart
 SuperAutoSuggestionsBox<String>(
-  source: SuggestionSources.list<String>(vendors),
+  source: SuperAutoSuggestionSources.list<String>(vendors),
   suggestionBuilder: vendorSuggestion,
   onCreate: (query) async {
     final vendor = await api.createVendor(query);
     return vendor.id; // raw String
   },
-  onSelected: (vendorId) {},
+  onSelectionChanged: (vendorIds) {},
 );
 ```
 
 ## ERP Input And Validation
 
-`SuperAutoSuggestionsBox` forwards ERP-style text input controls and participates in
-`FormState.save()` through `onSave`.
+`SuperAutoSuggestionsBox<T>` participates in an enclosing `Form` through
+`FormField<T>`. Its validator receives the selected raw `T?`, not the query
+text. Keep a controller when form submission needs to read the selected value.
 
 ```dart
+final documentController = SuperAutoSuggestionsController<String>();
+
 Form(
   key: formKey,
   child: SuperAutoSuggestionsBox<String>(
-    source: SuggestionSources.list<String>(documentReferences),
+    controller: documentController,
+    source: SuperAutoSuggestionSources.list<String>(documentReferences),
     suggestionBuilder: documentSuggestion,
     decoration: const InputDecoration(
       labelText: 'Document Reference',
-      helperText: 'Pick or type a document reference',
+      helperText: 'Pick a document reference',
     ),
     keyboardType: TextInputType.text,
     inputFormatters: [
@@ -298,22 +326,28 @@ Form(
     completeShadowHintOnTab: true,
     required: true,
     validator: (value) {
-      if (value.trim().isEmpty) return null;
-      final labels = [
-        for (var i = 0; i < documentReferences.length; i++)
-          documentSuggestion(documentReferences, i, documentReferences[i]).titleText,
-      ];
-      final ok = labels.contains(value);
-      return ok ? null : 'Pick a document from the list';
+      if (value == null) return null; // `required` handles the empty selection.
+      return documentReferences.contains(value)
+          ? null
+          : 'Pick a document from the list';
     },
-    onFieldSubmitted: (value) {},
-    onSave: (value) {},
+    onSelectionChanged: (selected) {},
   ),
 );
+
+if (formKey.currentState!.validate()) {
+  final savedDocumentReference = documentController.selected;
+}
 ```
 
 Validation errors surface through the suffix error badge tooltip, matching the
-GeniusLink form-field convention.
+GeniusLink form-field convention. For direct form-field access, controller
+`formFieldKey` is now `GlobalKey<FormFieldState<T>>?`.
+
+For keyboard traversal, a single-select field with
+`textInputAction: TextInputAction.next` moves focus to the next focusable field
+immediately after an item is selected. Multi-select fields keep focus in the
+current suggestions field.
 
 ## States And Embedding
 
@@ -328,7 +362,33 @@ GeniusLink form-field convention.
 
 ## Migration
 
-See [`migration_1.0.0_to_1.1.0.md`](migration_1.0.0_to_1.1.0.md) for the
-controller rename and widget-owned source migration. For the earlier raw-value
-API migration, see
+See [`migration_1.1.0_to_1.2.0.md`](migration_1.1.0_to_1.2.0.md) for the generic
+validator, `FormField<T>` integration, removed callbacks, source-name
+migrations, localization, `TextInputAction.next`, and
+`onSelectionChanged` behavior. For earlier migrations, see
+[`migration_1.0.0_to_1.1.0.md`](migration_1.0.0_to_1.1.0.md) and
 [`migration_0.14.0_to_1.0.0.md`](migration_0.14.0_to_1.0.0.md).
+
+## Localization
+
+The package ships English and Arabic translations using `flutter_localizations`,
+`intl`, and generated `intl_utils` delegates. Register the package helpers on
+your app:
+
+```dart
+MaterialApp(
+  localizationsDelegates: const [
+        // ...
+        SuperAutoSuggestionsTranslation.delegate,
+      ],
+  supportedLocales:
+      SuperAutoSuggestionsTranslation.delegate.supportedLocales,
+)
+```
+
+Built-in package strings such as the required-field message, loading/search
+states, Recent group label, inline-create text, fixed/unfixed tooltips, and
+Advanced Search chrome follow the active locale. Explicit custom strings passed
+to the widget continue to take precedence. Registration is optional: when no
+`SuperAutoSuggestionsTranslation` is available in the widget tree, package
+widgets fall back to the built-in English localization.

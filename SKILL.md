@@ -2,9 +2,9 @@
 name: super-auto-suggestion-box
 description: >
   Use the super_auto_suggestion_box Flutter package to build GeniusLink
-  design-system typeahead / combobox inputs. Version 1.1.0 accepts raw T values
-  and uses suggestionBuilder to derive SuperAutoSuggestionsItem metadata for
-  rendering, search, filtering, selection, paging, recents, and inline create.
+  design-system typeahead / combobox inputs. Version 1.2.0 uses raw T values,
+  FormField<T>-based validation over the selected T?, and onSelectionChanged
+  for select/de-select notifications while suggestionBuilder derives row metadata.
 ---
 
 # Super Auto Suggestion Box - Agent Skill
@@ -20,7 +20,7 @@ read-only/fixable states, validation, advanced search, and bare embedding.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.1.0
+  super_auto_suggestion_box: ^1.2.0
 ```
 
 ```dart
@@ -42,7 +42,7 @@ darkTheme: SuperMaterialThemeData.dark(
 ),
 ```
 
-## Required 1.1.0 Pattern
+## Required 1.2.0 Pattern
 
 Public APIs use raw `T` values. Do not build
 `List<SuperAutoSuggestionsItem<T>>` as source data. Create
@@ -69,9 +69,9 @@ SuperAutoSuggestionsItem<String> accountSuggestion(
 );
 
 SuperAutoSuggestionsBox<String>(
-  source: SuggestionSources.list<String>(accounts),
+  source: SuperAutoSuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
-  onSelected: (code) {},
+  onSelectionChanged: (codes) {},
 );
 ```
 
@@ -87,24 +87,24 @@ Built-in sources accept raw data/fetch configuration only. Provide
 both widget-created and external controllers:
 
 ```dart
-SuggestionSources.list<String>(accounts);
+SuperAutoSuggestionSources.list<String>(accounts);
 
-SuggestionSources.async<String>(
+SuperAutoSuggestionSources.async<String>(
   (query) => api.searchAccounts(query), // Future<List<String>>
   initialItems: accounts.take(5).toList(),
 );
 
-SuggestionSources.hybrid<String>(
+SuperAutoSuggestionSources.hybrid<String>(
   initialItems: accounts,
   fetch: (query) => api.searchAccounts(query),
 );
 
-SuggestionSources.remoteFallback<String>(
+SuperAutoSuggestionSources.remoteFallback<String>(
   initialItems: accounts,
   fetch: (query) => api.searchAccounts(query),
 );
 
-SuggestionSources.paged<String>(
+SuperAutoSuggestionSources.paged<String>(
   (query, page) async {
     final result = await api.searchAccountsPage(query, page);
     return SuperSuggestionsPage<String>(
@@ -116,8 +116,19 @@ SuggestionSources.paged<String>(
 );
 ```
 
-Use `SuggestionSources.strings(values)` only when the raw string is also the
+Use `SuperAutoSuggestionSources.strings(values)` only when the raw string is also the
 label. The source still receives no builder.
+
+When direct source construction is required, use the canonical 1.2.0 class
+names:
+
+- `SuperAutoListSuggestionsSource<T>`
+- `SuperAutoAsyncSuggestionsSource<T>`
+- `SuperAutoHybridSuggestionsSource<T>`
+- `SuperAutoRemoteFallbackSuggestionsSource<T>`
+- `SuperAutoPagedSuggestionsSource<T>`
+
+Prefer the `SuperAutoSuggestionSources` factories for ordinary usage.
 
 ## Controller And Callbacks
 
@@ -145,7 +156,7 @@ Pass the builder on the widget when rendering that controller:
 ```dart
 SuperAutoSuggestionsBox<String>(
   controller: controller,
-  source: SuggestionSources.list<String>(accounts),
+  source: SuperAutoSuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   initialRecents: const ['4000'],
   showRecents: true,
@@ -163,14 +174,15 @@ controller.highlightedSuggestion;
 controller.selectedSuggestion;
 ```
 
-Widget callbacks are raw:
+Selection callbacks are raw. `onSelectionChanged` is authoritative for both
+select and de-select operations; single-select emits `[item]` or `[]`, while
+multi-select emits the full selected list:
 
 ```dart
 SuperAutoSuggestionsBox<String>(
-  source: SuggestionSources.list<String>(accounts),
+  source: SuperAutoSuggestionSources.list<String>(accounts),
   suggestionBuilder: accountSuggestion,
   multiSelect: true,
-  onSelected: (code) {},
   onSelectionChanged: (codes) {},
   onCreate: (query) async {
     final created = await api.createAccount(query);
@@ -187,8 +199,11 @@ SuperAutoSuggestionsBox<String>(
 - Use `remoteFallback` for mostly-local data so local rows appear immediately
   while the remote fetch appends behind the loading-more indicator.
 - Use `paged` when a single response would be too large.
-- Validation uses `required`, `validator`, `forceError`, and `onValidity`; errors
-  surface through the suffix badge tooltip.
+- Validation uses an outer `FormField<T>`. `validator` receives the selected
+  raw `T?`; `required` and `forceError` continue to participate
+  in the package validation flow. Errors surface through the suffix badge tooltip.
+- `controller.formFieldKey` is `GlobalKey<FormFieldState<T>>?`. Read selected
+  values from controller state when a host form is submitted.
 - Use `decoration: InputDecoration(labelText:, helperText:, hintText:,
   prefixIcon:)` for field copy and iconography. Legacy `label`, `hint`, and
   `leading` remain deprecated.
@@ -196,6 +211,9 @@ SuperAutoSuggestionsBox<String>(
 - `allowFixed` exposes `controller.isFixed`; fixed fields block controller and
   user mutations without dimming.
 - `showShadowHint` and `completeShadowHintOnTab` remain enabled by default.
+- In single-select mode, `textInputAction: TextInputAction.next` advances
+  focus to the next focusable field after an item is selected. Multi-select
+  keeps focus in the suggestions field.
 
 ## Common Mistakes
 
@@ -203,11 +221,22 @@ SuperAutoSuggestionsBox<String>(
   callbacks, controller `initialSelected`, widget `initialRecents`, or
   `onCreate`. Use raw `T` values.
 - Omitting the required `source` on `SuperAutoSuggestionsBox`. Wrap local data
-  with `SuggestionSources.list<T>(values)`.
+  with `SuperAutoSuggestionSources.list<T>(values)`.
 - Omitting `suggestionBuilder` on `SuperAutoSuggestionsBox`.
 - Reading `controller.results` as suggestions. Use `controller.suggestions` or
   `controller.suggestionAt(index)` for metadata.
 - Returning `SuperAutoSuggestionsItem<T>` from `onCreate`. Return the raw created item.
 - Using `.async` for mostly-local data. Prefer `.remoteFallback`.
+- Using pre-1.2.0 concrete source class names. Use the `SuperAuto...SuggestionsSource` names above; use `SuperAutoSuggestionSources` for factory construction.
 - Recreating a controller in `build` for pre-filled or fixed fields. Keep it in
   state and dispose it.
+- Using removed 1.1.0 callbacks (`onChanged`, `onSubmitted`, `onSelected`,
+  `onFieldSubmitted`, `onEditingComplete`, `onSave`, or `onValidity`). Use
+  controller state/listeners for query state, `onSelectionChanged` for
+  selection state, and Flutter `Form` validation for validity.
+- Writing a validator for `String` query text. In 1.2.0 the validator receives
+  the selected raw `T?`.
+
+## Localization
+
+Register `SuperAutoSuggestionsTranslation.localizationsDelegates` and `SuperAutoSuggestionsTranslation.supportedLocales` on the app's `MaterialApp`. Built-in strings are available in English and Arabic. Registration is optional: if `SuperAutoSuggestionsTranslation` is absent from the widget tree, package widgets use English by default.

@@ -4,6 +4,62 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.2.0 - 2026-08-18
+
+### Added
+
+- Added English and Arabic package localization using `flutter_localizations`,
+  `intl`, generated `intl_utils` delegates, and
+  `SuperAutoSuggestionsLocalizations`.
+- Added a safe localization resolver: when
+  `SuperAutoSuggestionsLocalization` is not registered in the widget tree,
+  package-owned strings use the built-in English localization.
+
+### Changed
+
+- **Breaking:** Renamed `AutoSuggestionsValidator` to
+  `SuperAutoSuggestionsValidator<T>` and changed validation from query text to
+  the selected raw value: `String? Function(T? value)`.
+- **Breaking:** `SuperAutoSuggestionsBox<T>` now participates in Flutter forms
+  through an outer `FormField<T>`. The widget validator is passed to
+  `FormField.validator`, and controller form keys are typed as
+  `GlobalKey<FormFieldState<T>>?`.
+- **Breaking:** Removed the public callbacks `onChanged`, `onSubmitted`,
+  `onSelected`, `onFieldSubmitted`, `onEditingComplete`, `onSave`, and
+  `onValidity`.
+- `onSelectionChanged` is now the authoritative selection callback. It fires on
+  both select and de-select operations in single- and multi-select modes,
+  including controller-driven selection changes.
+- In single-select mode, `onSelectionChanged` receives `[item]` after selection
+  and `[]` after de-selection. In multi-select mode it receives the complete
+  selected list.
+- Updated the runnable examples to use selection-driven callbacks and
+  `FormState.validate()` plus controller state instead of the removed save and
+  field-submission callbacks.
+
+- **Breaking:** Renamed the concrete source implementations to
+  `SuperAutoListSuggestionsSource<T>`,
+  `SuperAutoAsyncSuggestionsSource<T>`,
+  `SuperAutoHybridSuggestionsSource<T>`,
+  `SuperAutoRemoteFallbackSuggestionsSource<T>`, and
+  `SuperAutoPagedSuggestionsSource<T>`.
+- Renamed the source factory namespace from `SuggestionSources` to
+  `SuperAutoSuggestionSources`; `SuggestionSources` remains as a deprecated
+  compatibility typedef.
+- In single-select mode, selecting an item now advances focus when
+  `textInputAction == TextInputAction.next`. Multi-select keeps focus in the
+  current field. Built-in Advanced Search follows the same rule.
+
+### Documentation
+
+- Updated `README.md`, `SKILL.md`, and example documentation for the 1.2.0 form
+  and selection API.
+- Added `migration_1.1.0_to_1.2.0.md` with validator, form key, callback, and
+  form-integration migration examples.
+- Added comprehensive Dartdoc for every built-in source factory and the five
+  concrete `SuperAuto...SuggestionsSource` classes, including behavior,
+  caching, errors, thresholds, paging, parameters, and examples.
+
 ## 1.1.0 - 2026-08-15
 
 ### Changed
@@ -340,8 +396,8 @@ embedding) compile unchanged.
   rewards consecutive runs and word-boundary hits, so loose queries surface the
   best match first (previously fuzzy hits kept arbitrary order).
 - **`SuggestionSources.hybrid(...)`** now returns the single-phase
-  `HybridSuggestionsSource` it documents (it previously constructed the
-  progressive fallback source, leaving `HybridSuggestionsSource` as dead code).
+  `SuperAutoHybridSuggestionsSource` it documents (it previously constructed the
+  progressive fallback source, leaving `SuperAutoHybridSuggestionsSource` as dead code).
   `remoteFallback` remains the progressive variant.
 
 ## [0.6.0] — 2026-07-01

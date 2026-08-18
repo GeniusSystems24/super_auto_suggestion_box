@@ -105,21 +105,18 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
   SuperAutoSuggestionsSource<String> _source() {
     switch (widget.type) {
       case ExampleSourceType.strings:
-        return SuggestionSources.strings(_items);
+        return SuperAutoSuggestionSources.strings(_items);
       case ExampleSourceType.list:
-        return SuggestionSources.list<String>(_items);
+        return SuperAutoSuggestionSources.list<String>(_items);
       case ExampleSourceType.fuzzy:
-        return SuggestionSources.fuzzy<String>(_items);
+        return SuperAutoSuggestionSources.fuzzy<String>(_items);
       case ExampleSourceType.asyncSource:
-        return SuggestionSources.async<String>(
-          (query) async {
-            await Future<void>.delayed(const Duration(milliseconds: 350));
-            return _matches(query);
-          },
-          initialItems: _items.take(5).toList(),
-        );
+        return SuperAutoSuggestionSources.async<String>((query) async {
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+          return _matches(query);
+        }, initialItems: _items.take(5).toList());
       case ExampleSourceType.hybrid:
-        return SuggestionSources.hybrid<String>(
+        return SuperAutoSuggestionSources.hybrid<String>(
           initialItems: _items.take(5).toList(),
           fetch: (query) async {
             await Future<void>.delayed(const Duration(milliseconds: 350));
@@ -129,7 +126,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
           remoteMinChars: 1,
         );
       case ExampleSourceType.remoteFallback:
-        return SuggestionSources.remoteFallback<String>(
+        return SuperAutoSuggestionSources.remoteFallback<String>(
           initialItems: _items.take(5).toList(),
           fetch: (query) async {
             await Future<void>.delayed(const Duration(milliseconds: 350));
@@ -139,22 +136,19 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
           remoteMinChars: 1,
         );
       case ExampleSourceType.paged:
-        return SuggestionSources.paged<String>(
-          (query, page) async {
-            await Future<void>.delayed(const Duration(milliseconds: 350));
-            final matches = _matches(query);
-            const pageSize = 5;
-            final start = page * pageSize;
-            final pageItems = start >= matches.length
-                ? <String>[]
-                : matches.skip(start).take(pageSize).toList();
-            return SuperSuggestionsPage<String>(
-              items: pageItems,
-              hasMore: start + pageItems.length < matches.length,
-            );
-          },
-          resolveFrom: _items,
-        );
+        return SuperAutoSuggestionSources.paged<String>((query, page) async {
+          await Future<void>.delayed(const Duration(milliseconds: 350));
+          final matches = _matches(query);
+          const pageSize = 5;
+          final start = page * pageSize;
+          final pageItems = start >= matches.length
+              ? <String>[]
+              : matches.skip(start).take(pageSize).toList();
+          return SuperSuggestionsPage<String>(
+            items: pageItems,
+            hasMore: start + pageItems.length < matches.length,
+          );
+        }, resolveFrom: _items);
     }
   }
 
@@ -183,9 +177,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
         title: Text(widget.type.title),
         subtitle: Text(
           'SOURCE EXAMPLE',
-          style: typography.eyebrow.copyWith(
-            color: colorScheme.primary,
-          ),
+          style: typography.eyebrow.copyWith(color: colorScheme.primary),
         ),
       ),
       body: SingleChildScrollView(
@@ -195,10 +187,8 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.1.0 · ${widget.type.title.toUpperCase()}',
-                style: typography.eyebrow.copyWith(
-                  color: colorScheme.primary,
-                ),
+                'v1.2.0 · ${widget.type.title.toUpperCase()}',
+                style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),
               Text(

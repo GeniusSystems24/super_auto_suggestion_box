@@ -55,9 +55,9 @@ void main() {
     expect(built.displayText, 'custom');
   });
 
-  group('AsyncSuggestionsSource cachedItems', () {
+  group('SuperAutoAsyncSuggestionsSource cachedItems', () {
     test('copies initial items and accumulates unique fetched items', () async {
-      final source = AsyncSuggestionsSource<String>(
+      final source = SuperAutoAsyncSuggestionsSource<String>(
         (_) async => ['b', 'c', 'c'],
         initialItems: ['a', 'b'],
       );
@@ -73,10 +73,10 @@ void main() {
     });
   });
 
-  group('HybridSuggestionsSource cachedItems', () {
+  group('SuperAutoHybridSuggestionsSource cachedItems', () {
     test('reuses fetched items locally without a second fetch', () async {
       var fetchCount = 0;
-      final source = HybridSuggestionsSource<String>(
+      final source = SuperAutoHybridSuggestionsSource<String>(
         initialItems: ['a'],
         remoteThreshold: 1,
         remoteMinChars: 1,
@@ -101,10 +101,10 @@ void main() {
     });
   });
 
-  group('RemoteFallbackSuggestionsSource cachedItems', () {
+  group('SuperAutoRemoteFallbackSuggestionsSource cachedItems', () {
     test('reuses fetched items through progressive local results', () async {
       var fetchCount = 0;
-      final source = RemoteFallbackSuggestionsSource<String>(
+      final source = SuperAutoRemoteFallbackSuggestionsSource<String>(
         initialItems: ['a'],
         remoteThreshold: 0,
         remoteMinChars: 1,

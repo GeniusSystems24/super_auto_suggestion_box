@@ -326,25 +326,22 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     ];
   }
 
-  String? _accountError;
   bool _boundReadOnly = false;
 
   final GlobalKey<FormState> _erpFormKey = GlobalKey<FormState>();
+  late final SuperAutoSuggestionsController<String> _erpController =
+      SuperAutoSuggestionsController<String>();
   String? _savedDocumentReference;
-  String _lastInputEvent = 'No input event yet';
+  String _lastInputEvent = 'No selection event yet';
 
   late final SuperAutoSuggestionsController<String> _lockedController =
-      SuperAutoSuggestionsController<String>(
-        initialValue: _accounts.first,
-      );
+      SuperAutoSuggestionsController<String>(initialValue: _accounts.first);
 
   late final SuperAutoSuggestionsController<String> _recentsController =
       SuperAutoSuggestionsController<String>();
 
   late final SuperAutoSuggestionsController<String> _boundController =
-      SuperAutoSuggestionsController<String>(
-        initialValue: '4000',
-      );
+      SuperAutoSuggestionsController<String>(initialValue: '4000');
 
   final FocusNode _fixableFocusNode = FocusNode();
   final GlobalKey<FormFieldState<String>> _fixableFormFieldKey =
@@ -361,6 +358,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     _lockedController.dispose();
     _recentsController.dispose();
     _boundController.dispose();
+    _erpController.dispose();
     _fixableController.dispose();
     _fixableFocusNode.dispose();
     super.dispose();
@@ -388,7 +386,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.1.0',
+                'v1.2.0',
                 style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -405,10 +403,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 subtitle: 'Search the chart of accounts by name or code',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   hintText: 'e.g. Accounts Receivable',
-                  onSelected: (code) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -418,7 +416,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 subtitle: 'Assign one or more cost centers to this entry',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   multiSelect: true,
                   hintText: 'Select cost centers...',
@@ -431,7 +429,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 subtitle: 'Fuzzy match - type loosely',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.fuzzy<String>(_cities),
+                  source: SuperAutoSuggestionSources.fuzzy<String>(_cities),
                   suggestionBuilder: _citySuggestion,
                   highlightMatch: AutoSuggestionMatch.fuzzy,
                   hintText: 'e.g. rdh',
@@ -445,7 +443,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'Local vendors show instantly; server search runs when local matches are few',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.remoteFallback<String>(
+                  source: SuperAutoSuggestionSources.remoteFallback<String>(
                     initialItems: _localVendors,
                     fetch: _fetchRemote,
                     remoteThreshold: 3,
@@ -453,7 +451,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   ),
                   suggestionBuilder: _vendorSuggestion,
                   hintText: 'e.g. cement, freight, glass...',
-                  onSelected: (vendor) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -464,11 +462,11 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'Focus the field and press Ctrl / Cmd + F to open Advanced Search',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_directory),
+                  source: SuperAutoSuggestionSources.list<String>(_directory),
                   suggestionBuilder: _directorySuggestion,
                   advancedSearch: true,
                   hintText: 'Search the directory... (Cmd/Ctrl+F)',
-                  onSelected: (vendor) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -479,7 +477,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'Required field with a custom validator - leave it empty and tab away',
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Debit Account',
@@ -488,26 +486,13 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   ),
                   required: true,
                   validator: (value) {
-                    if (value.trim().isEmpty) return null;
-                    final match = _accounts.any(
-                      (code) => _accountLabel(code) == value,
-                    );
-                    return match ? null : 'Pick an account from the list';
+                    if (value == null) return null;
+                    return _accounts.contains(value)
+                        ? null
+                        : 'Pick an account from the list';
                   },
-                  onValidity: (err) => setState(() => _accountError = err),
                   hintText: 'e.g. Accounts Receivable',
-                  onSelected: (code) {},
-                ),
-              ),
-              SizedBox(height: spacing.space2),
-              Text(
-                _accountError == null
-                    ? 'STATUS - VALID'
-                    : 'STATUS - ${_accountError!.toUpperCase()}',
-                style: typography.label.copyWith(
-                  color: _accountError == null
-                      ? t.tokens.success
-                      : Theme.of(context).colorScheme.error,
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -519,7 +504,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
                   controller: _lockedController,
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Reconciliation Account',
@@ -535,7 +520,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'A theme assigned directly to one box - green focused fill, border and bold text',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Ledger Account',
@@ -549,7 +534,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       cursorColor: t.tokens.success,
                     ),
                   ),
-                  onSelected: (code) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -561,13 +546,13 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
                   controller: _recentsController,
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   showRecents: true,
                   maxRecents: 4,
                   decoration: const InputDecoration(labelText: 'Account'),
                   hintText: 'Search accounts...',
-                  onSelected: (code) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -577,7 +562,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 subtitle: 'Type a missing name and press Enter to create it',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_projects),
+                  source: SuperAutoSuggestionSources.list<String>(_projects),
                   suggestionBuilder: _projectSuggestion,
                   decoration: const InputDecoration(labelText: 'Project'),
                   hintText: 'e.g. Seafront Villas',
@@ -587,7 +572,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     );
                     return query;
                   },
-                  onSelected: (project) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -598,7 +583,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'Large master data - 12 rows per page; scroll the dropdown to load more',
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.paged<String>(
+                  source: SuperAutoSuggestionSources.paged<String>(
                     _fetchCatalogPage,
                     resolveFrom: _catalog,
                   ),
@@ -606,7 +591,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   decoration: const InputDecoration(labelText: 'Item'),
                   maxVisibleRows: 7,
                   hintText: 'Search 64 items...',
-                  onSelected: (sku) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
@@ -621,14 +606,16 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   children: [
                     SuperAutoSuggestionsBox<String>(
                       controller: _boundController,
-                      source: SuggestionSources.list<String>(_accounts),
+                      source: SuperAutoSuggestionSources.list<String>(
+                        _accounts,
+                      ),
                       suggestionBuilder: _accountSuggestion,
                       decoration: const InputDecoration(
                         labelText: 'Ledger Account',
                       ),
                       readOnly: _boundReadOnly,
                       hintText: 'Pick or bind by code',
-                      onSelected: (code) {},
+                      onSelectionChanged: (items) {},
                     ),
                     SizedBox(height: spacing.space3),
                     Wrap(
@@ -671,7 +658,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SuperAutoSuggestionsBox<String>(
-                        source: SuggestionSources.list<String>(_documentReferences),
+                        controller: _erpController,
+                        source: SuperAutoSuggestionSources.list<String>(
+                          _documentReferences,
+                        ),
                         suggestionBuilder: _documentReferenceSuggestion,
                         decoration: const InputDecoration(
                           labelText: 'Document Reference',
@@ -703,14 +693,12 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         onTapUpOutside: (_) => setState(
                           () => _lastInputEvent = 'Pointer up outside',
                         ),
-                        onEditingComplete: () => setState(
-                          () => _lastInputEvent = 'Editing completed',
+                        required: true,
+                        onSelectionChanged: (items) => setState(
+                          () => _lastInputEvent = items.isEmpty
+                              ? 'Selection cleared'
+                              : 'Selected: ${items.last}',
                         ),
-                        onFieldSubmitted: (value) => setState(
-                          () => _lastInputEvent = 'Submitted: $value',
-                        ),
-                        onSave: (value) =>
-                            setState(() => _savedDocumentReference = value),
                       ),
                       SizedBox(height: spacing.space3),
                       Wrap(
@@ -719,9 +707,18 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           SuperButton(
-                            label: 'Save Form',
+                            label: 'Validate & Save',
                             variant: SuperButtonVariant.secondary,
-                            onPressed: () => _erpFormKey.currentState?.save(),
+                            onPressed: () {
+                              final valid =
+                                  _erpFormKey.currentState?.validate() ?? false;
+                              if (!valid) return;
+                              setState(() {
+                                _savedDocumentReference =
+                                    _erpController.selected;
+                                _lastInputEvent = 'Form validated';
+                              });
+                            },
                           ),
                           Text(
                             _savedDocumentReference == null
@@ -747,7 +744,9 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   children: [
                     SuperAutoSuggestionsBox<String>(
                       controller: _fixableController,
-                      source: SuggestionSources.list<String>(_accounts),
+                      source: SuperAutoSuggestionSources.list<String>(
+                        _accounts,
+                      ),
                       suggestionBuilder: _accountSuggestion,
                       decoration: const InputDecoration(
                         labelText: 'Settlement Account',
@@ -785,7 +784,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     'Label, helper, and placeholder copy use Flutter standard InputDecoration',
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
-                  source: SuggestionSources.list<String>(_accounts),
+                  source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   decoration: const InputDecoration(
                     labelText: 'Cash Account',
@@ -793,7 +792,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     hintText: 'Search by account code or name',
                     prefixIcon: Icon(Icons.account_balance_outlined),
                   ),
-                  onSelected: (code) {},
+                  onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),

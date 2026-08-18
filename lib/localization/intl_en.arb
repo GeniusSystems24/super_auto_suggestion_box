@@ -1,0 +1,34 @@
+{
+  "@@locale": "en",
+  "requiredMessage": "This field is required",
+  "recent": "Recent",
+  "loading": "Loading…",
+  "searching": "Searching…",
+  "searchingQuery": "Searching “{query}”…",
+  "@searchingQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "typeToSearch": "Type to search",
+  "noMatches": "No matches",
+  "noMatchesForQuery": "No matches for “{query}”",
+  "@noMatchesForQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingMore": "Loading more…",
+  "loadingMoreFromServer": "Loading more from server…",
+  "create": "Create",
+  "enter": "ENTER",
+  "fix": "Fix",
+  "unfix": "Unfix",
+  "advancedSearch": "Advanced Search",
+  "search": "Search…",
+  "advancedSearchKeyboardHint": "↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE"
+}

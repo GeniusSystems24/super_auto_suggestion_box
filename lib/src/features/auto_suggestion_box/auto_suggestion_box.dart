@@ -3,7 +3,7 @@
 // ------------------------------------------------------------
 // Public barrel for the SuperAutoSuggestionsBox feature. Exports the domain
 // entities + match strategy, the source contract and built-in source factory
-// (SuggestionSources), the controller, and the view + theme.
+// (SuperAutoSuggestionSources), the controller, and the view + theme.
 // ============================================================
 
 // Domain

@@ -1,0 +1,34 @@
+{
+  "@@locale": "ar",
+  "requiredMessage": "هذا الحقل مطلوب",
+  "recent": "الأخيرة",
+  "loading": "جارٍ التحميل…",
+  "searching": "جارٍ البحث…",
+  "searchingQuery": "جارٍ البحث عن «{query}»…",
+  "@searchingQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "typeToSearch": "اكتب للبحث",
+  "noMatches": "لا توجد نتائج",
+  "noMatchesForQuery": "لا توجد نتائج لـ «{query}»",
+  "@noMatchesForQuery": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingMore": "جارٍ تحميل المزيد…",
+  "loadingMoreFromServer": "جارٍ تحميل المزيد من الخادم…",
+  "create": "إنشاء",
+  "enter": "ENTER",
+  "fix": "تثبيت",
+  "unfix": "إلغاء التثبيت",
+  "advancedSearch": "بحث متقدم",
+  "search": "بحث…",
+  "advancedSearchKeyboardHint": "↑ ↓ للتنقل   ⏎ للاختيار   ESC للإغلاق"
+}

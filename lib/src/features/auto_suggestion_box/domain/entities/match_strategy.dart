@@ -57,7 +57,7 @@ class AutoSuggestionMatching {
   /// A relevance score for ranking matches (higher = better; 0 = no match).
   /// Both arguments are already-cased. For prefix/contains/words it rewards an
   /// earlier, tighter hit; for fuzzy it rewards consecutive runs and matches at
-  /// word boundaries — so `SuggestionSources.fuzzy` orders by match *quality*,
+  /// word boundaries — so `SuperAutoSuggestionSources.fuzzy` orders by match *quality*,
   /// not just insertion order.
   static double score(String haystack, String query, AutoSuggestionMatch mode) {
     if (query.isEmpty) return 1;

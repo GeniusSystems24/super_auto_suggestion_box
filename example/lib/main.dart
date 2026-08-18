@@ -7,6 +7,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 import 'auto_suggestion_box_demo.dart';
@@ -54,6 +55,15 @@ class _ExampleAppState extends State<ExampleApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Super Auto Suggestion Box',
+      locale: Locale(_direction == TextDirection.rtl ? 'ar' : 'en'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        SuperAutoSuggestionsTranslation.delegate,
+      ],
+      supportedLocales:
+          SuperAutoSuggestionsTranslation.delegate.supportedLocales,
       themeMode: _mode,
       theme: SuperMaterialThemeData.light(
         textTheme: typography,

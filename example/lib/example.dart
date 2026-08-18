@@ -41,21 +41,21 @@ class TryExampleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sources = <String, SuperAutoSuggestionsSource<String>>{
-      'list': SuggestionSources.list<String>(
+      'list': SuperAutoSuggestionSources.list<String>(
         documentReferences,
         match: AutoSuggestionMatch.fuzzy,
         caseSensitive: false,
       ),
-      'async': SuggestionSources.async<String>((query) async {
+      'async': SuperAutoSuggestionSources.async<String>((query) async {
         debugPrint('Async source called with query: $query');
         await Future<void>.delayed(const Duration(seconds: 1));
         return _matches(query);
       }),
-      'fuzzy': SuggestionSources.fuzzy<String>(
+      'fuzzy': SuperAutoSuggestionSources.fuzzy<String>(
         documentReferences,
         caseSensitive: false,
       ),
-      'paged': SuggestionSources.paged<String>((query, page) async {
+      'paged': SuperAutoSuggestionSources.paged<String>((query, page) async {
         debugPrint('Paged source called with query: $query, page: $page');
         await Future<void>.delayed(const Duration(seconds: 1));
         final all = _matches(query);
@@ -65,7 +65,7 @@ class TryExampleScreen extends StatelessWidget {
           hasMore: (page + 1) * 5 < all.length,
         );
       }, resolveFrom: documentReferences),
-      'hybrid': SuggestionSources.hybrid<String>(
+      'hybrid': SuperAutoSuggestionSources.hybrid<String>(
         fetch: (query) async {
           debugPrint('Hybrid source called with query: $query');
           await Future<void>.delayed(const Duration(seconds: 1));
@@ -76,7 +76,7 @@ class TryExampleScreen extends StatelessWidget {
         remoteMinChars: 3,
         remoteThreshold: 5,
       ),
-      'remoteFallback': SuggestionSources.remoteFallback<String>(
+      'remoteFallback': SuperAutoSuggestionSources.remoteFallback<String>(
         fetch: (query) async {
           debugPrint('Remote fallback source called with query: $query');
           await Future<void>.delayed(const Duration(seconds: 1));
@@ -106,8 +106,10 @@ class TryExampleScreen extends StatelessWidget {
             ),
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.next,
-            onFieldSubmitted: (value) {
-              debugPrint('Field submitted: $value');
+            onSelectionChanged: (items) {
+              debugPrint(
+                items.isEmpty ? 'Selection cleared' : 'Selected: ${items.last} of ${items.length} items',
+              );              
             },
           ),
           TextFormField(

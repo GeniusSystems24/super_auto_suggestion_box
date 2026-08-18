@@ -103,8 +103,6 @@ void main() {
                 enableIMEPersonalizedLearning: false,
                 maxLength: 8,
                 onTap: () => tapCount++,
-                onFieldSubmitted: (value) => submittedValue = value,
-                onSave: (value) => savedValue = value,
               ),
             ),
           ),
@@ -143,10 +141,12 @@ void main() {
           body: Form(
             key: formKey,
             child: SuperAutoSuggestionsBox<String>(
-              source: SuggestionSources.list<String>(const ['INV-1042', 'INV-1100']),
+              source: SuggestionSources.list<String>(const [
+                'INV-1042',
+                'INV-1100',
+              ]),
               suggestionBuilder: _suggestion,
               textDirection: TextDirection.ltr,
-              onSave: (value) => savedValue = value,
             ),
           ),
         ),
@@ -258,11 +258,13 @@ void main() {
       _themedApp(
         Scaffold(
           body: SuperAutoSuggestionsBox<String>(
-            source: SuggestionSources.list<String>(const ['INV-1042', 'INV-1100']),
+            source: SuggestionSources.list<String>(const [
+              'INV-1042',
+              'INV-1100',
+            ]),
             suggestionBuilder: _suggestion,
             textDirection: TextDirection.ltr,
             onTabNext: () => tabNextCount++,
-            onSelected: (_) => selectedCount++,
           ),
         ),
       ),
@@ -418,7 +420,6 @@ void main() {
           body: SuperAutoSuggestionsBox<String>(
             source: SuggestionSources.list<String>(const ['A', 'B']),
             suggestionBuilder: _suggestion,
-            onSelected: (value) => selected = value,
           ),
         ),
       ),
@@ -471,7 +472,11 @@ void main() {
         Scaffold(
           body: SuperAutoSuggestionsBox<String>(
             controller: controller,
-            source: SuggestionSources.list<String>(const ['alpha', 'alpine', 'beta']),
+            source: SuggestionSources.list<String>(const [
+              'alpha',
+              'alpine',
+              'beta',
+            ]),
             suggestionBuilder: _suggestion,
           ),
         ),
@@ -511,7 +516,6 @@ void main() {
               createQuery = query;
               return 'created:$query';
             },
-            onSelected: (value) => selected = value,
           ),
         ),
       ),

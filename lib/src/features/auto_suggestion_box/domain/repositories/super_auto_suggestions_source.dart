@@ -19,7 +19,7 @@ SuperAutoSuggestionsItem<T> _defaultSuggestionBuilder<T>(
 ) => SuperAutoSuggestionsItem<T>(value: element, titleText: element.toString());
 
 /// Produces raw matches for a query. Implement in the data layer (or subclass
-/// for custom behaviour); construct via the `SuggestionSources` factory facade.
+/// for custom behaviour); construct via the `SuperAutoSuggestionSources` factory facade.
 abstract class SuperAutoSuggestionsSource<T> {
   SuperAutoSuggestionsSource()
     : _suggestionBuilder = _defaultSuggestionBuilder<T>;

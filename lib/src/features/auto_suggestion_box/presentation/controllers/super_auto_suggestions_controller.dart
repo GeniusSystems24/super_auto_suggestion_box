@@ -96,7 +96,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   FocusNode? focusNode;
 
   /// Optional key for the inner [FormField], exposing its [FormFieldState].
-  GlobalKey<FormFieldState<String>>? formFieldKey;
+  GlobalKey<FormFieldState<T>>? formFieldKey;
 
   /// Optional flag the UI can use to hide/show the field.
   ///
@@ -124,7 +124,8 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   /// How many recents to retain (most-recent-first). 0 disables tracking.
   int _maxRecents = 5;
 
-  /// The group header shown above the recents section.
+  /// The group header shown above the recents section. The view binds a
+  /// localized default when the widget keeps its default label.
   String _recentsGroupLabel = 'Recent';
 
   /// Fired whenever the raw recents list changes.
@@ -169,7 +170,8 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   List<T> get results => List.unmodifiable(_results);
 
   /// Built suggestion rows for the current [results].
-  List<SuperAutoSuggestionsItem<T>> get suggestions => List.unmodifiable(_suggestions);
+  List<SuperAutoSuggestionsItem<T>> get suggestions =>
+      List.unmodifiable(_suggestions);
 
   bool get hasResults => _results.isNotEmpty;
   int get highlightedIndex => _highlighted;
@@ -438,7 +440,8 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
     _lastText = text.text;
     if (textChanged) {
       final selected = _selected;
-      if (selected != null && suggestionFor(selected).displayText != text.text) {
+      if (selected != null &&
+          suggestionFor(selected).displayText != text.text) {
         _selected = null;
       }
     }

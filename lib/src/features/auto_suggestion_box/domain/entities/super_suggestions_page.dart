@@ -4,7 +4,7 @@
 // One page of results for a paginated (infinite-scroll) source. Large ERP
 // master data — a chart of thousands of accounts, tens of thousands of
 // items/SKUs, a vendor directory — can't be shipped to the client in one shot.
-// A [PagedSuggestionsSource] returns the rows for a `(query, page)` pair plus a
+// A [SuperAutoPagedSuggestionsSource] returns the rows for a `(query, page)` pair plus a
 // [hasMore] flag; the controller loads page 0 on each query and appends the next
 // page when the user scrolls near the bottom of the overlay.
 // ============================================================

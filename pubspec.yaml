@@ -9,7 +9,7 @@ description: >
   Supports light/dark themes, LTR, and RTL.
 
 # package version
-version: 1.1.0+2
+version: 1.2.0
 # cd example; flutter build web --release --base-href "/super_auto_suggestion_box/"
 
 # package homepage, repository, and issue tracker URLs
@@ -31,13 +31,27 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.0
   # Shared GeniusLink design-system foundation (theme, tokens, type, widgets).
   super_core: ">=3.3.0 <4.0.0"
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  intl_utils: ^2.8.0
   flutter_lints: ^3.0.0
+
+# ============================================================
+# 🌐 Internationalization
+# ============================================================
+flutter_intl:
+  enabled: true
+  class_name: SuperAutoSuggestionsTranslation
+  use_deferred_loading: true
+  arb_dir: lib/localization
+  output_dir: lib/localization/generated
 
 flutter:
   uses-material-design: true
