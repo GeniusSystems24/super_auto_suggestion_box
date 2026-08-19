@@ -26,26 +26,26 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-    "advancedSearch": MessageLookupByLibrary.simpleMessage("بحث متقدم"),
-    "advancedSearchKeyboardHint": MessageLookupByLibrary.simpleMessage(
-      "↑ ↓ للتنقل   ⏎ للاختيار   ESC للإغلاق",
-    ),
-    "create": MessageLookupByLibrary.simpleMessage("إنشاء"),
-    "enter": MessageLookupByLibrary.simpleMessage("ENTER"),
-    "fix": MessageLookupByLibrary.simpleMessage("تثبيت"),
-    "loading": MessageLookupByLibrary.simpleMessage("جارٍ التحميل…"),
-    "loadingMore": MessageLookupByLibrary.simpleMessage("جارٍ تحميل المزيد…"),
-    "loadingMoreFromServer": MessageLookupByLibrary.simpleMessage(
-      "جارٍ تحميل المزيد من الخادم…",
-    ),
-    "noMatches": MessageLookupByLibrary.simpleMessage("لا توجد نتائج"),
-    "noMatchesForQuery": m0,
-    "recent": MessageLookupByLibrary.simpleMessage("الأخيرة"),
-    "requiredMessage": MessageLookupByLibrary.simpleMessage("هذا الحقل مطلوب"),
-    "search": MessageLookupByLibrary.simpleMessage("بحث…"),
-    "searching": MessageLookupByLibrary.simpleMessage("جارٍ البحث…"),
-    "searchingQuery": m1,
-    "typeToSearch": MessageLookupByLibrary.simpleMessage("اكتب للبحث"),
-    "unfix": MessageLookupByLibrary.simpleMessage("إلغاء التثبيت"),
-  };
+        "advancedSearch": MessageLookupByLibrary.simpleMessage("بحث متقدم"),
+        "advancedSearchKeyboardHint": MessageLookupByLibrary.simpleMessage(
+            "↑ ↓ للتنقل   ⏎ للاختيار   ESC للإغلاق"),
+        "create": MessageLookupByLibrary.simpleMessage("إنشاء"),
+        "enter": MessageLookupByLibrary.simpleMessage("ENTER"),
+        "fix": MessageLookupByLibrary.simpleMessage("تثبيت"),
+        "loading": MessageLookupByLibrary.simpleMessage("جارٍ التحميل…"),
+        "loadingMore":
+            MessageLookupByLibrary.simpleMessage("جارٍ تحميل المزيد…"),
+        "loadingMoreFromServer": MessageLookupByLibrary.simpleMessage(
+            "جارٍ تحميل المزيد من الخادم…"),
+        "noMatches": MessageLookupByLibrary.simpleMessage("لا توجد نتائج"),
+        "noMatchesForQuery": m0,
+        "recent": MessageLookupByLibrary.simpleMessage("الأخيرة"),
+        "requiredMessage":
+            MessageLookupByLibrary.simpleMessage("هذا الحقل مطلوب"),
+        "search": MessageLookupByLibrary.simpleMessage("بحث…"),
+        "searching": MessageLookupByLibrary.simpleMessage("جارٍ البحث…"),
+        "searchingQuery": m1,
+        "typeToSearch": MessageLookupByLibrary.simpleMessage("اكتب للبحث"),
+        "unfix": MessageLookupByLibrary.simpleMessage("إلغاء التثبيت")
+      };
 }

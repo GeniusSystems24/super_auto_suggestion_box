@@ -26,28 +26,26 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-    "advancedSearch": MessageLookupByLibrary.simpleMessage("Advanced Search"),
-    "advancedSearchKeyboardHint": MessageLookupByLibrary.simpleMessage(
-      "↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE",
-    ),
-    "create": MessageLookupByLibrary.simpleMessage("Create"),
-    "enter": MessageLookupByLibrary.simpleMessage("ENTER"),
-    "fix": MessageLookupByLibrary.simpleMessage("Fix"),
-    "loading": MessageLookupByLibrary.simpleMessage("Loading…"),
-    "loadingMore": MessageLookupByLibrary.simpleMessage("Loading more…"),
-    "loadingMoreFromServer": MessageLookupByLibrary.simpleMessage(
-      "Loading more from server…",
-    ),
-    "noMatches": MessageLookupByLibrary.simpleMessage("No matches"),
-    "noMatchesForQuery": m0,
-    "recent": MessageLookupByLibrary.simpleMessage("Recent"),
-    "requiredMessage": MessageLookupByLibrary.simpleMessage(
-      "This field is required",
-    ),
-    "search": MessageLookupByLibrary.simpleMessage("Search…"),
-    "searching": MessageLookupByLibrary.simpleMessage("Searching…"),
-    "searchingQuery": m1,
-    "typeToSearch": MessageLookupByLibrary.simpleMessage("Type to search"),
-    "unfix": MessageLookupByLibrary.simpleMessage("Unfix"),
-  };
+        "advancedSearch":
+            MessageLookupByLibrary.simpleMessage("Advanced Search"),
+        "advancedSearchKeyboardHint": MessageLookupByLibrary.simpleMessage(
+            "↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE"),
+        "create": MessageLookupByLibrary.simpleMessage("Create"),
+        "enter": MessageLookupByLibrary.simpleMessage("ENTER"),
+        "fix": MessageLookupByLibrary.simpleMessage("Fix"),
+        "loading": MessageLookupByLibrary.simpleMessage("Loading…"),
+        "loadingMore": MessageLookupByLibrary.simpleMessage("Loading more…"),
+        "loadingMoreFromServer":
+            MessageLookupByLibrary.simpleMessage("Loading more from server…"),
+        "noMatches": MessageLookupByLibrary.simpleMessage("No matches"),
+        "noMatchesForQuery": m0,
+        "recent": MessageLookupByLibrary.simpleMessage("Recent"),
+        "requiredMessage":
+            MessageLookupByLibrary.simpleMessage("This field is required"),
+        "search": MessageLookupByLibrary.simpleMessage("Search…"),
+        "searching": MessageLookupByLibrary.simpleMessage("Searching…"),
+        "searchingQuery": m1,
+        "typeToSearch": MessageLookupByLibrary.simpleMessage("Type to search"),
+        "unfix": MessageLookupByLibrary.simpleMessage("Unfix")
+      };
 }

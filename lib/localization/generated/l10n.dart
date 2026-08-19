@@ -18,10 +18,8 @@ class SuperAutoSuggestionsTranslation {
   static SuperAutoSuggestionsTranslation? _current;
 
   static SuperAutoSuggestionsTranslation get current {
-    assert(
-      _current != null,
-      'No instance of SuperAutoSuggestionsTranslation was loaded. Try to initialize the SuperAutoSuggestionsTranslation delegate before accessing SuperAutoSuggestionsTranslation.current.',
-    );
+    assert(_current != null,
+        'No instance of SuperAutoSuggestionsTranslation was loaded. Try to initialize the SuperAutoSuggestionsTranslation delegate before accessing SuperAutoSuggestionsTranslation.current.');
     return _current!;
   }
 
@@ -43,18 +41,14 @@ class SuperAutoSuggestionsTranslation {
 
   static SuperAutoSuggestionsTranslation of(BuildContext context) {
     final instance = SuperAutoSuggestionsTranslation.maybeOf(context);
-    assert(
-      instance != null,
-      'No instance of SuperAutoSuggestionsTranslation present in the widget tree. Did you add SuperAutoSuggestionsTranslation.delegate in localizationsDelegates?',
-    );
+    assert(instance != null,
+        'No instance of SuperAutoSuggestionsTranslation present in the widget tree. Did you add SuperAutoSuggestionsTranslation.delegate in localizationsDelegates?');
     return instance!;
   }
 
   static SuperAutoSuggestionsTranslation? maybeOf(BuildContext context) {
     return Localizations.of<SuperAutoSuggestionsTranslation>(
-      context,
-      SuperAutoSuggestionsTranslation,
-    );
+        context, SuperAutoSuggestionsTranslation);
   }
 
   /// `This field is required`
@@ -69,17 +63,32 @@ class SuperAutoSuggestionsTranslation {
 
   /// `Recent`
   String get recent {
-    return Intl.message('Recent', name: 'recent', desc: '', args: []);
+    return Intl.message(
+      'Recent',
+      name: 'recent',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Loading…`
   String get loading {
-    return Intl.message('Loading…', name: 'loading', desc: '', args: []);
+    return Intl.message(
+      'Loading…',
+      name: 'loading',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Searching…`
   String get searching {
-    return Intl.message('Searching…', name: 'searching', desc: '', args: []);
+    return Intl.message(
+      'Searching…',
+      name: 'searching',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Searching “{query}”…`
@@ -104,7 +113,12 @@ class SuperAutoSuggestionsTranslation {
 
   /// `No matches`
   String get noMatches {
-    return Intl.message('No matches', name: 'noMatches', desc: '', args: []);
+    return Intl.message(
+      'No matches',
+      name: 'noMatches',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `No matches for “{query}”`
@@ -139,22 +153,42 @@ class SuperAutoSuggestionsTranslation {
 
   /// `Create`
   String get create {
-    return Intl.message('Create', name: 'create', desc: '', args: []);
+    return Intl.message(
+      'Create',
+      name: 'create',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `ENTER`
   String get enter {
-    return Intl.message('ENTER', name: 'enter', desc: '', args: []);
+    return Intl.message(
+      'ENTER',
+      name: 'enter',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Fix`
   String get fix {
-    return Intl.message('Fix', name: 'fix', desc: '', args: []);
+    return Intl.message(
+      'Fix',
+      name: 'fix',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Unfix`
   String get unfix {
-    return Intl.message('Unfix', name: 'unfix', desc: '', args: []);
+    return Intl.message(
+      'Unfix',
+      name: 'unfix',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Advanced Search`
@@ -169,7 +203,12 @@ class SuperAutoSuggestionsTranslation {
 
   /// `Search…`
   String get search {
-    return Intl.message('Search…', name: 'search', desc: '', args: []);
+    return Intl.message(
+      'Search…',
+      name: 'search',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `↑ ↓ TO NAVIGATE   ⏎ TO SELECT   ESC TO CLOSE`

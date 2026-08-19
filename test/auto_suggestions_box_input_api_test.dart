@@ -252,7 +252,7 @@ void main() {
     tester,
   ) async {
     var tabNextCount = 0;
-    var selectedCount = 0;
+    const selectedCount = 0;
 
     await tester.pumpWidget(
       _themedApp(

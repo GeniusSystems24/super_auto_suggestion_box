@@ -111,7 +111,6 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     '5200',
   ];
 
-  static String _accountLabel(String code) => _accountMeta[code]?.label ?? code;
 
   static SuperAutoSuggestionsItem<String> _accountSuggestion(
     List<String> items,
