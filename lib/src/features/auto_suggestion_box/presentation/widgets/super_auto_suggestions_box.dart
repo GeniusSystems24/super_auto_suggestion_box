@@ -5,7 +5,7 @@
 // up/down to move through matches, Tab to complete, Enter / tap to pick, and
 // Esc to dismiss; when
 // free-text is allowed an unmatched value commits as-is on Enter. The matched
-// substring of each row is highlighted (see AutoSuggestionsHighlight).
+// substring of each row is highlighted (see SuperAutoSuggestionsHighlight).
 //
 // Rendering is a thin view over the controller: every gesture and key is
 // forwarded there and the widget rebuilds from its state. The overlay is an
@@ -14,6 +14,7 @@
 // ============================================================
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -30,6 +31,22 @@ import 'auto_suggestions_highlight.dart';
 /// A synchronous validator for the box: returns an error message, or null when
 /// valid. Receives the field's current committed / typed text.
 typedef SuperAutoSuggestionsValidator<T> = String? Function(T? value);
+
+/// Controls which search surface [SuperAutoSuggestionsBox] exposes.
+///
+/// When [SuperAutoSuggestionsBox.mode] is omitted, desktop platforms
+/// (macOS, Windows, Linux) resolve to [textBox]. Android, iOS, and Fuchsia
+/// resolve to [advanceView].
+enum SuperAutoSuggestionsMode {
+  /// Editable text box with an anchored inline suggestions overlay.
+  textBox,
+
+  /// Field-like launcher that opens the larger Advanced Search View.
+  advanceView,
+
+  /// Editable text box plus access to Advanced Search View.
+  both,
+}
 
 /// A view-only text controller that paints the remaining characters of the
 /// active suggestion after the real editable value. The shadow text is never
@@ -245,9 +262,9 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   final FieldDensity density;
 
   /// A theme assigned directly to this field, overriding the ambient
-  /// [AutoSuggestionsBoxThemeData] from the enclosing `Theme`. Use it to restyle
+  /// [SuperAutoSuggestionsBoxThemeData] from the enclosing `Theme`. Use it to restyle
   /// one box (fill, border, focused style…) without touching app-wide theming.
-  final AutoSuggestionsBoxThemeData? theme;
+  final SuperAutoSuggestionsBoxThemeData? theme;
 
   final bool autofocus;
   final FocusNode? focusNode;
@@ -359,7 +376,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// dropdown is unchanged.
   final bool bare;
 
-  /// Override the field's min height (defaults to [AutoSuggestionsBoxThemeData.fieldHeight]).
+  /// Override the field's min height (defaults to [SuperAutoSuggestionsBoxThemeData.fieldHeight]).
   final double? fieldHeight;
 
   /// Base text style for the typed value (size/family). Falls back to the DS body.
@@ -387,9 +404,19 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// committed. Disable to keep free-typed text on blur.
   final bool restoreOnBlur;
 
-  /// Enable the **Advanced Search View**: pressing Ctrl/⌘+F while the field is
-  /// focused opens a larger modal search surface over the same results.
-  final bool advancedSearch;
+  /// Search-surface mode.
+  ///
+  /// When null, desktop platforms (macOS, Windows, Linux) default to
+  /// [SuperAutoSuggestionsMode.textBox], while Android, iOS, and Fuchsia
+  /// default to [SuperAutoSuggestionsMode.advanceView].
+  final SuperAutoSuggestionsMode? mode;
+
+  /// Legacy opt-in for Advanced Search.
+  ///
+  /// `true` maps to [SuperAutoSuggestionsMode.both] and `false` maps to
+  /// [SuperAutoSuggestionsMode.textBox] when [mode] is null.
+  @Deprecated('Use mode: SuperAutoSuggestionsMode.both instead.')
+  final bool? advancedSearch;
 
   /// Custom builder for the advanced-search surface (defaults to a built-in
   /// dialog). Receives the live controller; commit via `controller.select(...)`.
@@ -504,7 +531,8 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.onTabPrev,
     this.scrollOnFocus = false,
     this.restoreOnBlur = true,
-    this.advancedSearch = false,
+    this.mode,
+    this.advancedSearch,
     this.advancedSearchBuilder,
     this.itemBuilder,
     this.emptyBuilder,
@@ -548,6 +576,38 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   bool _suppressReopen =
       false; // skip openOnFocus once (after a pick re-focuses)
   bool _advancedOpen = false; // the advanced-search dialog is showing
+  SuperAutoSuggestionsMode get _effectiveMode {
+    final explicitMode = widget.mode;
+    if (explicitMode != null) return explicitMode;
+
+    // Backward compatibility for callers that still pass advancedSearch.
+    final legacyAdvancedSearch = widget.advancedSearch;
+    if (legacyAdvancedSearch != null) {
+      return legacyAdvancedSearch
+          ? SuperAutoSuggestionsMode.both
+          : SuperAutoSuggestionsMode.textBox;
+    }
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+        return SuperAutoSuggestionsMode.textBox;
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+      case TargetPlatform.fuchsia:
+        return SuperAutoSuggestionsMode.advanceView;
+    }
+  }
+
+  bool get _usesTextBox =>
+      _effectiveMode == SuperAutoSuggestionsMode.textBox ||
+      _effectiveMode == SuperAutoSuggestionsMode.both;
+
+  bool get _usesAdvanceView =>
+      _effectiveMode == SuperAutoSuggestionsMode.advanceView ||
+      _effectiveMode == SuperAutoSuggestionsMode.both;
+
   bool _touched = false; // has the field been blurred at least once
   bool _creating = false; // an onCreate call is in flight
   String _resolvedRecentsGroupLabel = 'Recent';
@@ -671,7 +731,10 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     return completion.substring(query.length);
   }
 
-  void _updateShadowHint(TextStyle baseStyle, AutoSuggestionsBoxThemeData t) {
+  void _updateShadowHint(
+    TextStyle baseStyle,
+    SuperAutoSuggestionsBoxThemeData t,
+  ) {
     final style = widget.shadowHintStyle == null
         ? baseStyle.copyWith(color: t.fg3.withValues(alpha: 0.72))
         : baseStyle.merge(widget.shadowHintStyle);
@@ -763,7 +826,18 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       _blurTimer?.cancel();
       if (_suppressReopen) {
         _suppressReopen = false; // consume: don't reopen right after a pick
-      } else if (widget.openOnFocus &&
+      } else if (_effectiveMode == SuperAutoSuggestionsMode.advanceView &&
+          !widget.disabled &&
+          !widget.readOnly &&
+          widget.enabled &&
+          !_c.isFixed.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _focus.hasFocus && !_advancedOpen) {
+            _openAdvanced();
+          }
+        });
+      } else if (_usesTextBox &&
+          widget.openOnFocus &&
           !widget.disabled &&
           !widget.readOnly &&
           !_c.isFixed.value) {
@@ -805,20 +879,21 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       Scrollable.ensureVisible(
         ctx,
         alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-        duration: AutoSuggestionsBoxThemeData.durBase,
-        curve: AutoSuggestionsBoxThemeData.curveStandard,
+        duration: SuperAutoSuggestionsBoxThemeData.durBase,
+        curve: SuperAutoSuggestionsBoxThemeData.curveStandard,
       );
     });
   }
 
   void _onModel() {
     _syncSelectionState();
-    if (_c.isOpen && !_overlay.isShowing) {
+    final showInlineOverlay = _usesTextBox && !_advancedOpen;
+    if (_c.isOpen && showInlineOverlay && !_overlay.isShowing) {
       _overlay.show();
-    } else if (!_c.isOpen && _overlay.isShowing) {
+    } else if ((!_c.isOpen || !showInlineOverlay) && _overlay.isShowing) {
       _overlay.hide();
     }
-    if (_c.isOpen) _ensureHighlightVisible();
+    if (_c.isOpen && showInlineOverlay) _ensureHighlightVisible();
     if (mounted) setState(() {});
   }
 
@@ -867,8 +942,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       final max = _scroll.position.maxScrollExtent;
       _scroll.animateTo(
         target.clamp(0.0, max),
-        duration: AutoSuggestionsBoxThemeData.durFast,
-        curve: AutoSuggestionsBoxThemeData.curveStandard,
+        duration: SuperAutoSuggestionsBoxThemeData.durFast,
+        curve: SuperAutoSuggestionsBoxThemeData.curveStandard,
       );
     });
   }
@@ -946,7 +1021,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     if (e.logicalKey == LogicalKeyboardKey.keyF &&
         (HardwareKeyboard.instance.isControlPressed ||
             HardwareKeyboard.instance.isMetaPressed)) {
-      if (widget.advancedSearch) {
+      if (_usesAdvanceView) {
         _openAdvanced();
         return KeyEventResult.handled;
       }
@@ -1018,20 +1093,35 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     }
   }
 
-  /// Open the Advanced Search surface (Ctrl/⌘+F). Reuses the live controller so
+  /// Open the Advanced Search surface. Reuses the live controller so
   /// a pick made there commits straight back into the field.
   Future<void> _openAdvanced() async {
     if (_advancedOpen) return;
+
+    // Never allow the anchored TextBox overlay and Advanced Search surface
+    // to be visible at the same time.
+    _c.close();
+    if (_overlay.isShowing) _overlay.hide();
+
     _advancedOpen = true;
+
+    // Advanced Search reuses the live controller/results. `_advancedOpen`
+    // prevents `_onModel` from showing the anchored overlay while this is
+    // open.
     _c.open();
+
     final t = _resolveTheme(context);
     final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final platform = Theme.of(context).platform;
+    final isDesktop =
+        platform == TargetPlatform.macOS ||
+        platform == TargetPlatform.windows ||
+        platform == TargetPlatform.linux;
+
     var focusNextAfterPick = false;
-    await showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.55),
-      builder: (ctx) =>
-          widget.advancedSearchBuilder?.call(ctx, _c) ??
+
+    Widget buildAdvancedSurface(BuildContext ctx) {
+      return widget.advancedSearchBuilder?.call(ctx, _c) ??
           _AdvancedSearchDialog<T>(
             controller: _c,
             theme: t,
@@ -1053,9 +1143,45 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
                 Navigator.of(ctx).pop();
               }
             },
-          ),
-    );
-    _advancedOpen = false;
+          );
+    }
+
+    try {
+      if (isDesktop) {
+        await showDialog<void>(
+          context: context,
+          barrierColor: Colors.black.withValues(alpha: 0.55),
+          builder: buildAdvancedSurface,
+        );
+      } else {
+        await showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          backgroundColor: Colors.transparent,
+          barrierColor: Colors.black.withValues(alpha: 0.55),
+          builder: (ctx) {
+            final mediaQuery = MediaQuery.of(ctx);
+
+            // Keep the sheet above the software keyboard while allowing the
+            // built-in/custom Advanced Search content to control its own size.
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+              child: buildAdvancedSurface(ctx),
+            );
+          },
+        );
+      }
+    } finally {
+      // Advanced Search owns the results surface while it is visible.
+      // Always leave the inline field overlay fully closed when it exits.
+      _c.close();
+      if (_overlay.isShowing) _overlay.hide();
+      _advancedOpen = false;
+    }
+
     if (mounted) {
       if (focusNextAfterPick) {
         _focus.nextFocus();
@@ -1137,8 +1263,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
 
   /// Resolve the effective theme: a directly-assigned [SuperAutoSuggestionsBox.theme]
   /// wins over the ambient extension (which falls back to the dark preset).
-  AutoSuggestionsBoxThemeData _resolveTheme(BuildContext context) =>
-      widget.theme ?? AutoSuggestionsBoxThemeData.of(context);
+  SuperAutoSuggestionsBoxThemeData _resolveTheme(BuildContext context) =>
+      widget.theme ?? SuperAutoSuggestionsBoxThemeData.of(context);
 
   @override
   Widget build(BuildContext context) {
@@ -1220,12 +1346,15 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     );
   }
 
-  Widget _buildField(AutoSuggestionsBoxThemeData t, String? error) {
+  Widget _buildField(SuperAutoSuggestionsBoxThemeData t, String? error) {
     final focused = _focus.hasFocus;
     final bare = widget.bare;
     final disabled = widget.disabled;
-    final readOnly = (widget.readOnly || _c.isFixed.value) && !disabled;
-    final interactive = widget.enabled && !disabled && !readOnly;
+    final advanceViewOnly =
+        _effectiveMode == SuperAutoSuggestionsMode.advanceView;
+    final hostReadOnly = widget.readOnly || _c.isFixed.value;
+    final readOnly = (hostReadOnly || advanceViewOnly) && !disabled;
+    final interactive = widget.enabled && !disabled && !hostReadOnly;
     final hasError = error != null;
     final fs = t.focusedStyle;
     final cs = Theme.of(context).colorScheme;
@@ -1233,8 +1362,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     final minH =
         widget.fieldHeight ??
         (widget.density == FieldDensity.compact
-            ? AutoSuggestionsBoxThemeData.fieldCompact
-            : AutoSuggestionsBoxThemeData.fieldHeight);
+            ? SuperAutoSuggestionsBoxThemeData.fieldCompact
+            : SuperAutoSuggestionsBoxThemeData.fieldHeight);
 
     // Text style — merge focused fontStyle override when focused.
     var baseStyle =
@@ -1254,12 +1383,12 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     _updateShadowHint(baseStyle, t);
 
     // ── Border helpers ──
-    const double bw = AutoSuggestionsBoxThemeData.fieldBorderWidth;
+    const double bw = SuperAutoSuggestionsBoxThemeData.fieldBorderWidth;
     OutlineInputBorder ob(Color c) => bare
         ? const OutlineInputBorder(borderSide: BorderSide.none)
         : OutlineInputBorder(
             borderRadius: BorderRadius.circular(
-              AutoSuggestionsBoxThemeData.radiusSm,
+              SuperAutoSuggestionsBoxThemeData.radiusSm,
             ),
             borderSide: BorderSide(color: c, width: bw),
           );
@@ -1384,7 +1513,12 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           onTap: widget.enabled && !disabled
               ? () {
                   widget.onTap?.call();
-                  if (interactive) _c.open();
+                  if (!interactive) return;
+                  if (advanceViewOnly) {
+                    _openAdvanced();
+                  } else {
+                    _c.open();
+                  }
                 }
               : null,
           onTapOutside: widget.onTapOutside,
@@ -1406,7 +1540,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   /// The trailing adornments (count pill · spinner · clear / chevron) spliced
   /// into the field row. Taps are inert while the field is non-interactive.
   List<Widget> _suffixChildren(
-    AutoSuggestionsBoxThemeData t,
+    SuperAutoSuggestionsBoxThemeData t,
     bool hasText,
     bool interactive,
   ) {
@@ -1452,6 +1586,16 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         ),
       );
     }
+    if (_usesAdvanceView && interactive) {
+      children.add(
+        _IconBtn(
+          icon: Icons.manage_search_rounded,
+          color: t.fg3,
+          hoverColor: t.fg1,
+          onTap: _openAdvanced,
+        ),
+      );
+    }
     if (widget.clearButton && hasText && interactive) {
       children.add(
         _IconBtn(
@@ -1464,7 +1608,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           },
         ),
       );
-    } else {
+    } else if (_usesTextBox) {
       children.add(
         _IconBtn(
           icon: _c.isOpen
@@ -1485,10 +1629,11 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   }
 
   // ── overlay ──
-  Widget _buildOverlay(BuildContext ctx, AutoSuggestionsBoxThemeData t) {
+  Widget _buildOverlay(BuildContext ctx, SuperAutoSuggestionsBoxThemeData t) {
     final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
     final fieldSize =
-        box?.size ?? const Size(280, AutoSuggestionsBoxThemeData.fieldHeight);
+        box?.size ??
+        const Size(280, SuperAutoSuggestionsBoxThemeData.fieldHeight);
     final fieldW = widget.width ?? fieldSize.width;
 
     // Decide flip: place above when there isn't room below.
@@ -1503,7 +1648,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
 
     final followerAnchor = flipUp ? Alignment.bottomLeft : Alignment.topLeft;
     final targetAnchor = flipUp ? Alignment.topLeft : Alignment.bottomLeft;
-    const gap = AutoSuggestionsBoxThemeData.overlayGap;
+    const gap = SuperAutoSuggestionsBoxThemeData.overlayGap;
 
     return Stack(
       children: [
@@ -1522,10 +1667,10 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           targetAnchor: targetAnchor,
           child: Align(
             alignment: flipUp ? Alignment.bottomLeft : Alignment.topLeft,
-            child: AutoSuggestionsPanel<T>(
+            child: SuperAutoSuggestionsPanel<T>(
               width: fieldW.clamp(
                 180.0,
-                AutoSuggestionsBoxThemeData.overlayMaxWidth,
+                SuperAutoSuggestionsBoxThemeData.overlayMaxWidth,
               ),
               theme: t,
               controller: _c,
@@ -1550,17 +1695,19 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     );
   }
 
-  double _overlayHeight(AutoSuggestionsBoxThemeData t) {
+  double _overlayHeight(SuperAutoSuggestionsBoxThemeData t) {
     final rows = _c.results.length.clamp(0, widget.maxVisibleRows);
-    return (rows == 0 ? 56 : rows * AutoSuggestionsBoxThemeData.rowHeight + 10)
+    return (rows == 0
+            ? 56
+            : rows * SuperAutoSuggestionsBoxThemeData.rowHeight + 10)
         .toDouble();
   }
 }
 
 // ── the dropdown panel ──
-class AutoSuggestionsPanel<T> extends StatelessWidget {
+class SuperAutoSuggestionsPanel<T> extends StatelessWidget {
   final double width;
-  final AutoSuggestionsBoxThemeData theme;
+  final SuperAutoSuggestionsBoxThemeData theme;
   final SuperAutoSuggestionsController<T> controller;
   final ScrollController scroll;
   final int maxVisibleRows;
@@ -1584,7 +1731,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
   /// Invoked when the create footer is tapped.
   final VoidCallback? onCreate;
 
-  const AutoSuggestionsPanel({
+  const SuperAutoSuggestionsPanel({
     super.key,
     required this.width,
     required this.theme,
@@ -1611,7 +1758,8 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
     final l10n = SuperAutoSuggestionsLocalization.of(context);
     final results = controller.results;
     final q = controller.effectiveQuery;
-    final maxH = maxVisibleRows * AutoSuggestionsBoxThemeData.rowHeight + 10;
+    final maxH =
+        maxVisibleRows * SuperAutoSuggestionsBoxThemeData.rowHeight + 10;
 
     Widget body;
     if (controller.isLoading && results.isEmpty) {
@@ -1804,10 +1952,10 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
         decoration: BoxDecoration(
           color: t.overlayBg,
           borderRadius: BorderRadius.circular(
-            AutoSuggestionsBoxThemeData.radiusLg,
+            SuperAutoSuggestionsBoxThemeData.radiusLg,
           ),
           border: Border.all(color: t.border),
-          boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
+          boxShadow: SuperAutoSuggestionsBoxThemeData.overlayShadow,
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -1831,7 +1979,7 @@ class AutoSuggestionsPanel<T> extends StatelessWidget {
 
 // ── one suggestion row ──
 class _Row<T> extends StatelessWidget {
-  final AutoSuggestionsBoxThemeData theme;
+  final SuperAutoSuggestionsBoxThemeData theme;
   final T item;
   final SuperAutoSuggestionsItem<T> suggestion;
   final String query;
@@ -1861,7 +2009,7 @@ class _Row<T> extends StatelessWidget {
     required this.onHover,
   });
 
-  Widget _checkbox(AutoSuggestionsBoxThemeData t, BuildContext context) {
+  Widget _checkbox(SuperAutoSuggestionsBoxThemeData t, BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     return Container(
       width: 18,
@@ -1871,7 +2019,7 @@ class _Row<T> extends StatelessWidget {
         color: selected ? accent : Colors.transparent,
         border: Border.all(color: selected ? accent : t.fg3, width: 1.6),
         borderRadius: BorderRadius.circular(
-          AutoSuggestionsBoxThemeData.radiusSm,
+          SuperAutoSuggestionsBoxThemeData.radiusSm,
         ),
       ),
       child: selected
@@ -1882,12 +2030,28 @@ class _Row<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabledStream = suggestion.enabledSnapshot;
+    if (enabledStream == null) {
+      return _buildRow(context, suggestion.enabled);
+    }
+
+    return StreamBuilder<bool>(
+      stream: enabledStream,
+      initialData: suggestion.enabled,
+      builder: (context, snapshot) =>
+          _buildRow(context, snapshot.data ?? suggestion.enabled),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, bool enabled) {
     final t = theme;
     final s = suggestion;
-    final enabled = s.enabled;
+    final effectiveSuggestion = enabled == s.enabled
+        ? s
+        : s.copyWith(enabled: enabled);
 
     final inner =
-        custom?.call(context, item, s, highlighted) ??
+        custom?.call(context, item, effectiveSuggestion, highlighted) ??
         Row(
           children: [
             if (s.icon != null || s.iconData != null) ...[
@@ -1906,22 +2070,21 @@ class _Row<T> extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  s.title ??
-                      AutoSuggestionsHighlight(
-                        text: s.displayText,
-                        query: query,
-                        match: highlightMatch,
-                        enabled: highlightMatches,
-                        baseStyle: TextStyle(
-                          fontFamily: (SuperMaterialThemeData.of(
-                            context,
-                          ).textTheme).bodyMedium?.fontFamily,
-                          fontSize: 13.5,
-                          height: 1.2,
-                          color: enabled ? t.fg1 : t.fg3,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                  SuperAutoSuggestionsHighlight(
+                    text: s.displayText,
+                    query: query,
+                    match: highlightMatch,
+                    enabled: highlightMatches,
+                    baseStyle: TextStyle(
+                      fontFamily: (SuperMaterialThemeData.of(
+                        context,
+                      ).textTheme).bodyMedium?.fontFamily,
+                      fontSize: 13.5,
+                      height: 1.2,
+                      color: enabled ? t.fg1 : t.fg3,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   if (s.description != null || s.descriptionText != null) ...[
                     const SizedBox(height: 1),
                     s.description ??
@@ -1982,13 +2145,13 @@ class _Row<T> extends StatelessWidget {
 
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => onHover(),
+      onEnter: enabled ? (_) => onHover() : null,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: enabled ? onTap : null,
         child: AnimatedContainer(
-          duration: AutoSuggestionsBoxThemeData.durFast,
-          height: AutoSuggestionsBoxThemeData.rowHeight,
+          duration: SuperAutoSuggestionsBoxThemeData.durFast,
+          height: SuperAutoSuggestionsBoxThemeData.rowHeight,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: highlighted
@@ -2012,7 +2175,7 @@ class _Row<T> extends StatelessWidget {
 
 // ── the "＋ Create …" footer (inline create; see SuperAutoSuggestionsBox.onCreate) ──
 class _CreateFooter extends StatefulWidget {
-  final AutoSuggestionsBoxThemeData theme;
+  final SuperAutoSuggestionsBoxThemeData theme;
   final String label;
   final bool creating;
   final bool showEnterHint;
@@ -2045,7 +2208,7 @@ class _CreateFooterState extends State<_CreateFooter> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.creating ? null : widget.onTap,
         child: AnimatedContainer(
-          duration: AutoSuggestionsBoxThemeData.durFast,
+          duration: SuperAutoSuggestionsBoxThemeData.durFast,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: _h ? t.accentWash(0.12) : t.accentWash(0.05),
@@ -2121,14 +2284,14 @@ class _CreateFooterState extends State<_CreateFooter> {
 
 // ── bottom "loading more…" row appended while a paged source fetches ──
 class _PageLoadingRow extends StatelessWidget {
-  final AutoSuggestionsBoxThemeData theme;
+  final SuperAutoSuggestionsBoxThemeData theme;
   const _PageLoadingRow({required this.theme});
   @override
   Widget build(BuildContext context) {
     final t = theme;
     final l10n = SuperAutoSuggestionsLocalization.of(context);
     return Container(
-      height: AutoSuggestionsBoxThemeData.rowHeight,
+      height: SuperAutoSuggestionsBoxThemeData.rowHeight,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
@@ -2288,7 +2451,7 @@ class _ErrorBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.error,
         borderRadius: BorderRadius.circular(
-          AutoSuggestionsBoxThemeData.radiusMd,
+          SuperAutoSuggestionsBoxThemeData.radiusMd,
         ),
       ),
       textStyle: TextStyle(
@@ -2318,7 +2481,7 @@ class _ErrorBadge extends StatelessWidget {
 // ============================================================
 class _AdvancedSearchDialog<T> extends StatefulWidget {
   final SuperAutoSuggestionsController<T> controller;
-  final AutoSuggestionsBoxThemeData theme;
+  final SuperAutoSuggestionsBoxThemeData theme;
   final String title;
   final bool multiSelect;
   final AutoSuggestionMatch highlightMatch;
@@ -2410,10 +2573,10 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
               decoration: BoxDecoration(
                 color: t.overlayBg,
                 borderRadius: BorderRadius.circular(
-                  AutoSuggestionsBoxThemeData.radiusLg,
+                  SuperAutoSuggestionsBoxThemeData.radiusLg,
                 ),
                 border: Border.all(color: t.border),
-                boxShadow: AutoSuggestionsBoxThemeData.overlayShadow,
+                boxShadow: SuperAutoSuggestionsBoxThemeData.overlayShadow,
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
@@ -2479,7 +2642,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                         decoration: BoxDecoration(
                           color: t.fieldBg,
                           borderRadius: BorderRadius.circular(
-                            AutoSuggestionsBoxThemeData.radiusMd,
+                            SuperAutoSuggestionsBoxThemeData.radiusMd,
                           ),
                           border: Border.all(
                             color: Theme.of(context).colorScheme.primary,
@@ -2641,3 +2804,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
     );
   }
 }
+
+/// Deprecated 1.2.x name for [SuperAutoSuggestionsPanel].
+@Deprecated('Use SuperAutoSuggestionsPanel instead.')
+typedef AutoSuggestionsPanel<T> = SuperAutoSuggestionsPanel<T>;

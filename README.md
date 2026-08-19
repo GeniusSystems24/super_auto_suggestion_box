@@ -9,10 +9,11 @@ server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.2.0` keeps raw `T` values as the public data model and integrates
-`SuperAutoSuggestionsBox<T>` with Flutter forms through `FormField<T>`. The
-validator receives the selected raw `T?`, and `onSelectionChanged` is the
-selection callback for both select and de-select operations.
+Version `1.3.0` keeps raw `T` values as the public data model, consolidates
+suggestion row construction into `SuperAutoSuggestionsItem<T>(...)`, and
+finishes the `Super` prefix migration for public presentation/widget classes.
+The validator still receives the selected raw `T?`, and `onSelectionChanged`
+remains the selection callback for both select and de-select operations.
 
 Every `SuperAutoSuggestionsBox<T>` requires a
 `SuperAutoSuggestionsSource<T>`. Use `SuperAutoSuggestionSources.list<T>(values)` for a
@@ -36,7 +37,7 @@ recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.2.0
+  super_auto_suggestion_box: ^1.3.0
 ```
 
 ```dart
@@ -141,20 +142,22 @@ SuperAutoSuggestionsBox<String>(
 );
 ```
 
-For fully custom suggestion content, use the widget-based constructor:
+Custom supporting widgets now use the same constructor. `titleText` remains the
+canonical searchable and committed title:
 
 ```dart
-SuperAutoSuggestionsItem<String>.build(
+SuperAutoSuggestionsItem<String>(
   value: '1020',
-  title: const Text('Bank - Operating'),
+  titleText: 'Bank - Operating',
   description: const Text('1020 - Current Assets'),
   trailing: const Chip(label: Text('Active')),
   icon: const Icon(Icons.account_balance_outlined),
 );
 ```
 
-Widget-built items use `value.toString()` as their searchable and committed
-text. Supply `keywords` to add other search terms.
+`descriptionText`, `trailingText`, and `iconData` remain available when custom
+widgets are not needed. Suggestions can also carry an optional
+`Stream? enabledSnapshot` alongside the immediate `enabled` boolean.
 
 ## Suggestion Sources
 
@@ -218,6 +221,13 @@ The factory methods above return these public implementations:
 Prefer `SuperAutoSuggestionSources` for normal construction. Instantiate a
 concrete source directly only when its public source-specific API is needed.
 The pre-1.2.0 concrete class names are no longer canonical.
+
+## Presentation Widget Names
+
+The canonical public presentation/widget types now all use the `Super` prefix:
+`SuperAutoSuggestionsBoxThemeData`, `SuperAutoSuggestionsBoxFocusedStyle`,
+`SuperAutoSuggestionsHighlight`, and `SuperAutoSuggestionsPanel<T>`.
+Deprecated typedefs preserve the 1.2.x names during migration.
 
 ## Controller API
 

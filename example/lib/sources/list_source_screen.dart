@@ -6,7 +6,6 @@ class ListSourceScreen extends StatelessWidget {
   const ListSourceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const SourceExamplesView(
-    type: ExampleSourceType.list,
-  );
+  Widget build(BuildContext context) =>
+      const SourceExamplesView(type: ExampleSourceType.list);
 }

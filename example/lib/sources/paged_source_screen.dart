@@ -6,7 +6,6 @@ class PagedSourceScreen extends StatelessWidget {
   const PagedSourceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const SourceExamplesView(
-    type: ExampleSourceType.paged,
-  );
+  Widget build(BuildContext context) =>
+      const SourceExamplesView(type: ExampleSourceType.paged);
 }

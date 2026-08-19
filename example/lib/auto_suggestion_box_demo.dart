@@ -111,7 +111,6 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     '5200',
   ];
 
-
   static SuperAutoSuggestionsItem<String> _accountSuggestion(
     List<String> items,
     int index,
@@ -385,7 +384,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.2.0',
+                'v1.3.0',
                 style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -525,8 +524,8 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     labelText: 'Ledger Account',
                   ),
                   hintText: 'Focus me to see the custom focused style',
-                  theme: AutoSuggestionsBoxThemeData.of(context).copyWith(
-                    focusedStyle: AutoSuggestionsBoxFocusedStyle(
+                  theme: SuperAutoSuggestionsBoxThemeData.of(context).copyWith(
+                    focusedStyle: SuperAutoSuggestionsBoxFocusedStyle(
                       fillColor: const Color(0x141DB88A),
                       border: BorderSide(color: t.tokens.success, width: 1.6),
                       fontStyle: const TextStyle(fontWeight: FontWeight.w600),

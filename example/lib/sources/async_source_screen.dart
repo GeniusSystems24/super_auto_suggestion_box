@@ -6,7 +6,6 @@ class AsyncSourceScreen extends StatelessWidget {
   const AsyncSourceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const SourceExamplesView(
-    type: ExampleSourceType.asyncSource,
-  );
+  Widget build(BuildContext context) =>
+      const SourceExamplesView(type: ExampleSourceType.asyncSource);
 }

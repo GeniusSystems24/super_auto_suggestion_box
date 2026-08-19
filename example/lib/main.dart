@@ -11,6 +11,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 import 'auto_suggestion_box_demo.dart';
+import 'advanced_search_screen.dart';
 import 'sources/async_source_screen.dart';
 import 'sources/fuzzy_source_screen.dart';
 import 'sources/hybrid_source_screen.dart';
@@ -18,6 +19,7 @@ import 'sources/list_source_screen.dart';
 import 'sources/paged_source_screen.dart';
 import 'sources/remote_fallback_source_screen.dart';
 import 'sources/strings_source_screen.dart';
+import 'super_auto_suggestions_item_scenarios_screen.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -108,6 +110,18 @@ class _Launcher extends StatelessWidget {
   final VoidCallback onToggleDirection;
 
   static final List<_Demo> _demos = [
+    _Demo(
+      'Suggestion item scenarios',
+      'All SuperAutoSuggestionsItem fields · enabledSnapshot',
+      Icons.view_list_rounded,
+      (_) => const SuperAutoSuggestionsItemScenariosScreen(),
+    ),
+    _Demo(
+      'Advanced Search',
+      'Ctrl / Cmd + F · built-in dialog · custom advanced-search surface',
+      Icons.search_rounded,
+      (_) => const AdvancedSearchScreen(),
+    ),
     _Demo(
       'Auto Suggestion Box',
       'Typeahead · recents · create · paged · multi-select · fuzzy',

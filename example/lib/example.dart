@@ -26,8 +26,8 @@ class TryExampleScreen extends StatelessWidget {
   ) => SuperAutoSuggestionsItem<String>(
     value: element,
     titleText: element,
-    descriptionText: 'Directory entry ${index + 1}',
-    iconData: Icons.account_box_rounded,
+    description: Text('Directory entry ${index + 1}'),
+    icon: const Icon(Icons.account_box_rounded),
   );
 
   static List<String> _matches(String query) {
@@ -108,8 +108,10 @@ class TryExampleScreen extends StatelessWidget {
             textInputAction: TextInputAction.next,
             onSelectionChanged: (items) {
               debugPrint(
-                items.isEmpty ? 'Selection cleared' : 'Selected: ${items.last} of ${items.length} items',
-              );              
+                items.isEmpty
+                    ? 'Selection cleared'
+                    : 'Selected: ${items.last} of ${items.length} items',
+              );
             },
           ),
           TextFormField(

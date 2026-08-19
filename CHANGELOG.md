@@ -4,6 +4,34 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.3.0 - 2026-08-19
+
+### Added
+
+- Added optional `description`, `trailing`, and `icon` widget fields directly
+  to the default `SuperAutoSuggestionsItem<T>` constructor.
+- Added `Stream? enabledSnapshot` to `SuperAutoSuggestionsItem<T>`.
+
+### Changed
+
+- **Breaking:** Removed `SuperAutoSuggestionsItem.build`.
+- **Breaking:** Removed the custom suggestion `title` widget field. `titleText`
+  is now the canonical searchable, display, and committed title.
+- **Breaking:** Renamed the remaining public presentation/widget classes to
+  `SuperAutoSuggestionsBoxFocusedStyle`, `SuperAutoSuggestionsBoxThemeData`,
+  `SuperAutoSuggestionsHighlight`, and `SuperAutoSuggestionsPanel<T>`.
+- Updated package docs and runnable example screens for the 1.3.0 API.
+
+### Deprecated
+
+- Added deprecated compatibility typedefs for
+  `AutoSuggestionsBoxFocusedStyle`, `AutoSuggestionsBoxThemeData`,
+  `AutoSuggestionsHighlight`, and `AutoSuggestionsPanel<T>`.
+
+### Documentation
+
+- Added `migration_1.2.0_to_1.3.0.md`.
+
 ## 1.2.0 - 2026-08-18
 
 ### Added

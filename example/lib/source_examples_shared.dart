@@ -87,8 +87,8 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
   ) => SuperAutoSuggestionsItem<String>(
     value: item,
     titleText: item,
-    descriptionText: 'Account ${index + 1}',
-    iconData: Icons.account_balance_outlined,
+    description: Text('Account ${index + 1}'),
+    icon: const Icon(Icons.account_balance_outlined),
     keywords: [item.replaceAll(' ', '')],
   );
 
@@ -187,7 +187,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.2.0 · ${widget.type.title.toUpperCase()}',
+                'v1.3.0 · ${widget.type.title.toUpperCase()}',
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),

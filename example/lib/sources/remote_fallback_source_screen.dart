@@ -6,7 +6,6 @@ class RemoteFallbackSourceScreen extends StatelessWidget {
   const RemoteFallbackSourceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const SourceExamplesView(
-    type: ExampleSourceType.remoteFallback,
-  );
+  Widget build(BuildContext context) =>
+      const SourceExamplesView(type: ExampleSourceType.remoteFallback);
 }

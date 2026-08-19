@@ -6,7 +6,6 @@ class HybridSourceScreen extends StatelessWidget {
   const HybridSourceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const SourceExamplesView(
-    type: ExampleSourceType.hybrid,
-  );
+  Widget build(BuildContext context) =>
+      const SourceExamplesView(type: ExampleSourceType.hybrid);
 }

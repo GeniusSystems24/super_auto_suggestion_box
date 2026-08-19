@@ -13,7 +13,7 @@ import '../../domain/entities/match_strategy.dart';
 import 'auto_suggestions_box_theme.dart';
 
 /// Renders [text] with the portion(s) matching [query] emphasised.
-class AutoSuggestionsHighlight extends StatelessWidget {
+class SuperAutoSuggestionsHighlight extends StatelessWidget {
   final String text;
   final String query;
   final AutoSuggestionMatch match;
@@ -21,7 +21,7 @@ class AutoSuggestionsHighlight extends StatelessWidget {
   final TextStyle baseStyle;
   final Color? highlightColor;
 
-  const AutoSuggestionsHighlight({
+  const SuperAutoSuggestionsHighlight({
     super.key,
     required this.text,
     required this.query,
@@ -51,7 +51,7 @@ class AutoSuggestionsHighlight extends StatelessWidget {
       );
     }
     final hi = baseStyle.copyWith(
-      color: highlightColor ?? AutoSuggestionsBoxThemeData.accent,
+      color: highlightColor ?? SuperAutoSuggestionsBoxThemeData.accent,
       fontWeight: FontWeight.w700,
     );
     final pieces = <TextSpan>[];
@@ -76,3 +76,7 @@ class AutoSuggestionsHighlight extends StatelessWidget {
     );
   }
 }
+
+/// Deprecated 1.2.x name for [SuperAutoSuggestionsHighlight].
+@Deprecated('Use SuperAutoSuggestionsHighlight instead.')
+typedef AutoSuggestionsHighlight = SuperAutoSuggestionsHighlight;

@@ -1,6 +1,6 @@
 # super_auto_suggestion_box example
 
-Runnable gallery for `super_auto_suggestion_box` 1.2.0 with `super_core` 3.3.0.
+Runnable gallery for `super_auto_suggestion_box` 1.3.0 with `super_core` 3.3.0.
 
 The gallery demonstrates raw `T` items with `suggestionBuilder` across local,
 fuzzy, remote-fallback, paged, multi-select, recents, inline-create, validation,

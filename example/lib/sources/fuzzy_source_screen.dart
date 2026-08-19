@@ -6,7 +6,6 @@ class FuzzySourceScreen extends StatelessWidget {
   const FuzzySourceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const SourceExamplesView(
-    type: ExampleSourceType.fuzzy,
-  );
+  Widget build(BuildContext context) =>
+      const SourceExamplesView(type: ExampleSourceType.fuzzy);
 }

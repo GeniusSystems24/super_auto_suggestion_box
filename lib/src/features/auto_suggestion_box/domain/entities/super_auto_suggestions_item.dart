@@ -1,12 +1,10 @@
 // ============================================================
 // features/auto_suggestion_box/domain/entities/super_auto_suggestions_item.dart
 // ------------------------------------------------------------
-// The pure data the box renders. A [SuperAutoSuggestionsItem] is one row — a typed
-// [value] plus the [titleText] shown and matched against. [HighlightSpan] is a
-// `[start, end)` slice of a titleText that matched a query, used by the view to
-// bold the hit. No I/O, no Flutter framework beyond IconData (a UI affordance
-// intrinsic to the row).
+// The render/search metadata for one raw suggestion value.
 // ============================================================
+
+import 'dart:async' show Stream;
 
 import 'package:flutter/widgets.dart' show IconData, Widget, immutable;
 
@@ -18,17 +16,18 @@ import 'package:flutter/widgets.dart' show IconData, Widget, immutable;
 typedef AutoSuggestionBuilder<T> =
     SuperAutoSuggestionsItem<T> Function(List<T> items, int index, T element);
 
-/// One suggestion row. [value] is what the host receives on select;
-/// [titleText] is the text shown and matched against.
+/// One suggestion row.
+///
+/// [value] is the raw value returned to the host. [titleText] remains the
+/// searchable, display, and field-completion title when provided. Supporting content can be
+/// supplied either as plain metadata ([descriptionText], [trailingText],
+/// [iconData]) or as custom widgets ([description], [trailing], [icon]).
 @immutable
 class SuperAutoSuggestionsItem<T> {
   final T value;
 
   /// Plain-text title used for display, matching, and field completion.
   final String? titleText;
-
-  /// Custom title content supplied by [SuperAutoSuggestionsItem.build].
-  final Widget? title;
 
   /// Optional plain-text supporting content.
   final String? descriptionText;
@@ -52,40 +51,32 @@ class SuperAutoSuggestionsItem<T> {
   final List<String> keywords;
   final bool enabled;
 
-  /// Creates a suggestion row from strings and optional icon data.
+  /// Optional stream associated with the enabled state.
+  ///
+  /// Each event represents the current enabled state for the suggestion.
+  final Stream<bool>? enabledSnapshot;
+
+  /// Creates render/search metadata for one suggestion.
+  ///
+  /// [titleText] remains the canonical searchable/committed title. For
+  /// supporting UI, custom [description], [trailing], and [icon] widgets can be
+  /// supplied directly without using a separate named constructor.
   const SuperAutoSuggestionsItem({
     required this.value,
     required this.titleText,
     this.descriptionText,
-    this.trailingText,
-    this.iconData,
-    this.group,
-    this.keywords = const [],
-    this.enabled = true,
-  }) : title = null,
-       description = null,
-       trailing = null,
-       icon = null;
-
-  /// Creates a suggestion row from custom widgets.
-  const SuperAutoSuggestionsItem.build({
-    required this.value,
-    required this.title,
     this.description,
+    this.trailingText,
     this.trailing,
+    this.iconData,
     this.icon,
     this.group,
     this.keywords = const [],
     this.enabled = true,
-  }) : titleText = null,
-       descriptionText = null,
-       trailingText = null,
-       iconData = null;
+    this.enabledSnapshot,
+  });
 
   /// Text used by search, completion, and the editable field.
-  ///
-  /// Widget-built rows fall back to the raw value because arbitrary widgets do
-  /// not expose searchable text.
   String get displayText => titleText ?? value.toString();
 
   String get haystack => ([displayText, ...keywords]).join(' ').toLowerCase();
@@ -94,37 +85,29 @@ class SuperAutoSuggestionsItem<T> {
     T? value,
     String? titleText,
     String? descriptionText,
-    String? trailingText,
-    IconData? iconData,
-    Widget? title,
     Widget? description,
+    String? trailingText,
     Widget? trailing,
+    IconData? iconData,
     Widget? icon,
     String? group,
     List<String>? keywords,
     bool? enabled,
+    Stream<bool>? enabledSnapshot,
   }) {
-    if (this.title != null) {
-      return SuperAutoSuggestionsItem<T>.build(
-        value: value ?? this.value,
-        title: title ?? this.title!,
-        description: description ?? this.description,
-        trailing: trailing ?? this.trailing,
-        icon: icon ?? this.icon,
-        group: group ?? this.group,
-        keywords: keywords ?? this.keywords,
-        enabled: enabled ?? this.enabled,
-      );
-    }
     return SuperAutoSuggestionsItem<T>(
       value: value ?? this.value,
-      titleText: titleText ?? this.titleText!,
+      titleText: titleText ?? this.titleText,
       descriptionText: descriptionText ?? this.descriptionText,
+      description: description ?? this.description,
       trailingText: trailingText ?? this.trailingText,
+      trailing: trailing ?? this.trailing,
       iconData: iconData ?? this.iconData,
+      icon: icon ?? this.icon,
       group: group ?? this.group,
       keywords: keywords ?? this.keywords,
       enabled: enabled ?? this.enabled,
+      enabledSnapshot: enabledSnapshot ?? this.enabledSnapshot,
     );
   }
 
