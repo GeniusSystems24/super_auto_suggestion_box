@@ -440,9 +440,9 @@ void main() {
           body: SuperAutoSuggestionsBox<String>(
             source: SuggestionSources.list<String>(const ['A']),
             suggestionBuilder: (items, index, value) =>
-                SuperAutoSuggestionsItem<String>.build(
+                SuperAutoSuggestionsItem<String>(
                   value: value,
-                  title: const Text('Widget title'),
+                  titleText: 'Widget title',
                   description: const Text('Widget description'),
                   trailing: const Text('Widget trailing'),
                   icon: const Icon(Icons.star),

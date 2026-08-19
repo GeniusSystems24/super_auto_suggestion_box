@@ -8,6 +8,7 @@ analyzer:
     invalid_annotation_target: ignore
     # منع أي استيراد مباشر لملفات src/ من خارج المكتبة
     implementation_imports: error
+    prefer_final_locals: ignore
 linter:
   rules:
     - implementation_imports

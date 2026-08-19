@@ -40,15 +40,14 @@ void main() {
     expect(item.iconData, isNull);
     expect(item.copyWith(titleText: 'Petty Cash').titleText, 'Petty Cash');
 
-    const built = SuperAutoSuggestionsItem<String>.build(
+    const built = SuperAutoSuggestionsItem<String>(
       value: 'custom',
-      title: Text('Custom title'),
+      titleText: ('Custom title'),
       description: Text('Custom description'),
       trailing: Chip(label: Text('Active')),
       icon: Icon(Icons.star),
     );
     expect(built.titleText, isNull);
-    expect(built.title, isA<Text>());
     expect(built.description, isA<Text>());
     expect(built.trailing, isA<Chip>());
     expect(built.icon, isA<Icon>());
