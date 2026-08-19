@@ -201,7 +201,7 @@ class _SuperAutoSuggestionsItemScenariosScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.0 · ITEM API',
+                'v1.3.1 · ITEM API',
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),

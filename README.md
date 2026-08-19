@@ -9,7 +9,7 @@ server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.3.0` keeps raw `T` values as the public data model, consolidates
+Version `1.3.1` keeps raw `T` values as the public data model, consolidates
 suggestion row construction into `SuperAutoSuggestionsItem<T>(...)`, and
 finishes the `Super` prefix migration for public presentation/widget classes.
 The validator still receives the selected raw `T?`, and `onSelectionChanged`
@@ -37,7 +37,7 @@ recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.3.0
+  super_auto_suggestion_box: ^1.3.1
 ```
 
 ```dart

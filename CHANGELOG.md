@@ -4,6 +4,26 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.3.1 - 2026-08-19
+
+### Changed
+
+- Added `super_form_field` as a direct dependency and reused its shared
+  `FieldShell`, `ErrorBadge`, and `FieldIconButton` primitives.
+- Removed duplicated private `_FieldLabel`, `_FixedButton`, `_ErrorBadge`, and
+  `_IconBtn` implementations from `SuperAutoSuggestionsBox`.
+- Mobile Advanced Search is now edge-to-edge inside its modal bottom sheet,
+  without outer padding/margin.
+- Mobile Advanced Search no longer shows desktop keyboard-shortcut
+  descriptions.
+- Advanced Search results now render `SuperAutoSuggestionsItem.group` headers
+  with the same grouping rule and styling as the inline overlay menu.
+
+### Documentation
+
+- Added `migration_1.3.0_to_1.3.1.md`.
+- Updated README, skill guidance, and example version labels for 1.3.1.
+
 ## 1.3.0 - 2026-08-19
 
 ### Added

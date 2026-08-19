@@ -64,6 +64,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       titleText: record.name,
       descriptionText: '${record.code} · ${record.city}',
       trailingText: record.category,
+      group: record.category,
       iconData: _iconFor(record),
       keywords: <String>[
         record.code,
@@ -134,7 +135,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.0 · SEARCH MODE',
+                'v1.3.1 · SEARCH MODE',
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),

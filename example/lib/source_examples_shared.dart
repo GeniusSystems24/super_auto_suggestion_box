@@ -187,7 +187,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.0 · ${widget.type.title.toUpperCase()}',
+                'v1.3.1 · ${widget.type.title.toUpperCase()}',
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),

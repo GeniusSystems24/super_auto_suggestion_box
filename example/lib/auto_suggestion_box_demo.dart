@@ -384,7 +384,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.0',
+                'v1.3.1',
                 style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),

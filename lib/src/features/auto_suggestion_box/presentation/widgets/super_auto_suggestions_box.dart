@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
+import 'package:super_form_field/super_form_field.dart' as sff;
 
 import '../../../../core/core.dart';
 import '../../../../../localization/super_auto_suggestions_localizations.dart';
@@ -592,7 +593,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       case TargetPlatform.macOS:
       case TargetPlatform.windows:
       case TargetPlatform.linux:
-        return SuperAutoSuggestionsMode.textBox;
+        return SuperAutoSuggestionsMode.both;
       case TargetPlatform.android:
       case TargetPlatform.iOS:
       case TargetPlatform.fuchsia:
@@ -1125,6 +1126,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           _AdvancedSearchDialog<T>(
             controller: _c,
             theme: t,
+            isDesktop: isDesktop,
             title:
                 widget.decoration?.labelText ??
                 // ignore: deprecated_member_use_from_same_package
@@ -1156,22 +1158,18 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       } else {
         await showModalBottomSheet<void>(
           context: context,
-          isScrollControlled: true,
+          scrollControlDisabledMaxHeightRatio: 0.9,
           useSafeArea: true,
-          backgroundColor: Colors.transparent,
+          backgroundColor: t.overlayBg,
+          enableDrag: false,
           barrierColor: Colors.black.withValues(alpha: 0.55),
-          builder: (ctx) {
-            final mediaQuery = MediaQuery.of(ctx);
-
-            // Keep the sheet above the software keyboard while allowing the
-            // built-in/custom Advanced Search content to control its own size.
-            return AnimatedPadding(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
-              child: buildAdvancedSurface(ctx),
-            );
-          },
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(SuperAutoSuggestionsBoxThemeData.radiusLg),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          builder: buildAdvancedSurface,
         );
       }
     } finally {
@@ -1270,14 +1268,17 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   Widget build(BuildContext context) {
     if (_c.isHiden) return const SizedBox.shrink();
     final t = _resolveTheme(context);
-    final label =
-        widget.decoration?.labelText ??
-        // ignore: deprecated_member_use_from_same_package
-        widget.label;
-    final helper =
-        widget.decoration?.helperText ??
-        // ignore: deprecated_member_use_from_same_package
-        widget.hint;
+
+    final baseDecoration = widget.decoration ?? const InputDecoration();
+    // ignore: deprecated_member_use_from_same_package
+    final legacyLabel = baseDecoration.label == null ? widget.label : null;
+    // ignore: deprecated_member_use_from_same_package
+    final legacyHelper = baseDecoration.helper == null ? widget.hint : null;
+    final shellDecoration = baseDecoration.copyWith(
+      labelText: baseDecoration.labelText ?? legacyLabel,
+      helperText: baseDecoration.helperText ?? legacyHelper,
+    );
+
     return FormField<T>(
       key: _formFieldKey,
       initialValue: _formValue,
@@ -1287,59 +1288,23 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
             ? null
             : formState.errorText ?? _visibleError;
         final field = _buildField(t, error);
+
         return SizedBox(
           width: widget.width,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (label != null || widget.allowFixed) ...[
-                Row(
-                  children: [
-                    if (label != null)
-                      Expanded(
-                        child: _FieldLabel(
-                          text: label,
-                          required: widget.required,
-                          color: t.fg2,
-                        ),
-                      )
-                    else
-                      const Spacer(),
-                    if (widget.allowFixed)
-                      _FixedButton(controller: _c, color: t.fg3),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
-              CompositedTransformTarget(
-                link: _link,
-                child: OverlayPortal(
-                  controller: _overlay,
-                  overlayChildBuilder: (ctx) => _buildOverlay(ctx, t),
-                  child: field,
-                ),
+          child: sff.FieldShell(
+            decoration: shellDecoration,
+            required: widget.required,
+            hasError: error != null,
+            allowFixed: widget.allowFixed,
+            isFixed: widget.allowFixed ? _c.isFixed : null,
+            child: CompositedTransformTarget(
+              link: _link,
+              child: OverlayPortal(
+                controller: _overlay,
+                overlayChildBuilder: (ctx) => _buildOverlay(ctx, t),
+                child: field,
               ),
-              // Hint sits beneath the control and is hidden whenever an error shows
-              // (errors surface only through the suffix badge — never inline).
-              if (helper != null && error == null) ...[
-                const SizedBox(height: 6),
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 2),
-                  child: Text(
-                    helper,
-                    style: TextStyle(
-                      fontFamily: (SuperMaterialThemeData.of(
-                        context,
-                      ).textTheme).bodyMedium?.fontFamily,
-                      fontSize: 12,
-                      height: 1.35,
-                      color: t.fg3,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         );
       },
@@ -1428,7 +1393,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       ..._suffixChildren(t, _c.query.isNotEmpty, interactive),
       if (hasError) ...[
         const SizedBox(width: 4),
-        _ErrorBadge(error: error, cs: cs),
+        sff.ErrorBadge(error: error, size: 18),
       ],
       const SizedBox(width: 4),
     ];
@@ -1588,21 +1553,21 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     }
     if (_usesAdvanceView && interactive) {
       children.add(
-        _IconBtn(
+        sff.FieldIconButton(
           icon: Icons.manage_search_rounded,
-          color: t.fg3,
-          hoverColor: t.fg1,
-          onTap: _openAdvanced,
+          size: 25,
+          iconSize: 17,
+          onPressed: _openAdvanced,
         ),
       );
     }
     if (widget.clearButton && hasText && interactive) {
       children.add(
-        _IconBtn(
+        sff.FieldIconButton(
           icon: Icons.close_rounded,
-          color: t.fg3,
-          hoverColor: t.fg1,
-          onTap: () {
+          size: 25,
+          iconSize: 17,
+          onPressed: () {
             _c.clear();
             _focus.requestFocus();
           },
@@ -1610,18 +1575,18 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       );
     } else if (_usesTextBox) {
       children.add(
-        _IconBtn(
+        sff.FieldIconButton(
           icon: _c.isOpen
               ? Icons.expand_less_rounded
               : Icons.expand_more_rounded,
-          color: t.fg3,
-          hoverColor: t.fg1,
-          onTap: interactive
+          size: 25,
+          iconSize: 17,
+          onPressed: interactive
               ? () {
                   _c.toggle();
                   _focus.requestFocus();
                 }
-              : () {},
+              : null,
         ),
       );
     }
@@ -2322,155 +2287,6 @@ class _PageLoadingRow extends StatelessWidget {
   }
 }
 
-// ── tiny hover-aware icon button used in the field suffix ──
-class _IconBtn extends StatefulWidget {
-  final IconData icon;
-  final Color color;
-  final Color hoverColor;
-  final VoidCallback onTap;
-  const _IconBtn({
-    required this.icon,
-    required this.color,
-    required this.hoverColor,
-    required this.onTap,
-  });
-  @override
-  State<_IconBtn> createState() => _IconBtnState();
-}
-
-class _IconBtnState extends State<_IconBtn> {
-  bool _h = false;
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _h = true),
-      onExit: (_) => setState(() => _h = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(
-            widget.icon,
-            size: 17,
-            color: _h ? widget.hoverColor : widget.color,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── uppercase field label with optional required asterisk ──
-// Matches super_form_field's FieldShell label: ALL CAPS, 11/700, ~0.05em
-// tracking, with a danger-red `*` when required.
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel({
-    required this.text,
-    required this.required,
-    required this.color,
-  });
-
-  final String text;
-  final bool required;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontFamily: (SuperMaterialThemeData.of(
-        context,
-      ).textTheme).bodyMedium?.fontFamily,
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.55,
-      color: color,
-    );
-    if (!required) return Text(text.toUpperCase(), style: style);
-    return Text.rich(
-      TextSpan(
-        text: text.toUpperCase(),
-        style: style,
-        children: [
-          TextSpan(
-            text: ' *',
-            style: style.copyWith(color: Theme.of(context).colorScheme.error),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FixedButton<T> extends StatelessWidget {
-  const _FixedButton({required this.controller, required this.color});
-
-  final SuperAutoSuggestionsController<T> controller;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: controller.isFixed,
-      builder: (context, fixed, _) {
-        final l10n = SuperAutoSuggestionsLocalization.of(context);
-        return Tooltip(
-          message: fixed ? l10n.unfix : l10n.fix,
-          child: IconButton(
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 26, height: 26),
-            padding: EdgeInsets.zero,
-            iconSize: 14,
-            color: fixed ? Theme.of(context).colorScheme.primary : color,
-            onPressed: () => controller.isFixed.value = !fixed,
-            icon: Icon(fixed ? Icons.lock_rounded : Icons.lock_open_rounded),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ── validator-error affordance ──
-// A danger alert icon whose hover / long-press tooltip carries the full error
-// text. This is the ONLY way the box surfaces validation — never inline text
-// under the control (matching the super_form_field rule).
-class _ErrorBadge extends StatelessWidget {
-  const _ErrorBadge({required this.error, required this.cs});
-
-  final String error;
-  final ColorScheme cs;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: error,
-      preferBelow: false,
-      waitDuration: const Duration(milliseconds: 120),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: cs.error,
-        borderRadius: BorderRadius.circular(
-          SuperAutoSuggestionsBoxThemeData.radiusMd,
-        ),
-      ),
-      textStyle: TextStyle(
-        fontFamily: (SuperMaterialThemeData.of(
-          context,
-        ).textTheme).bodyMedium?.fontFamily,
-        fontSize: 12,
-        height: 1.45,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Icon(Icons.error_outline_rounded, size: 18, color: cs.error),
-      ),
-    );
-  }
-}
-
 // ============================================================
 // Advanced Search View (Ctrl/⌘+F)
 // ------------------------------------------------------------
@@ -2482,6 +2298,7 @@ class _ErrorBadge extends StatelessWidget {
 class _AdvancedSearchDialog<T> extends StatefulWidget {
   final SuperAutoSuggestionsController<T> controller;
   final SuperAutoSuggestionsBoxThemeData theme;
+  final bool isDesktop;
   final String title;
   final bool multiSelect;
   final AutoSuggestionMatch highlightMatch;
@@ -2489,6 +2306,7 @@ class _AdvancedSearchDialog<T> extends StatefulWidget {
   const _AdvancedSearchDialog({
     required this.controller,
     required this.theme,
+    required this.isDesktop,
     required this.title,
     required this.multiSelect,
     required this.highlightMatch,
@@ -2562,243 +2380,274 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
     final l10n = SuperAutoSuggestionsLocalization.of(context);
     final results = _c.results;
     final q = _c.effectiveQuery;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640, maxHeight: 620),
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: t.overlayBg,
-                borderRadius: BorderRadius.circular(
-                  SuperAutoSuggestionsBoxThemeData.radiusLg,
-                ),
-                border: Border.all(color: t.border),
-                boxShadow: SuperAutoSuggestionsBoxThemeData.overlayShadow,
+
+    final surface = Container(
+      decoration: BoxDecoration(
+        color: t.overlayBg,
+        borderRadius: widget.isDesktop
+            ? BorderRadius.circular(SuperAutoSuggestionsBoxThemeData.radiusLg)
+            : BorderRadius.vertical(
+                top: Radius.circular(SuperAutoSuggestionsBoxThemeData.radiusLg),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        border: widget.isDesktop ? Border.all(color: t.border) : null,
+        boxShadow: widget.isDesktop
+            ? SuperAutoSuggestionsBoxThemeData.overlayShadow
+            : null,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: widget.isDesktop ? MainAxisSize.min : MainAxisSize.max,
+        children: [
+          // Header.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 14, 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.advancedSearch.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: (SuperMaterialThemeData.of(
+                            context,
+                          ).textTheme).bodyMedium?.fontFamily,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        widget.title,
+                        style: TextStyle(
+                          fontFamily: (SuperMaterialThemeData.of(
+                            context,
+                          ).textTheme).h1.fontFamily,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
+                          color: t.fg1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                sff.FieldIconButton(
+                  icon: Icons.close_rounded,
+                  size: 25,
+                  iconSize: 17,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ],
+            ),
+          ),
+
+          // Search field.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+            child: Focus(
+              onKeyEvent: _onKey,
+              child: Container(
+                height: 48,
+                color: t.fieldBg,
+
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _text,
+                        focusNode: _focus,
+                        onChanged: _c.setText,
+                        style: TextStyle(
+                          fontFamily: (SuperMaterialThemeData.of(
+                            context,
+                          ).textTheme).bodyMedium?.fontFamily,
+                          fontSize: 15,
+                          color: t.fg1,
+                        ),
+                        cursorColor: Theme.of(context).colorScheme.primary,
+                        decoration: InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          hintText: l10n.search,
+                          hintStyle: TextStyle(fontSize: 15, color: t.fg3),
+                          prefixIcon: Icon(Icons.search_rounded, size: 19, color: t.fg3),
+                        ),
+                      ),
+                    ),
+                    if (_c.isLoading)
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          if (_c.isLoadingMore)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              color: t.accentWash(0.06),
+              child: Row(
                 children: [
-                  // header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 14, 14),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.advancedSearch.toUpperCase(),
+                  SizedBox(
+                    width: 13,
+                    height: 13,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Text(
+                    l10n.loadingMoreFromServer,
+                    style: TextStyle(
+                      fontFamily: (SuperMaterialThemeData.of(
+                        context,
+                      ).textTheme).bodyMedium?.fontFamily,
+                      fontSize: 11.5,
+                      color: t.fg2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          Divider(height: 1, color: t.border),
+
+          // Results. Group headings intentionally use the same adjacency rule
+          // and typography as the inline overlay menu.
+          Flexible(
+            child: results.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 48),
+                    child: Text(
+                      _c.isLoading ? l10n.searching : l10n.noMatches,
+                      style: TextStyle(
+                        fontFamily: (SuperMaterialThemeData.of(
+                          context,
+                        ).textTheme).bodyMedium?.fontFamily,
+                        fontSize: 13,
+                        color: t.fg3,
+                      ),
+                    ),
+                  )
+                : Scrollbar(
+                    controller: _scroll,
+                    child: ListView.builder(
+                      controller: _scroll,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      itemCount: results.length,
+                      itemBuilder: (ctx, i) {
+                        final item = results[i];
+                        final s = _c.suggestionAt(i);
+                        final isHighlighted = _c.isHighlighted(i);
+                        final showGroup =
+                            s.group != null &&
+                            (i == 0 || _c.suggestionAt(i - 1).group != s.group);
+
+                        final row = _Row<T>(
+                          theme: t,
+                          item: item,
+                          suggestion: s,
+                          query: q,
+                          highlighted: isHighlighted,
+                          highlightMatch: widget.highlightMatch,
+                          highlightMatches: true,
+                          custom: null,
+                          multiSelect: widget.multiSelect,
+                          selected:
+                              widget.multiSelect && _c.isSelectedValue(s.value),
+                          onTap: () => widget.onPick(item),
+                          onHover: () => _c.highlightAt(i),
+                        );
+
+                        if (!showGroup) return row;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: EdgeInsetsDirectional.fromSTEB(
+                                14,
+                                i == 0 ? 4 : 9,
+                                14,
+                                5,
+                              ),
+                              child: Text(
+                                s.group!.toUpperCase(),
                                 style: TextStyle(
                                   fontFamily: (SuperMaterialThemeData.of(
                                     context,
                                   ).textTheme).bodyMedium?.fontFamily,
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.0,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                widget.title,
-                                style: TextStyle(
-                                  fontFamily: (SuperMaterialThemeData.of(
-                                    context,
-                                  ).textTheme).h1.fontFamily,
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.4,
-                                  color: t.fg1,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _IconBtn(
-                          icon: Icons.close_rounded,
-                          color: t.fg3,
-                          hoverColor: t.fg1,
-                          onTap: () => Navigator.of(context).maybePop(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // search field
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-                    child: Focus(
-                      onKeyEvent: _onKey,
-                      child: Container(
-                        height: 48,
-                        padding: const EdgeInsetsDirectional.only(
-                          start: 14,
-                          end: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: t.fieldBg,
-                          borderRadius: BorderRadius.circular(
-                            SuperAutoSuggestionsBoxThemeData.radiusMd,
-                          ),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search_rounded, size: 19, color: t.fg3),
-                            const SizedBox(width: 11),
-                            Expanded(
-                              child: TextField(
-                                controller: _text,
-                                focusNode: _focus,
-                                onChanged: _c.setText,
-                                style: TextStyle(
-                                  fontFamily: (SuperMaterialThemeData.of(
-                                    context,
-                                  ).textTheme).bodyMedium?.fontFamily,
-                                  fontSize: 15,
-                                  color: t.fg1,
-                                ),
-                                cursorColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                decoration: InputDecoration(
-                                  isCollapsed: true,
-                                  border: InputBorder.none,
-                                  hintText: l10n.search,
-                                  hintStyle: TextStyle(
-                                    fontSize: 15,
-                                    color: t.fg3,
-                                  ),
+                                  letterSpacing: 0.7,
+                                  color: t.groupFg,
                                 ),
                               ),
                             ),
-                            if (_c.isLoading)
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
+                            row,
                           ],
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
-                  if (_c.isLoadingMore)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      color: t.accentWash(0.06),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 13,
-                            height: 13,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 9),
-                          Text(
-                            l10n.loadingMoreFromServer,
-                            style: TextStyle(
-                              fontFamily: (SuperMaterialThemeData.of(
-                                context,
-                              ).textTheme).bodyMedium?.fontFamily,
-                              fontSize: 11.5,
-                              color: t.fg2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  Divider(height: 1, color: t.border),
-                  // results
-                  Flexible(
-                    child: results.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 48),
-                            child: Text(
-                              _c.isLoading ? l10n.searching : l10n.noMatches,
-                              style: TextStyle(
-                                fontFamily: (SuperMaterialThemeData.of(
-                                  context,
-                                ).textTheme).bodyMedium?.fontFamily,
-                                fontSize: 13,
-                                color: t.fg3,
-                              ),
-                            ),
-                          )
-                        : Scrollbar(
-                            controller: _scroll,
-                            child: ListView.builder(
-                              controller: _scroll,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              itemCount: results.length,
-                              itemBuilder: (ctx, i) {
-                                final item = results[i];
-                                final s = _c.suggestionAt(i);
-                                return _Row<T>(
-                                  theme: t,
-                                  item: item,
-                                  suggestion: s,
-                                  query: q,
-                                  highlighted: _c.isHighlighted(i),
-                                  highlightMatch: widget.highlightMatch,
-                                  highlightMatches: true,
-                                  custom: null,
-                                  multiSelect: widget.multiSelect,
-                                  selected:
-                                      widget.multiSelect &&
-                                      _c.isSelectedValue(s.value),
-                                  onTap: () => widget.onPick(item),
-                                  onHover: () => _c.highlightAt(i),
-                                );
-                              },
-                            ),
-                          ),
-                  ),
-                  // footer hint
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: t.fieldBg,
-                      border: Border(top: BorderSide(color: t.border)),
-                    ),
-                    child: Text(
-                      l10n.advancedSearchKeyboardHint,
-                      style: TextStyle(
-                        fontFamily: (SuperMaterialThemeData.of(
-                          context,
-                        ).textTheme).bodyMedium?.fontFamily,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                        color: t.fg3,
-                      ),
-                    ),
-                  ),
-                ],
+          ),
+
+          // Keyboard shortcuts are desktop-only. Mobile intentionally has no
+          // shortcut-description footer.
+          if (widget.isDesktop)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: t.fieldBg,
+                border: Border(top: BorderSide(color: t.border)),
+              ),
+              child: Text(
+                l10n.advancedSearchKeyboardHint,
+                style: TextStyle(
+                  fontFamily: (SuperMaterialThemeData.of(
+                    context,
+                  ).textTheme).bodyMedium?.fontFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                  color: t.fg3,
+                ),
               ),
             ),
-          ),
+        ],
+      ),
+    );
+
+    if (!widget.isDesktop) {
+      // Edge-to-edge inside the modal bottom sheet: deliberately no outer
+      // Padding, Margin, Center, or transparent gutter on mobile.
+      return SizedBox(
+        width: double.infinity,
+        height: MediaQuery.sizeOf(context).height,
+        child: Material(color: Colors.transparent, child: surface),
+      );
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640, maxHeight: 620),
+          child: Material(color: Colors.transparent, child: surface),
         ),
       ),
     );

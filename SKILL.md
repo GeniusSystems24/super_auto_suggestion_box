@@ -2,7 +2,7 @@
 name: super-auto-suggestion-box
 description: >
   Use the super_auto_suggestion_box Flutter package to build GeniusLink
-  design-system typeahead / combobox inputs. Version 1.3.0 uses raw T values,
+  design-system typeahead / combobox inputs. Version 1.3.1 uses raw T values,
   FormField<T>-based validation over the selected T?, and onSelectionChanged
   for select/de-select notifications while suggestionBuilder derives row metadata.
 ---
@@ -20,7 +20,7 @@ read-only/fixable states, validation, advanced search, and bare embedding.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.3.0
+  super_auto_suggestion_box: ^1.3.1
 ```
 
 ```dart
@@ -42,7 +42,7 @@ darkTheme: SuperMaterialThemeData.dark(
 ),
 ```
 
-## Required 1.3.0 Pattern
+## Required 1.3.1 Pattern
 
 Public APIs use raw `T` values. Do not build
 `List<SuperAutoSuggestionsItem<T>>` as source data. Create
@@ -87,6 +87,16 @@ Use the canonical `Super`-prefixed widget classes:
 `SuperAutoSuggestionsBoxThemeData`, `SuperAutoSuggestionsBoxFocusedStyle`,
 `SuperAutoSuggestionsHighlight`, and `SuperAutoSuggestionsPanel<T>`.
 The pre-1.3.0 names remain only as deprecated typedefs.
+
+## 1.3.1 Advanced Search and form-field foundation
+
+- Desktop Advanced Search uses a dialog.
+- Android, iOS, and Fuchsia use an edge-to-edge modal bottom sheet.
+- Do not show keyboard-shortcut descriptions on mobile.
+- Advanced Search must display `SuperAutoSuggestionsItem.group` headings using
+  the same adjacency rule as the inline overlay.
+- Reuse `super_form_field`'s `FieldShell`, `ErrorBadge`, and `FieldIconButton`;
+  do not recreate those components locally.
 
 ## Sources
 
