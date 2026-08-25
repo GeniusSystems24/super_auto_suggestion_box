@@ -1163,7 +1163,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           backgroundColor: t.overlayBg,
           enableDrag: false,
           barrierColor: Colors.black.withValues(alpha: 0.55),
-          shape: RoundedRectangleBorder(
+          shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(SuperAutoSuggestionsBoxThemeData.radiusLg),
             ),
@@ -2386,7 +2386,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
         color: t.overlayBg,
         borderRadius: widget.isDesktop
             ? BorderRadius.circular(SuperAutoSuggestionsBoxThemeData.radiusLg)
-            : BorderRadius.vertical(
+            : const BorderRadius.vertical(
                 top: Radius.circular(SuperAutoSuggestionsBoxThemeData.radiusLg),
               ),
         border: widget.isDesktop ? Border.all(color: t.border) : null,

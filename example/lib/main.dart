@@ -247,44 +247,46 @@ class _DemoCard extends StatelessWidget {
     final spacing = theme.spacing;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SuperSectionCard(
+    return InkWell(
       onTap: () => Navigator.of(
         context,
       ).push(MaterialPageRoute<void>(builder: demo.builder)),
-      padding: spacing.cardPadding,
-      child: Row(
-        children: [
-          Container(
-            width: spacing.controlHeight,
-            height: spacing.controlHeight,
-            decoration: BoxDecoration(
-              color: Color.alphaBlend(
-                colorScheme.primary.withValues(alpha: 0.14),
-                theme.surface,
+      child: SuperSectionCard1(
+        padding: spacing.cardPadding,
+        child: Row(
+          children: [
+            Container(
+              width: spacing.controlHeight,
+              height: spacing.controlHeight,
+              decoration: BoxDecoration(
+                color: Color.alphaBlend(
+                  colorScheme.primary.withValues(alpha: 0.14),
+                  theme.surface,
+                ),
+                borderRadius: spacing.borderRadiusControl,
               ),
-              borderRadius: spacing.borderRadiusControl,
+              child: Icon(demo.icon, size: 22, color: colorScheme.primary),
             ),
-            child: Icon(demo.icon, size: 22, color: colorScheme.primary),
-          ),
-          SizedBox(width: spacing.space4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  demo.title,
-                  style: typography.heading.copyWith(color: theme.fg1),
-                ),
-                SizedBox(height: spacing.space1),
-                Text(
-                  demo.subtitle,
-                  style: typography.caption.copyWith(color: theme.fg3),
-                ),
-              ],
+            SizedBox(width: spacing.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    demo.title,
+                    style: typography.heading.copyWith(color: theme.fg1),
+                  ),
+                  SizedBox(height: spacing.space1),
+                  Text(
+                    demo.subtitle,
+                    style: typography.caption.copyWith(color: theme.fg3),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right, color: theme.fg4),
-        ],
+            Icon(Icons.chevron_right, color: theme.fg4),
+          ],
+        ),
       ),
     );
   }
