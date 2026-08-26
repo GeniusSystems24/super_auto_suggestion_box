@@ -1291,7 +1291,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
 
         return SizedBox(
           width: widget.width,
-          child: sff.FieldShell(
+          child: sff.FormFieldShell(
             decoration: shellDecoration,
             required: widget.required,
             hasError: error != null,
