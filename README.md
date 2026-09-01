@@ -311,12 +311,15 @@ SuperAutoSuggestionsBox<String>(
 `SuperAutoSuggestionsBox<T>` participates in an enclosing `Form` through
 `FormField<T>`. Its validator receives the selected raw `T?`, not the query
 text. Keep a controller when form submission needs to read the selected value.
+When `autovalidateMode` is omitted, the box inherits the nearest
+`Form.autovalidateMode` before falling back to `AutovalidateMode.disabled`.
 
 ```dart
 final documentController = SuperAutoSuggestionsController<String>();
 
 Form(
   key: formKey,
+  autovalidateMode: AutovalidateMode.onUserInteraction,
   child: SuperAutoSuggestionsBox<String>(
     controller: documentController,
     source: SuperAutoSuggestionSources.list<String>(documentReferences),
@@ -353,6 +356,14 @@ if (formKey.currentState!.validate()) {
 Validation errors surface through the suffix error badge tooltip, matching the
 GeniusLink form-field convention. For direct form-field access, controller
 `formFieldKey` is now `GlobalKey<FormFieldState<T>>?`.
+
+Use `validationPosition` to choose where validation appears:
+`ValidationPosition.suffixIcon` shows the error badge in the field suffix,
+`ValidationPosition.underBox` shows error text under the box, and
+`ValidationPosition.labelTrailing` shows the error badge at the end of the
+label row. When omitted, the box uses `SuperFormField.validationPosition`; when
+that is also null, mobile defaults to under-box text and larger screens default
+to label-trailing badges.
 
 For keyboard traversal, a single-select field with
 `textInputAction: TextInputAction.next` moves focus to the next focusable field

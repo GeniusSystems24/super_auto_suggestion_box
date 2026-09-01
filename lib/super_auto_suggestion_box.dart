@@ -28,6 +28,9 @@
 ///   `import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';`
 library super_auto_suggestion_box;
 
+export 'package:super_form_field/super_form_field.dart'
+    show SuperFormField, ValidationPosition;
+
 // ── Localization ────────────────────────────────────────────────────────────
 export 'localization/super_auto_suggestions_localizations.dart';
 

@@ -12,6 +12,7 @@ import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 import 'auto_suggestion_box_demo.dart';
 import 'advanced_search_screen.dart';
+import 'autovalidate_mode_demo.dart';
 import 'sources/async_source_screen.dart';
 import 'sources/fuzzy_source_screen.dart';
 import 'sources/hybrid_source_screen.dart';
@@ -20,6 +21,7 @@ import 'sources/paged_source_screen.dart';
 import 'sources/remote_fallback_source_screen.dart';
 import 'sources/strings_source_screen.dart';
 import 'super_auto_suggestions_item_scenarios_screen.dart';
+import 'validation_position_demo.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -117,6 +119,18 @@ class _Launcher extends StatelessWidget {
       (_) => const SuperAutoSuggestionsItemScenariosScreen(),
     ),
     _Demo(
+      'Autovalidate Mode',
+      'Field value آ· Form default آ· disabled fallback',
+      Icons.rule_rounded,
+      (_) => const AutovalidateModeDemo(),
+    ),
+    _Demo(
+      'Validation Position',
+      'Suffix icon آ· under-box text آ· label-trailing icon',
+      Icons.error_outline_rounded,
+      (_) => const ValidationPositionDemo(),
+    ),
+    _Demo(
       'Advanced Search',
       'Ctrl / Cmd + F · built-in dialog · custom advanced-search surface',
       Icons.search_rounded,
@@ -128,6 +142,7 @@ class _Launcher extends StatelessWidget {
       Icons.manage_search_outlined,
       (_) => const AutoSuggestionBoxDemo(),
     ),
+
     _Demo(
       'String source',
       'Label-equals-value convenience source · basic · controlled · multi-select · recents',

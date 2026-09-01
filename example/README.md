@@ -4,7 +4,8 @@ Runnable gallery for `super_auto_suggestion_box` 1.3.0 with `super_core` 3.3.0.
 
 The gallery demonstrates raw `T` items with `suggestionBuilder` across local,
 fuzzy, remote-fallback, paged, multi-select, recents, inline-create, validation,
-read-only, advanced-search, fixable-field, and text-input scenarios.
+validation positioning, Form-level autovalidation inheritance, read-only,
+advanced-search, fixable-field, and text-input scenarios.
 
 Dedicated launcher entries cover every built-in source factory: `strings`,
 `list`, `fuzzy`, `async`, `hybrid`, `remoteFallback`, and `paged`. Each source

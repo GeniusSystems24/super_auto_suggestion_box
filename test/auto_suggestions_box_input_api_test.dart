@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_form_field/super_form_field.dart' as sff;
 
 Widget _themedApp(Widget home) {
   final typography = SuperTextTheme();
@@ -24,6 +25,104 @@ SuperAutoSuggestionsItem<String> _suggestion(
 );
 
 void main() {
+  testWidgets('inherits autovalidate mode from nearest form', (tester) async {
+    final formFieldKey = GlobalKey<FormFieldState<String>>();
+    final controller = SuperAutoSuggestionsController<String>(
+      formFieldKey: formFieldKey,
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: Form(
+            autovalidateMode: AutovalidateMode.always,
+            child: SuperAutoSuggestionsBox<String>(
+              controller: controller,
+              source: SuggestionSources.list<String>(const ['A']),
+              suggestionBuilder: _suggestion,
+              required: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(formFieldKey.currentState?.errorText, 'This field is required');
+  });
+
+  testWidgets('validation can render under the box', (tester) async {
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: Form(
+            autovalidateMode: AutovalidateMode.always,
+            child: SuperAutoSuggestionsBox<String>(
+              source: SuggestionSources.list<String>(const ['A']),
+              suggestionBuilder: _suggestion,
+              required: true,
+              validationPosition: ValidationPosition.underBox,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('This field is required'), findsOneWidget);
+    expect(find.byType(sff.ErrorBadge), findsNothing);
+  });
+
+  testWidgets('validation can render as a suffix icon', (tester) async {
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: Form(
+            autovalidateMode: AutovalidateMode.always,
+            child: SuperAutoSuggestionsBox<String>(
+              source: SuggestionSources.list<String>(const ['A']),
+              suggestionBuilder: _suggestion,
+              required: true,
+              validationPosition: ValidationPosition.suffixIcon,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('This field is required'), findsNothing);
+    expect(find.byType(sff.ErrorBadge), findsOneWidget);
+  });
+
+  testWidgets(
+    'global validation position is used when field position is null',
+    (tester) async {
+      addTearDown(() => SuperFormField.validationPosition = null);
+      SuperFormField.validationPosition = ValidationPosition.underBox;
+
+      await tester.pumpWidget(
+        _themedApp(
+          Scaffold(
+            body: Form(
+              autovalidateMode: AutovalidateMode.always,
+              child: SuperAutoSuggestionsBox<String>(
+                source: SuggestionSources.list<String>(const ['A']),
+                suggestionBuilder: _suggestion,
+                required: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('This field is required'), findsOneWidget);
+      expect(find.byType(sff.ErrorBadge), findsNothing);
+    },
+  );
+
   testWidgets('allowFixed toggles a compact label action and protects text', (
     tester,
   ) async {

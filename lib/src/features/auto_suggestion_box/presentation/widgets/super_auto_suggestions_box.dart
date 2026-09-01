@@ -254,6 +254,19 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// Show the error before the field has been touched (e.g. on a submit sweep).
   final bool forceError;
 
+  /// Controls where validation feedback is rendered.
+  ///
+  /// When null, the box uses [sff.SuperFormField.validationPosition]. When that
+  /// is also null, mobile defaults to [sff.ValidationPosition.underBox] and
+  /// tablet/desktop defaults to [sff.ValidationPosition.labelTrailing].
+  final sff.ValidationPosition? validationPosition;
+
+  /// Controls this field's auto-validation behavior.
+  ///
+  /// When null, the box inherits the nearest [Form.autovalidateMode] before
+  /// falling back to [AutovalidateMode.disabled].
+  final AutovalidateMode? autovalidateMode;
+
   /// Helper text shown beneath the control. Hidden whenever an error shows.
   @Deprecated('Use decoration: InputDecoration(helperText: ...) instead.')
   final String? hint;
@@ -489,6 +502,8 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.validator,
     this.requiredMessage = 'This field is required',
     this.forceError = false,
+    this.validationPosition,
+    this.autovalidateMode,
     this.hint,
     this.density = FieldDensity.comfortable,
     this.theme,
@@ -1268,6 +1283,11 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   Widget build(BuildContext context) {
     if (_c.isHiden) return const SizedBox.shrink();
     final t = _resolveTheme(context);
+    final autovalidateMode =
+        widget.autovalidateMode ??
+        context.findAncestorWidgetOfExactType<Form>()?.autovalidateMode ??
+        AutovalidateMode.disabled;
+    final validationPosition = _effectiveValidationPosition(context);
 
     final baseDecoration = widget.decoration ?? const InputDecoration();
     // ignore: deprecated_member_use_from_same_package
@@ -1282,12 +1302,22 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     return FormField<T>(
       key: _formFieldKey,
       initialValue: _formValue,
+      autovalidateMode: autovalidateMode,
       validator: _validateFormValue,
       builder: (formState) {
         final error = widget.disabled
             ? null
             : formState.errorText ?? _visibleError;
-        final field = _buildField(t, error);
+        final field = _buildField(t, error, validationPosition);
+        final underBoxError =
+            validationPosition == sff.ValidationPosition.underBox
+            ? error
+            : null;
+        final labelRight =
+            validationPosition == sff.ValidationPosition.labelTrailing &&
+                error != null
+            ? sff.ErrorBadge(error: error)
+            : null;
 
         return SizedBox(
           width: widget.width,
@@ -1295,6 +1325,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
             decoration: shellDecoration,
             required: widget.required,
             hasError: error != null,
+            errorText: underBoxError,
+            labelRight: labelRight,
             allowFixed: widget.allowFixed,
             isFixed: widget.allowFixed ? _c.isFixed : null,
             child: CompositedTransformTarget(
@@ -1311,7 +1343,23 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     );
   }
 
-  Widget _buildField(SuperAutoSuggestionsBoxThemeData t, String? error) {
+  sff.ValidationPosition _effectiveValidationPosition(BuildContext context) {
+    final explicit = widget.validationPosition;
+    if (explicit != null) return explicit;
+
+    final global = sff.SuperFormField.validationPosition;
+    if (global != null) return global;
+
+    return SuperDeviceMode.of(context).isMobile
+        ? sff.ValidationPosition.underBox
+        : sff.ValidationPosition.labelTrailing;
+  }
+
+  Widget _buildField(
+    SuperAutoSuggestionsBoxThemeData t,
+    String? error,
+    sff.ValidationPosition validationPosition,
+  ) {
     final focused = _focus.hasFocus;
     final bare = widget.bare;
     final disabled = widget.disabled;
@@ -1391,7 +1439,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     // ── Suffix row ──
     final suffixWidgets = <Widget>[
       ..._suffixChildren(t, _c.query.isNotEmpty, interactive),
-      if (hasError) ...[
+      if (hasError &&
+          validationPosition == sff.ValidationPosition.suffixIcon) ...[
         const SizedBox(width: 4),
         sff.ErrorBadge(error: error, size: 18),
       ],
@@ -2474,7 +2523,11 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
                           border: InputBorder.none,
                           hintText: l10n.search,
                           hintStyle: TextStyle(fontSize: 15, color: t.fg3),
-                          prefixIcon: Icon(Icons.search_rounded, size: 19, color: t.fg3),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            size: 19,
+                            color: t.fg3,
+                          ),
                         ),
                       ),
                     ),

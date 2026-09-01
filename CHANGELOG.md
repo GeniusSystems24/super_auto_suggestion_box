@@ -4,6 +4,20 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.4.0
+
+### Added
+
+- Added nullable `SuperAutoSuggestionsBox.autovalidateMode` support, inheriting
+  the nearest `Form.autovalidateMode` when a field-level value is omitted.
+- Added an autovalidate-mode example screen demonstrating Form-level defaults
+  and field-level overrides.
+- Added `SuperAutoSuggestionsBox.validationPosition`, sharing
+  `super_form_field`'s `ValidationPosition` and package-wide
+  `SuperFormField.validationPosition` default.
+- Added a validation-position example screen for suffix, under-box, and
+  label-trailing validation feedback.
+
 ## 1.3.1 - 2026-08-19
 
 ### Changed
