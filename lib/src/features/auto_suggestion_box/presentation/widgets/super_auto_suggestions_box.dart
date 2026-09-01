@@ -261,6 +261,9 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// tablet/desktop defaults to [sff.ValidationPosition.labelTrailing].
   final sff.ValidationPosition? validationPosition;
 
+  /// Optional widget displayed at the end of the label row.
+  final Widget? helpIcon;
+
   /// Controls this field's auto-validation behavior.
   ///
   /// When null, the box inherits the nearest [Form.autovalidateMode] before
@@ -503,6 +506,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.requiredMessage = 'This field is required',
     this.forceError = false,
     this.validationPosition,
+    this.helpIcon,
     this.autovalidateMode,
     this.hint,
     this.density = FieldDensity.comfortable,
@@ -1313,11 +1317,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
             validationPosition == sff.ValidationPosition.underBox
             ? error
             : null;
-        final labelRight =
-            validationPosition == sff.ValidationPosition.labelTrailing &&
-                error != null
-            ? sff.ErrorBadge(error: error)
-            : null;
+        final labelRight = _buildLabelRight(error, validationPosition);
 
         return SizedBox(
           width: widget.width,
@@ -1353,6 +1353,28 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     return SuperDeviceMode.of(context).isMobile
         ? sff.ValidationPosition.underBox
         : sff.ValidationPosition.labelTrailing;
+  }
+
+  Widget? _buildLabelRight(String? error, sff.ValidationPosition position) {
+    final widgets = <Widget>[
+      if (position == sff.ValidationPosition.labelTrailing && error != null)
+        sff.ErrorBadge(error: error),
+      if (widget.helpIcon != null) widget.helpIcon!,
+    ];
+
+    if (widgets.isEmpty) return null;
+    if (widgets.length == 1) return widgets.single;
+
+    final gap = SuperThemeData.of(context).spacing.space1;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < widgets.length; i++) ...[
+          if (i > 0) SizedBox(width: gap),
+          widgets[i],
+        ],
+      ],
+    );
   }
 
   Widget _buildField(

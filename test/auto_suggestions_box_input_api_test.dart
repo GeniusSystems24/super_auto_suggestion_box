@@ -123,6 +123,27 @@ void main() {
     },
   );
 
+  testWidgets('help icon renders at the end of the label row', (tester) async {
+    const helpKey = ValueKey('auto_suggestions_help_icon');
+
+    await tester.pumpWidget(
+      _themedApp(
+        Scaffold(
+          body: SuperAutoSuggestionsBox<String>(
+            source: SuggestionSources.list<String>(const ['A']),
+            suggestionBuilder: _suggestion,
+            decoration: const InputDecoration(labelText: 'Account'),
+            helpIcon: const Icon(Icons.help_outline_rounded, key: helpKey),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ACCOUNT'), findsOneWidget);
+    expect(find.byKey(helpKey), findsOneWidget);
+  });
+
   testWidgets('allowFixed toggles a compact label action and protects text', (
     tester,
   ) async {

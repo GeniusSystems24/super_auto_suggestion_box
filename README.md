@@ -9,7 +9,7 @@ server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.3.1` keeps raw `T` values as the public data model, consolidates
+Version `1.5.0` keeps raw `T` values as the public data model, consolidates
 suggestion row construction into `SuperAutoSuggestionsItem<T>(...)`, and
 finishes the `Super` prefix migration for public presentation/widget classes.
 The validator still receives the selected raw `T?`, and `onSelectionChanged`
@@ -37,7 +37,7 @@ recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.3.1
+  super_auto_suggestion_box: ^1.5.0
 ```
 
 ```dart
@@ -364,6 +364,20 @@ Use `validationPosition` to choose where validation appears:
 label row. When omitted, the box uses `SuperFormField.validationPosition`; when
 that is also null, mobile defaults to under-box text and larger screens default
 to label-trailing badges.
+
+Use `helpIcon` to add a custom help affordance at the end of the label row:
+
+```dart
+SuperAutoSuggestionsBox<String>(
+  source: SuperAutoSuggestionSources.list<String>(accounts),
+  suggestionBuilder: accountSuggestion,
+  decoration: const InputDecoration(labelText: 'Posting account'),
+  helpIcon: const Tooltip(
+    message: 'Used by journal posting and reports.',
+    child: Icon(Icons.help_outline_rounded, size: 18),
+  ),
+);
+```
 
 For keyboard traversal, a single-select field with
 `textInputAction: TextInputAction.next` moves focus to the next focusable field

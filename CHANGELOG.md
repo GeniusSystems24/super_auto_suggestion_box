@@ -4,6 +4,13 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.5.0
+
+### Added
+
+- Added optional `SuperAutoSuggestionsBox.helpIcon` support at the end of the
+  label row.
+  
 ## 1.4.0
 
 ### Added

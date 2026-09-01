@@ -188,6 +188,11 @@ class _RequiredBox extends StatelessWidget {
         ),
         required: true,
         validationPosition: validationPosition,
+        helpIcon: Icon(
+          Icons.help_outline_rounded,
+          size: 18,
+          color: context.superTheme.fg3,
+        ),
       ),
     );
   }
