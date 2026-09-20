@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 import 'auto_suggestion_box_demo.dart';
 import 'advanced_search_screen.dart';
@@ -58,16 +59,16 @@ class _ExampleAppState extends State<ExampleApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Super Auto Suggestion Box',
+      onGenerateTitle: (context) => SuperExampleLocalization.of(context).appTitle,
       locale: Locale(_direction == TextDirection.rtl ? 'ar' : 'en'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
-        SuperAutoSuggestionsTranslation.delegate,
+        SuperAutoSuggestionLocalization.delegate,
+        SuperExampleLocalization.delegate,
       ],
-      supportedLocales:
-          SuperAutoSuggestionsTranslation.delegate.supportedLocales,
+      supportedLocales: SuperAutoSuggestionLocalization.supportedLocales,
       themeMode: _mode,
       theme: SuperMaterialThemeData.light(
         textTheme: typography,
@@ -111,91 +112,113 @@ class _Launcher extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final VoidCallback onToggleDirection;
 
-  static final List<_Demo> _demos = [
-    _Demo(
-      'Suggestion item scenarios',
-      'All SuperAutoSuggestionsItem fields · enabledSnapshot',
-      Icons.view_list_rounded,
-      (_) => const SuperAutoSuggestionsItemScenariosScreen(),
-    ),
-    _Demo(
-      'Autovalidate Mode',
-      'Field value آ· Form default آ· disabled fallback',
-      Icons.rule_rounded,
-      (_) => const AutovalidateModeDemo(),
-    ),
-    _Demo(
-      'Validation Position',
-      'Suffix icon آ· under-box text آ· label-trailing icon',
-      Icons.error_outline_rounded,
-      (_) => const ValidationPositionDemo(),
-    ),
-    _Demo(
-      'Advanced Search',
-      'Ctrl / Cmd + F · built-in dialog · custom advanced-search surface',
-      Icons.search_rounded,
-      (_) => const AdvancedSearchScreen(),
-    ),
-    _Demo(
-      'Auto Suggestion Box',
-      'Typeahead · recents · create · paged · multi-select · fuzzy',
-      Icons.manage_search_outlined,
-      (_) => const AutoSuggestionBoxDemo(),
-    ),
-
-    _Demo(
-      'String source',
-      'Label-equals-value convenience source · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const StringsSourceScreen(),
-    ),
-    _Demo(
-      'List source',
-      'In-memory contains matching · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const ListSourceScreen(),
-    ),
-    _Demo(
-      'Fuzzy source',
-      'Typo-tolerant in-memory ranking · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const FuzzySourceScreen(),
-    ),
-    _Demo(
-      'Async source',
-      'Server-style asynchronous lookup · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const AsyncSourceScreen(),
-    ),
-    _Demo(
-      'Hybrid source',
-      'Local results merged with remote data · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const HybridSourceScreen(),
-    ),
-    _Demo(
-      'Remote fallback',
-      'Local-first lookup with remote fallback · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const RemoteFallbackSourceScreen(),
-    ),
-    _Demo(
-      'Paged source',
-      'Infinite scrolling through server pages · basic · controlled · multi-select · recents',
-      Icons.source_outlined,
-      (_) => const PagedSourceScreen(),
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = context.superTheme;
     final typography = context.superTextTheme;
     final spacing = theme.spacing;
     final colorScheme = Theme.of(context).colorScheme;
 
+    final demos = <_Demo>[
+      _Demo(
+        l10n.suggestionItemScenarios,
+        l10n.suggestionItemScenariosGalleryDescription,
+        Icons.view_list_rounded,
+        (_) => const SuperAutoSuggestionsItemScenariosScreen(),
+      ),
+      _Demo(
+        l10n.autovalidateMode,
+        l10n.autovalidateGalleryDescription,
+        Icons.rule_rounded,
+        (_) => const AutovalidateModeDemo(),
+      ),
+      _Demo(
+        l10n.validationPosition,
+        l10n.validationPositionGalleryDescription,
+        Icons.error_outline_rounded,
+        (_) => const ValidationPositionDemo(),
+      ),
+      _Demo(
+        l10n.advancedSearch,
+        l10n.advancedSearchGalleryDescription,
+        Icons.search_rounded,
+        (_) => const AdvancedSearchScreen(),
+      ),
+      _Demo(
+        l10n.autoSuggestionBox,
+        l10n.autoSuggestionBoxGalleryDescription,
+        Icons.manage_search_outlined,
+        (_) => const AutoSuggestionBoxDemo(),
+      ),
+      _Demo(
+        l10n.stringSource,
+        '${l10n.stringSourceDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const StringsSourceScreen(),
+      ),
+      _Demo(
+        l10n.listSource,
+        '${l10n.listSourceDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const ListSourceScreen(),
+      ),
+      _Demo(
+        l10n.fuzzySource,
+        '${l10n.fuzzySourceDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const FuzzySourceScreen(),
+      ),
+      _Demo(
+        l10n.asyncSource,
+        '${l10n.asyncSourceDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const AsyncSourceScreen(),
+      ),
+      _Demo(
+        l10n.hybridSource,
+        '${l10n.hybridSourceDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const HybridSourceScreen(),
+      ),
+      _Demo(
+        l10n.remoteFallback,
+        '${l10n.remoteFallbackDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const RemoteFallbackSourceScreen(),
+      ),
+      _Demo(
+        l10n.pagedSource,
+        '${l10n.pagedSourceDescription} · ${l10n.sourceDemoCapabilities}',
+        Icons.source_outlined,
+        (_) => const PagedSourceScreen(),
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: theme.bg,
+      appBar: AppBar(
+        backgroundColor: theme.bg,
+        surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            tooltip: mode == ThemeMode.dark ? l10n.lightTheme : l10n.darkTheme,
+            onPressed: onToggleTheme,
+            icon: Icon(
+              mode == ThemeMode.dark
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+            ),
+          ),
+          IconButton(
+            tooltip: direction == TextDirection.ltr
+                ? l10n.switchToArabic
+                : l10n.switchToEnglish,
+            onPressed: onToggleDirection,
+            icon: const Icon(Icons.language_rounded),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: SuperScaffold(
@@ -204,43 +227,21 @@ class _Launcher extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'SUPER AUTO SUGGESTION BOX • GALLERY',
+                  l10n.galleryEyebrow,
                   style: typography.eyebrow.copyWith(
                     color: colorScheme.primary,
                   ),
                 ),
                 SizedBox(height: spacing.space2),
                 Text(
-                  'Component Demos مكتبة المكونات',
+                  l10n.componentDemos,
                   style: typography.h1.copyWith(color: theme.fg1),
                 ),
                 SizedBox(height: spacing.space8),
-                for (final demo in _demos) ...[
+                for (final demo in demos) ...[
                   _DemoCard(demo: demo),
                   SizedBox(height: spacing.section),
                 ],
-                SizedBox(height: spacing.space6),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: spacing.space3,
-                  runSpacing: spacing.space3,
-                  children: [
-                    SuperButton(
-                      label: mode == ThemeMode.dark
-                          ? 'Light Theme'
-                          : 'Dark Theme',
-                      variant: SuperButtonVariant.secondary,
-                      onPressed: onToggleTheme,
-                    ),
-                    SuperButton(
-                      label: direction == TextDirection.ltr
-                          ? 'العربية (RTL)'
-                          : 'English (LTR)',
-                      variant: SuperButtonVariant.secondary,
-                      onPressed: onToggleDirection,
-                    ),
-                  ],
-                ),
               ],
             ),
           ),

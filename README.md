@@ -56,10 +56,10 @@ MaterialApp(
   ),
   localizationsDelegates: const [
         // ...
-        SuperAutoSuggestionsTranslation.delegate,
+        SuperAutoSuggestionLocalization.delegate,
       ],
   supportedLocales:
-      SuperAutoSuggestionsTranslation.delegate.supportedLocales,
+      SuperAutoSuggestionLocalization.delegate.supportedLocales,
 );
 ```
 
@@ -414,10 +414,10 @@ your app:
 MaterialApp(
   localizationsDelegates: const [
         // ...
-        SuperAutoSuggestionsTranslation.delegate,
+        SuperAutoSuggestionLocalization.delegate,
       ],
   supportedLocales:
-      SuperAutoSuggestionsTranslation.delegate.supportedLocales,
+      SuperAutoSuggestionLocalization.delegate.supportedLocales,
 )
 ```
 
@@ -425,5 +425,5 @@ Built-in package strings such as the required-field message, loading/search
 states, Recent group label, inline-create text, fixed/unfixed tooltips, and
 Advanced Search chrome follow the active locale. Explicit custom strings passed
 to the widget continue to take precedence. Registration is optional: when no
-`SuperAutoSuggestionsTranslation` is available in the widget tree, package
+`SuperAutoSuggestionLocalization` is available in the widget tree, package
 widgets fall back to the built-in English localization.

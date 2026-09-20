@@ -32,7 +32,7 @@ export 'package:super_form_field/super_form_field.dart'
     show SuperFormField, ValidationPosition;
 
 // ── Localization ────────────────────────────────────────────────────────────
-export 'localization/super_auto_suggestions_localizations.dart';
+export 'localizations/generated/l10n.dart';
 
 // ── Core (theme tokens, shared widgets, utils — from super_core) ─────────────
 export 'src/core/core.dart';

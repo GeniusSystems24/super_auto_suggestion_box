@@ -1,20 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 /// Every built-in source gets its own route while sharing the same scenario
 /// gallery, making source behavior easy to compare.
 enum ExampleSourceType {
-  strings('String source', 'Label-equals-value convenience source'),
-  list('List source', 'In-memory contains matching'),
-  fuzzy('Fuzzy source', 'Typo-tolerant in-memory ranking'),
-  asyncSource('Async source', 'Server-style asynchronous lookup'),
-  hybrid('Hybrid source', 'Immediate local results merged with remote data'),
-  remoteFallback('Remote fallback', 'Local-first lookup with remote fallback'),
-  paged('Paged source', 'Infinite scrolling through server pages');
+  strings,
+  list,
+  fuzzy,
+  asyncSource,
+  hybrid,
+  remoteFallback,
+  paged;
 
-  const ExampleSourceType(this.title, this.description);
-  final String title;
-  final String description;
+  String title(SuperExampleLocalization l10n) => switch (this) {
+    ExampleSourceType.strings => l10n.stringSource,
+    ExampleSourceType.list => l10n.listSource,
+    ExampleSourceType.fuzzy => l10n.fuzzySource,
+    ExampleSourceType.asyncSource => l10n.asyncSource,
+    ExampleSourceType.hybrid => l10n.hybridSource,
+    ExampleSourceType.remoteFallback => l10n.remoteFallback,
+    ExampleSourceType.paged => l10n.pagedSource,
+  };
+
+  String description(SuperExampleLocalization l10n) => switch (this) {
+    ExampleSourceType.strings => l10n.stringSourceDescription,
+    ExampleSourceType.list => l10n.listSourceDescription,
+    ExampleSourceType.fuzzy => l10n.fuzzySourceDescription,
+    ExampleSourceType.asyncSource => l10n.asyncSourceDescription,
+    ExampleSourceType.hybrid => l10n.hybridSourceDescription,
+    ExampleSourceType.remoteFallback => l10n.remoteFallbackDescription,
+    ExampleSourceType.paged => l10n.pagedSourceDescription,
+  };
 }
 
 class SourceExamplesView extends StatefulWidget {
@@ -80,17 +97,20 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
     super.dispose();
   }
 
-  static SuperAutoSuggestionsItem<String> _suggestion(
+  SuperAutoSuggestionsItem<String> _suggestion(
     List<String> items,
     int index,
     String item,
-  ) => SuperAutoSuggestionsItem<String>(
-    value: item,
-    titleText: item,
-    description: Text('Account ${index + 1}'),
-    icon: const Icon(Icons.account_balance_outlined),
-    keywords: [item.replaceAll(' ', '')],
-  );
+  ) {
+    final l10n = SuperExampleLocalization.of(context);
+    return SuperAutoSuggestionsItem<String>(
+      value: item,
+      titleText: item,
+      description: Text(l10n.accountNumber(index + 1)),
+      icon: const Icon(Icons.account_balance_outlined),
+      keywords: [item.replaceAll(' ', '')],
+    );
+  }
 
   static List<String> _matches(String query) {
     final normalized = query.trim().toLowerCase();
@@ -167,16 +187,19 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = context.superTheme;
     final typography = context.superTextTheme;
     final spacing = theme.spacing;
     final colorScheme = Theme.of(context).colorScheme;
+    final sourceTitle = widget.type.title(l10n);
+    final sourceDescription = widget.type.description(l10n);
 
     return Scaffold(
       appBar: SuperAppBar(
-        title: Text(widget.type.title),
+        title: Text(sourceTitle),
         subtitle: Text(
-          'SOURCE EXAMPLE',
+          l10n.sourceExample,
           style: typography.eyebrow.copyWith(color: colorScheme.primary),
         ),
       ),
@@ -187,62 +210,59 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.1 · ${widget.type.title.toUpperCase()}',
+                l10n.sourceVersion(sourceTitle.toUpperCase()),
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),
               Text(
-                widget.type.description,
+                sourceDescription,
                 style: typography.h1.copyWith(color: theme.fg1),
               ),
               SizedBox(height: spacing.space8),
               _scenario(
-                title: 'Basic Lookup',
-                description: 'The widget owns the source and controller.',
+                title: l10n.basicLookup,
+                description: l10n.widgetOwnsSource,
                 marker: SuperMarker.identity,
                 child: SuperAutoSuggestionsBox<String>(
                   source: _basicSource,
                   suggestionBuilder: _suggestion,
-                  decoration: const InputDecoration(labelText: 'Account'),
-                  hintText: 'Search accounts...',
+                  decoration: InputDecoration(labelText: l10n.account),
+                  hintText: l10n.searchAccounts,
                 ),
               ),
               SizedBox(height: spacing.section),
               _scenario(
-                title: 'External Controller',
-                description:
-                    'Read selection and control the field from host code.',
+                title: l10n.externalController,
+                description: l10n.controlFromHost,
                 marker: SuperMarker.notes,
                 child: SuperAutoSuggestionsBox<String>(
                   source: _controlledSource,
                   controller: _controlled,
                   suggestionBuilder: _suggestion,
-                  decoration: const InputDecoration(
-                    labelText: 'Controlled Account',
+                  decoration: InputDecoration(
+                    labelText: l10n.controlledAccount,
                   ),
-                  hintText: 'Host-controlled lookup...',
+                  hintText: l10n.hostControlledLookup,
                 ),
               ),
               SizedBox(height: spacing.section),
               _scenario(
-                title: 'Multi-select',
-                description:
-                    'Select several raw values from the same source type.',
+                title: l10n.multiSelect,
+                description: l10n.selectSeveralValues,
                 marker: SuperMarker.ledger,
                 child: SuperAutoSuggestionsBox<String>(
                   source: _multiSelectSource,
                   controller: _multiSelect,
                   suggestionBuilder: _suggestion,
                   multiSelect: true,
-                  decoration: const InputDecoration(labelText: 'Accounts'),
-                  hintText: 'Select accounts...',
+                  decoration: InputDecoration(labelText: l10n.accounts),
+                  hintText: l10n.selectAccounts,
                 ),
               ),
               SizedBox(height: spacing.section),
               _scenario(
-                title: 'Recent Selections',
-                description:
-                    'Committed values are pinned when the query is empty.',
+                title: l10n.recentSelections,
+                description: l10n.committedValuesPinned,
                 marker: SuperMarker.identity,
                 child: SuperAutoSuggestionsBox<String>(
                   source: _recentsSource,
@@ -250,10 +270,10 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
                   suggestionBuilder: _suggestion,
                   showRecents: true,
                   maxRecents: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Recent Accounts',
+                  decoration: InputDecoration(
+                    labelText: l10n.recentAccounts,
                   ),
-                  hintText: 'Pick an account...',
+                  hintText: l10n.pickAccount,
                 ),
               ),
               SizedBox(height: spacing.section),

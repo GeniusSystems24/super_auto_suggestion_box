@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 class AutovalidateModeDemo extends StatefulWidget {
   const AutovalidateModeDemo({super.key});
@@ -29,6 +30,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = context.superTheme;
     final spacing = theme.spacing;
     final typography = context.superTextTheme;
@@ -36,7 +38,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
 
     return Scaffold(
       backgroundColor: theme.bg,
-      appBar: SuperAppBar(title: const Text('Autovalidate Mode')),
+      appBar: SuperAppBar(title: Text(l10n.autovalidateMode)),
       body: SafeArea(
         child: SingleChildScrollView(
           child: SuperScaffold(
@@ -45,42 +47,41 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'VALIDATION',
+                  l10n.validation,
                   style: typography.eyebrow.copyWith(
                     color: colorScheme.primary,
                   ),
                 ),
                 SizedBox(height: spacing.space2),
                 Text(
-                  'Form Autovalidation',
+                  l10n.formAutovalidation,
                   style: typography.h1.copyWith(color: theme.fg1),
                 ),
                 SizedBox(height: spacing.space8),
                 SuperSectionCard2(
                   collapsible: false,
-                  title: 'Form default',
-                  subtitle:
-                      'Both boxes below read autovalidateMode from the Form.',
+                  title: l10n.formDefault,
+                  subtitle: l10n.formDefaultDescription,
                   marker: theme.tokens.markerColor(SuperMarker.identity),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SegmentedButton<AutovalidateMode>(
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: AutovalidateMode.disabled,
                             icon: Icon(Icons.pause_circle_outline_rounded),
-                            label: Text('Disabled'),
+                            label: Text(l10n.disabled),
                           ),
                           ButtonSegment(
                             value: AutovalidateMode.always,
                             icon: Icon(Icons.running_with_errors_rounded),
-                            label: Text('Always'),
+                            label: Text(l10n.always),
                           ),
                           ButtonSegment(
                             value: AutovalidateMode.onUserInteraction,
                             icon: Icon(Icons.touch_app_rounded),
-                            label: Text('On change'),
+                            label: Text(l10n.onChange),
                           ),
                         ],
                         selected: {_mode},
@@ -95,10 +96,11 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                           children: [
                             SuperAutoSuggestionsBox<String>(
                               source: SuggestionSources.list<String>(_accounts),
-                              suggestionBuilder: _accountSuggestion,
-                              decoration: const InputDecoration(
-                                labelText: 'Posting account',
-                                helperText: 'Required account lookup.',
+                              suggestionBuilder: (items, index, item) =>
+                                  _accountSuggestion(items, index, item, l10n),
+                              decoration: InputDecoration(
+                                labelText: l10n.postingAccount,
+                                helperText: l10n.requiredAccountLookup,
                                 prefixIcon: Icon(Icons.account_balance),
                               ),
                               required: true,
@@ -106,16 +108,17 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                             SizedBox(height: spacing.space6),
                             SuperAutoSuggestionsBox<String>(
                               source: SuggestionSources.list<String>(_accounts),
-                              suggestionBuilder: _accountSuggestion,
-                              decoration: const InputDecoration(
-                                labelText: 'Expense account',
-                                helperText: 'Must be an expense account.',
+                              suggestionBuilder: (items, index, item) =>
+                                  _accountSuggestion(items, index, item, l10n),
+                              decoration: InputDecoration(
+                                labelText: l10n.expenseAccount,
+                                helperText: l10n.mustBeExpense,
                                 prefixIcon: Icon(Icons.receipt_long_outlined),
                               ),
                               validator: (value) =>
                                   value == null || value.startsWith('5')
                                   ? null
-                                  : 'Choose an expense account.',
+                                  : l10n.chooseExpense,
                             ),
                           ],
                         ),
@@ -126,14 +129,14 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                           FilledButton.icon(
                             onPressed: () => _formKey.currentState?.validate(),
                             icon: const Icon(Icons.fact_check_outlined),
-                            label: const Text('Validate'),
+                            label: Text(l10n.validate),
                           ),
                           SizedBox(width: spacing.space3),
                           TextButton.icon(
                             onPressed: () => _formKey.currentState?.reset(),
                             icon: const Icon(Icons.restart_alt_rounded),
                             label: Text(
-                              'Reset',
+                              l10n.reset,
                               style: TextStyle(color: theme.fg2),
                             ),
                           ),
@@ -145,17 +148,16 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                 SizedBox(height: spacing.space8),
                 SuperSectionCard2(
                   collapsible: false,
-                  title: 'Field override',
-                  subtitle:
-                      'This box validates always, independent of the Form mode.',
+                  title: l10n.fieldOverride,
+                  subtitle: l10n.fieldAlwaysValidates,
                   marker: theme.tokens.markerColor(SuperMarker.ledger),
                   child: SuperAutoSuggestionsBox<String>(
                     source: SuggestionSources.list<String>(_accounts),
-                    suggestionBuilder: _accountSuggestion,
-                    decoration: const InputDecoration(
-                      labelText: 'Immediate account',
-                      helperText:
-                          'Field-level autovalidateMode takes precedence.',
+                    suggestionBuilder: (items, index, item) =>
+                                  _accountSuggestion(items, index, item, l10n),
+                    decoration: InputDecoration(
+                      labelText: l10n.immediateAccount,
+                      helperText: l10n.fieldAutovalidatePrecedence,
                       prefixIcon: Icon(Icons.flash_on_outlined),
                     ),
                     required: true,
@@ -175,12 +177,13 @@ SuperAutoSuggestionsItem<String> _accountSuggestion(
   List<String> items,
   int index,
   String item,
+  SuperExampleLocalization l10n,
 ) {
   final parts = item.split(' ');
   return SuperAutoSuggestionsItem<String>(
     value: item,
     titleText: item,
-    descriptionText: 'Account code ${parts.first}',
+    descriptionText: l10n.accountCode(parts.first),
     iconData: Icons.account_balance_outlined,
     keywords: [parts.first, item.replaceAll(' ', '')],
   );

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 class SuperAutoSuggestionsItemScenariosScreen extends StatefulWidget {
   const SuperAutoSuggestionsItemScenariosScreen({super.key});
@@ -61,30 +62,31 @@ class _SuperAutoSuggestionsItemScenariosScreenState
     int index,
     _ScenarioItem item,
   ) {
+    final l10n = SuperExampleLocalization.of(context);
     switch (item.id) {
       case 'title':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Plain title text',
+          titleText: l10n.plainTitleText,
         );
 
       case 'descriptionText':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Description as text',
-          descriptionText: 'descriptionText renders supporting plain text',
+          titleText: l10n.descriptionAsText,
+          descriptionText: l10n.descriptionTextSupport,
         );
 
       case 'descriptionWidget':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Description as widget',
-          description: const Row(
+          titleText: l10n.descriptionAsWidget,
+          description: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.info_outline_rounded, size: 12),
               SizedBox(width: 4),
-              Text('Custom description widget'),
+              Text(l10n.customDescriptionWidget),
             ],
           ),
         );
@@ -92,17 +94,17 @@ class _SuperAutoSuggestionsItemScenariosScreenState
       case 'trailingText':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Trailing text',
+          titleText: l10n.trailingText,
           trailingText: 'ERP-1042',
         );
 
       case 'trailingWidget':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Trailing widget',
-          trailing: const Chip(
+          titleText: l10n.trailingWidget,
+          trailing: Chip(
             visualDensity: VisualDensity.compact,
-            label: Text('ACTIVE'),
+            label: Text(l10n.active),
           ),
         );
 
@@ -116,29 +118,29 @@ class _SuperAutoSuggestionsItemScenariosScreenState
       case 'iconWidget':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Custom icon widget',
+          titleText: l10n.customIconWidget,
           icon: const CircleAvatar(radius: 10, child: Text('S')),
         );
 
       case 'group':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Grouped suggestion',
-          group: 'Metadata scenarios',
+          titleText: l10n.groupedSuggestion,
+          group: l10n.metadataScenarios,
         );
 
       case 'keywords':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Searchable aliases',
-          descriptionText: 'Search for: invoice, vendor, INV-1042',
+          titleText: l10n.searchableAliases,
+          descriptionText: l10n.searchAliasesHint,
           keywords: const <String>['invoice', 'vendor', 'INV-1042'],
         );
 
       case 'disabled':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Statically disabled',
+          titleText: l10n.staticallyDisabled,
           descriptionText: 'enabled: false',
           iconData: Icons.block_rounded,
           enabled: false,
@@ -147,9 +149,8 @@ class _SuperAutoSuggestionsItemScenariosScreenState
       case 'enabledSnapshot':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Stream-controlled enabled state',
-          descriptionText:
-              'enabledSnapshot: Stream<bool> · toggle it above the field',
+          titleText: l10n.streamControlledState,
+          descriptionText: l10n.streamControlledDescription,
           iconData: Icons.sensors_rounded,
           enabled: _streamEnabled,
           enabledSnapshot: _enabledController.stream,
@@ -158,16 +159,16 @@ class _SuperAutoSuggestionsItemScenariosScreenState
       case 'combined':
         return SuperAutoSuggestionsItem<_ScenarioItem>(
           value: item,
-          titleText: 'Combined rich suggestion',
-          description: const Text(
-            'Widget description · searchable title remains titleText',
+          titleText: l10n.combinedRichSuggestion,
+          description: Text(
+            l10n.richDescription,
           ),
           trailing: const Icon(Icons.chevron_right_rounded),
           icon: const CircleAvatar(
             radius: 10,
             child: Icon(Icons.business_rounded, size: 12),
           ),
-          group: 'Rich scenarios',
+          group: l10n.richScenarios,
           keywords: const <String>['company', 'customer', 'rich'],
           enabled: true,
         );
@@ -181,6 +182,7 @@ class _SuperAutoSuggestionsItemScenariosScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = context.superTheme;
     final typography = context.superTextTheme;
     final spacing = theme.spacing;
@@ -190,7 +192,7 @@ class _SuperAutoSuggestionsItemScenariosScreenState
       appBar: SuperAppBar(
         title: const Text('SuperAutoSuggestionsItem'),
         subtitle: Text(
-          'ALL ITEM SCENARIOS',
+          l10n.allItemScenarios,
           style: typography.eyebrow.copyWith(color: colorScheme.primary),
         ),
       ),
@@ -201,36 +203,32 @@ class _SuperAutoSuggestionsItemScenariosScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.1 · ITEM API',
+                l10n.itemApiVersion,
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),
               Text(
-                'Every SuperAutoSuggestionsItem scenario',
+                l10n.everyItemScenario,
                 style: typography.h1.copyWith(color: theme.fg1),
               ),
               SizedBox(height: spacing.space3),
               Text(
-                'The list below covers text metadata, custom widgets, grouping, '
-                'keywords, static enabled state, Stream<bool> enabledSnapshot, '
-                'and a combined rich item.',
+                l10n.itemScenarioOverview,
                 style: typography.label.copyWith(color: theme.fg2),
               ),
               SizedBox(height: spacing.space8),
               SuperSectionCard2(
                 collapsible: false,
                 title: 'enabledSnapshot',
-                subtitle:
-                    'This switch updates the Stream<bool> used by the '
-                    'enabledSnapshot scenario.',
+                subtitle: l10n.enabledSnapshotDescription,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         _streamEnabled
-                            ? 'Dynamic suggestion is enabled'
-                            : 'Dynamic suggestion is disabled',
+                            ? l10n.dynamicSuggestionEnabled
+                            : l10n.dynamicSuggestionDisabled,
                       ),
                     ),
                     Switch(
@@ -243,9 +241,8 @@ class _SuperAutoSuggestionsItemScenariosScreenState
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'All item scenarios',
-                subtitle:
-                    'Open the suggestions and inspect each rendering/API case.',
+                title: l10n.allItemScenariosTitle,
+                subtitle: l10n.inspectItemCases,
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<_ScenarioItem>(
                   source: _source,
@@ -253,13 +250,12 @@ class _SuperAutoSuggestionsItemScenariosScreenState
                   mode: SuperAutoSuggestionsMode.textBox,
                   minChars: 0,
                   maxResults: 50,
-                  decoration: const InputDecoration(
-                    labelText: 'SuperAutoSuggestionsItem scenarios',
-                    helperText:
-                        'Open the list with an empty query to see every case.',
+                  decoration: InputDecoration(
+                    labelText: l10n.itemScenariosLabel,
+                    helperText: l10n.openEmptyQuery,
                     prefixIcon: Icon(Icons.view_list_rounded),
                   ),
-                  hintText: 'Search title or keywords...',
+                  hintText: l10n.searchTitleKeywords,
                 ),
               ),
             ],

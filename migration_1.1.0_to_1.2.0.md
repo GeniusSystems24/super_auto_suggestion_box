@@ -236,10 +236,10 @@ Version 1.2.0 includes English and Arabic package strings through
 MaterialApp(
   localizationsDelegates: const [
         // ...
-        SuperAutoSuggestionsTranslation.delegate,
+        SuperAutoSuggestionLocalization.delegate,
       ],
   supportedLocales:
-      SuperAutoSuggestionsTranslation.delegate.supportedLocales,
+      SuperAutoSuggestionLocalization.delegate.supportedLocales,
 )
 ```
 

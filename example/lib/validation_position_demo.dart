@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 class ValidationPositionDemo extends StatefulWidget {
   const ValidationPositionDemo({super.key});
@@ -35,6 +36,7 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = context.superTheme;
     final spacing = theme.spacing;
     final typography = context.superTextTheme;
@@ -42,7 +44,7 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
 
     return Scaffold(
       backgroundColor: theme.bg,
-      appBar: SuperAppBar(title: const Text('Validation Position')),
+      appBar: SuperAppBar(title: Text(l10n.validationPosition)),
       body: SafeArea(
         child: SingleChildScrollView(
           child: SuperScaffold(
@@ -51,22 +53,21 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'VALIDATION',
+                  l10n.validation,
                   style: typography.eyebrow.copyWith(
                     color: colorScheme.primary,
                   ),
                 ),
                 SizedBox(height: spacing.space2),
                 Text(
-                  'Feedback Placement',
+                  l10n.feedbackPlacement,
                   style: typography.h1.copyWith(color: theme.fg1),
                 ),
                 SizedBox(height: spacing.space8),
                 SuperSectionCard2(
                   collapsible: false,
-                  title: 'Global default',
-                  subtitle:
-                      'Leave it responsive, or set one package-wide position.',
+                  title: l10n.globalDefault,
+                  subtitle: l10n.globalDefaultDescription,
                   marker: theme.tokens.markerColor(SuperMarker.identity),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,12 +77,12 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
                         runSpacing: spacing.space2,
                         children: [
                           ChoiceChip(
-                            label: const Text('Responsive'),
+                            label: Text(l10n.responsive),
                             selected: _globalPosition == null,
                             onSelected: (_) => _setGlobalPosition(null),
                           ),
                           ChoiceChip(
-                            label: const Text('Suffix'),
+                            label: Text(l10n.suffix),
                             selected:
                                 _globalPosition ==
                                 ValidationPosition.suffixIcon,
@@ -90,14 +91,14 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
                             ),
                           ),
                           ChoiceChip(
-                            label: const Text('Under'),
+                            label: Text(l10n.under),
                             selected:
                                 _globalPosition == ValidationPosition.underBox,
                             onSelected: (_) =>
                                 _setGlobalPosition(ValidationPosition.underBox),
                           ),
                           ChoiceChip(
-                            label: const Text('Label'),
+                            label: Text(l10n.label),
                             selected:
                                 _globalPosition ==
                                 ValidationPosition.labelTrailing,
@@ -108,36 +109,35 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
                         ],
                       ),
                       SizedBox(height: spacing.space6),
-                      const _RequiredBox(label: 'Uses package default'),
+                      _RequiredBox(label: l10n.usesPackageDefault),
                     ],
                   ),
                 ),
                 SizedBox(height: spacing.space8),
                 SuperSectionCard2(
                   collapsible: false,
-                  title: 'Field override',
-                  subtitle:
-                      'The selected field position overrides the package default.',
+                  title: l10n.fieldOverride,
+                  subtitle: l10n.fieldPositionDescription,
                   marker: theme.tokens.markerColor(SuperMarker.ledger),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       SegmentedButton<ValidationPosition>(
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: ValidationPosition.suffixIcon,
                             icon: Icon(Icons.input_rounded),
-                            label: Text('Suffix'),
+                            label: Text(l10n.suffix),
                           ),
                           ButtonSegment(
                             value: ValidationPosition.underBox,
                             icon: Icon(Icons.short_text_rounded),
-                            label: Text('Under'),
+                            label: Text(l10n.under),
                           ),
                           ButtonSegment(
                             value: ValidationPosition.labelTrailing,
                             icon: Icon(Icons.label_important_outline_rounded),
-                            label: Text('Label'),
+                            label: Text(l10n.label),
                           ),
                         ],
                         selected: {_position},
@@ -146,7 +146,7 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
                       ),
                       SizedBox(height: spacing.space6),
                       _RequiredBox(
-                        label: 'Uses field position',
+                        label: l10n.usesFieldPosition,
                         validationPosition: _position,
                       ),
                     ],
@@ -174,16 +174,18 @@ class _RequiredBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     return Form(
       autovalidateMode: AutovalidateMode.always,
       child: SuperAutoSuggestionsBox<String>(
         source: SuggestionSources.list<String>(
           _ValidationPositionDemoState._accounts,
         ),
-        suggestionBuilder: _accountSuggestion,
+        suggestionBuilder: (items, index, item) =>
+            _accountSuggestion(items, index, item, l10n),
         decoration: InputDecoration(
           labelText: label,
-          helperText: 'Required account lookup.',
+          helperText: l10n.requiredAccountLookup,
           prefixIcon: const Icon(Icons.account_balance),
         ),
         required: true,
@@ -202,12 +204,13 @@ SuperAutoSuggestionsItem<String> _accountSuggestion(
   List<String> items,
   int index,
   String item,
+  SuperExampleLocalization l10n,
 ) {
   final code = item.split(' ').first;
   return SuperAutoSuggestionsItem<String>(
     value: item,
     titleText: item,
-    descriptionText: 'Account code $code',
+    descriptionText: l10n.accountCode(code),
     iconData: Icons.account_balance_outlined,
     keywords: [code, item.replaceAll(' ', '')],
   );

@@ -1,0 +1,278 @@
+{
+  "@@locale": "ar",
+  "validation": "التحقق",
+  "fieldOverride": "تجاوز إعداد الحقل",
+  "suffix": "لاحقة",
+  "under": "أسفل",
+  "label": "التسمية",
+  "account": "الحساب",
+  "accounts": "الحسابات",
+  "searchAccounts": "ابحث في الحسابات...",
+  "recentAccounts": "الحسابات الأخيرة",
+  "pickAccount": "اختر حسابًا...",
+  "requiredAccountLookup": "البحث عن الحساب مطلوب.",
+  "selectionCleared": "تم مسح التحديد",
+  "directoryEntry": "إدخال في الدليل",
+  "accountCode": "رمز الحساب {code}",
+  "@accountCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "searchModes": "أوضاع البحث",
+  "searchModesSubtitle": "حقل نص · عرض متقدم · كلاهما",
+  "searchModeVersion": "v1.3.1 · وضع البحث",
+  "threeSearchSurfaces": "مكوّن واحد وثلاث واجهات للبحث",
+  "searchModeResponsiveDescription": "عند عدم تحديد الوضع، تستخدم منصات سطح المكتب TextBox افتراضيًا، بينما تستخدم Android وiOS وFuchsia وضع AdvanceView.",
+  "adaptiveDefault": "الوضع التكيفي الافتراضي",
+  "adaptiveDefaultDescription": "لا يتم تمرير وضع محدد؛ يستخدم سطح المكتب TextBox بينما تستخدم الأجهزة المحمولة AdvanceView.",
+  "adaptiveSearch": "بحث تكيفي",
+  "platformDefaultMode": "يستخدم الوضع الافتراضي بحسب المنصة.",
+  "textBox": "حقل نص",
+  "textBoxDescription": "حقل نص تقليدي قابل للتحرير مع قائمة اقتراحات منسدلة مرتبطة بالحقل.",
+  "textBoxMode": "وضع TextBox",
+  "typeAndPickInline": "اكتب مباشرة واختر من القائمة المضمنة.",
+  "advanceView": "العرض المتقدم",
+  "advanceViewDescription": "يتحول الحقل إلى مشغّل لواجهة البحث المتقدم بدلًا من فتح القائمة المنسدلة المضمنة.",
+  "advanceViewMode": "وضع AdvanceView",
+  "openAdvancedView": "اضغط على الحقل أو ركّز عليه لفتح العرض المتقدم.",
+  "both": "كلاهما",
+  "bothDescription": "يجمع بين سلوك TextBox المضمن والعرض المتقدم. استخدم إجراء البحث المتقدم أو Ctrl/Cmd + F أثناء التركيز على الحقل.",
+  "bothModes": "كلا الوضعين",
+  "bothEnabled": "تم تفعيل الاقتراحات المضمنة والعرض المتقدم معًا.",
+  "searchDirectoryHint": "الاسم أو الرمز أو الفئة أو المدينة...",
+  "autovalidateMode": "وضع التحقق التلقائي",
+  "formAutovalidation": "التحقق التلقائي للنموذج",
+  "formDefault": "إعداد النموذج الافتراضي",
+  "formDefaultDescription": "يقرأ الحقلان أدناه autovalidateMode من النموذج.",
+  "disabled": "معطل",
+  "always": "دائمًا",
+  "onChange": "عند التغيير",
+  "postingAccount": "حساب الترحيل",
+  "expenseAccount": "حساب المصروف",
+  "mustBeExpense": "يجب أن يكون حساب مصروف.",
+  "chooseExpense": "اختر حساب مصروف.",
+  "validate": "تحقق",
+  "reset": "إعادة تعيين",
+  "fieldAlwaysValidates": "يتحقق هذا الحقل دائمًا بشكل مستقل عن وضع النموذج.",
+  "immediateAccount": "حساب فوري",
+  "fieldAutovalidatePrecedence": "إعداد autovalidateMode على مستوى الحقل له الأولوية.",
+  "validationPosition": "موضع التحقق",
+  "feedbackPlacement": "موضع رسالة التحقق",
+  "globalDefault": "الإعداد العام الافتراضي",
+  "globalDefaultDescription": "اتركه متجاوبًا أو حدد موضعًا واحدًا على مستوى الحزمة.",
+  "responsive": "متجاوب",
+  "usesPackageDefault": "يستخدم إعداد الحزمة الافتراضي",
+  "fieldPositionDescription": "موضع الحقل المحدد يتجاوز إعداد الحزمة الافتراضي.",
+  "usesFieldPosition": "يستخدم موضع الحقل",
+  "exampleScreen": "شاشة المثال",
+  "documentReference": "مرجع المستند",
+  "directoryEntryNumber": "إدخال الدليل {number}",
+  "@directoryEntryNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "stringSource": "مصدر النصوص",
+  "stringSourceDescription": "مصدر مبسط تكون فيه التسمية مساوية للقيمة",
+  "listSource": "مصدر القائمة",
+  "listSourceDescription": "مطابقة contains داخل الذاكرة",
+  "fuzzySource": "مصدر البحث التقريبي",
+  "fuzzySourceDescription": "ترتيب داخل الذاكرة يتحمل أخطاء الكتابة",
+  "asyncSource": "مصدر غير متزامن",
+  "asyncSourceDescription": "بحث غير متزامن مشابه لبحث الخادم",
+  "hybridSource": "مصدر هجين",
+  "hybridSourceDescription": "نتائج محلية فورية مدمجة مع بيانات بعيدة",
+  "remoteFallback": "رجوع إلى المصدر البعيد",
+  "remoteFallbackDescription": "بحث محلي أولًا مع الرجوع إلى المصدر البعيد",
+  "pagedSource": "مصدر مقسم إلى صفحات",
+  "pagedSourceDescription": "تمرير لا نهائي عبر صفحات الخادم",
+  "sourceExample": "مثال المصدر",
+  "sourceVersion": "v1.3.1 · {title}",
+  "@sourceVersion": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "basicLookup": "بحث أساسي",
+  "widgetOwnsSource": "المكوّن يدير المصدر ووحدة التحكم.",
+  "externalController": "وحدة تحكم خارجية",
+  "controlFromHost": "اقرأ التحديد وتحكم بالحقل من كود التطبيق المضيف.",
+  "controlledAccount": "حساب متحكم به",
+  "hostControlledLookup": "بحث يتحكم به التطبيق المضيف...",
+  "multiSelect": "تحديد متعدد",
+  "selectSeveralValues": "اختر عدة قيم خام من نوع المصدر نفسه.",
+  "selectAccounts": "اختر الحسابات...",
+  "recentSelections": "التحديدات الأخيرة",
+  "committedValuesPinned": "تُثبت القيم المحددة عند كون عبارة البحث فارغة.",
+  "accountNumber": "الحساب {number}",
+  "@accountNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "allItemScenarios": "كل سيناريوهات العناصر",
+  "itemApiVersion": "v1.3.1 · واجهة العنصر",
+  "everyItemScenario": "كل سيناريوهات SuperAutoSuggestionsItem",
+  "itemScenarioOverview": "تغطي القائمة أدناه البيانات النصية، والمكونات المخصصة، والتجميع، والكلمات المفتاحية، وحالة التفعيل الثابتة، وStream<bool> enabledSnapshot، وعنصرًا غنيًا مركبًا.",
+  "enabledSnapshotDescription": "يحدّث هذا المفتاح Stream<bool> المستخدم في سيناريو enabledSnapshot.",
+  "dynamicSuggestionEnabled": "الاقتراح الديناميكي مفعّل",
+  "dynamicSuggestionDisabled": "الاقتراح الديناميكي معطل",
+  "allItemScenariosTitle": "كل سيناريوهات العناصر",
+  "inspectItemCases": "افتح الاقتراحات وتفحص كل حالة عرض/واجهة برمجية.",
+  "itemScenariosLabel": "سيناريوهات SuperAutoSuggestionsItem",
+  "openEmptyQuery": "افتح القائمة بعبارة بحث فارغة لرؤية جميع الحالات.",
+  "searchTitleKeywords": "ابحث في العنوان أو الكلمات المفتاحية...",
+  "plainTitleText": "نص عنوان عادي",
+  "descriptionAsText": "وصف كنص",
+  "descriptionTextSupport": "يعرض descriptionText نصًا توضيحيًا عاديًا",
+  "descriptionAsWidget": "وصف كمكوّن",
+  "customDescriptionWidget": "مكوّن وصف مخصص",
+  "trailingText": "نص لاحق",
+  "trailingWidget": "مكوّن لاحق",
+  "active": "نشط",
+  "customIconWidget": "مكوّن أيقونة مخصص",
+  "groupedSuggestion": "اقتراح مجمّع",
+  "metadataScenarios": "سيناريوهات البيانات الوصفية",
+  "searchableAliases": "أسماء بديلة قابلة للبحث",
+  "searchAliasesHint": "ابحث عن: invoice أو vendor أو INV-1042",
+  "staticallyDisabled": "معطل بشكل ثابت",
+  "streamControlledState": "حالة تفعيل يتحكم بها Stream",
+  "streamControlledDescription": "enabledSnapshot: Stream<bool> · بدّل حالته أعلى الحقل",
+  "combinedRichSuggestion": "اقتراح غني مركب",
+  "richDescription": "وصف بمكوّن · يظل العنوان القابل للبحث هو titleText",
+  "richScenarios": "سيناريوهات غنية",
+  "autoSuggestionBox": "مربع الاقتراح التلقائي",
+  "accountLookup": "البحث عن الحساب",
+  "postToAccount": "الترحيل إلى حساب",
+  "searchChartAccounts": "ابحث في دليل الحسابات بالاسم أو الرمز",
+  "accountsReceivableExample": "مثال: حسابات العملاء",
+  "tagCostCenters": "تحديد مراكز التكلفة",
+  "assignCostCenters": "عيّن مركز تكلفة واحدًا أو أكثر لهذا الإدخال",
+  "quickFilter": "تصفية سريعة",
+  "fuzzyMatchHint": "مطابقة تقريبية - اكتب بشكل مرن",
+  "rdhExample": "مثال: rdh",
+  "selectVendor": "اختر المورد",
+  "vendorRemoteDescription": "يظهر الموردون المحليون فورًا، ويعمل بحث الخادم عندما تكون النتائج المحلية قليلة",
+  "vendorExample": "مثال: إسمنت، شحن، زجاج...",
+  "vendorDirectory": "دليل الموردين",
+  "advancedSearchShortcutDescription": "ركّز على الحقل واضغط Ctrl / Cmd + F لفتح البحث المتقدم",
+  "searchDirectory": "ابحث في الدليل... (Cmd/Ctrl+F)",
+  "requiredCustomValidator": "حقل مطلوب مع مدقق مخصص - اتركه فارغًا ثم انتقل بالحرف Tab",
+  "debitAccount": "حساب المدين",
+  "pickAccountTypes": "اختر حساب أصل أو التزام أو حقوق ملكية أو إيراد أو مصروف",
+  "pickAccountFromList": "اختر حسابًا من القائمة",
+  "lockedAccount": "حساب مقفل",
+  "disabledFieldDescription": "الحقل المعطل يمنع الكتابة وفتح واجهة الاقتراحات",
+  "reconciliationAccount": "حساب التسوية",
+  "themedField": "حقل مخصص الثيم",
+  "themedFieldDescription": "ثيم مخصص لهذا الحقل مباشرة - تعبئة وحدود خضراء عند التركيز ونص عريض",
+  "ledgerAccount": "حساب دفتر الأستاذ",
+  "customFocusedStyleHint": "ركّز عليّ لرؤية نمط التركيز المخصص",
+  "recentAccountsDescription": "اختر عدة حسابات ثم امسح الحقل وأعد فتحه - ستظهر الاختيارات الأخيرة في الأعلى",
+  "projectTag": "وسم المشروع",
+  "createProjectDescription": "اكتب اسمًا غير موجود واضغط Enter لإنشائه",
+  "project": "المشروع",
+  "seafrontVillasExample": "مثال: فلل الواجهة البحرية",
+  "itemCatalog": "دليل الأصناف",
+  "itemCatalogDescription": "بيانات رئيسية كبيرة - 12 صفًا لكل صفحة؛ مرر القائمة لتحميل المزيد",
+  "item": "الصنف",
+  "search64Items": "ابحث في 64 صنفًا...",
+  "boundAccount": "حساب مرتبط",
+  "boundAccountDescription": "اربط الحساب بالرمز المخزن ثم اقفله في وضع قراءة فقط",
+  "pickOrBindCode": "اختر أو اربط بواسطة الرمز",
+  "bind1020": "اربط 1020",
+  "bind4000": "اربط 4000",
+  "edit": "تعديل",
+  "lockReadOnly": "قفل (للقراءة فقط)",
+  "erpDocumentReference": "مرجع مستند ERP",
+  "erpReferenceDescription": "اكتب بادئة واضغط Tab لقبول الإكمال، ثم Tab مرة أخرى للانتقال",
+  "inv1042Example": "مثال: INV-1042",
+  "fieldTapped": "تم الضغط على الحقل",
+  "pointerDownOutside": "ضغط المؤشر خارج الحقل",
+  "pointerUpOutside": "رفع المؤشر خارج الحقل",
+  "selectedValue": "المحدد: {value}",
+  "@selectedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "validateAndSave": "تحقق واحفظ",
+  "formValidated": "تم التحقق من النموذج",
+  "savedStatus": "محفوظ: {reference} - {event}",
+  "@savedStatus": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      },
+      "event": {
+        "type": "String"
+      }
+    }
+  },
+  "fixableAccount": "حساب قابل للتثبيت",
+  "fixableDescription": "استخدم إجراء التسمية الصغير لحماية القيمة الحالية أو إلغاء قفلها",
+  "settlementAccount": "حساب التسوية",
+  "lockAfterSelecting": "اقفل الحقل بعد اختيار حساب",
+  "pickThenFix": "اختر حسابًا ثم ثبته",
+  "focusField": "ركّز على الحقل",
+  "validateField": "تحقق من الحقل",
+  "inputDecoration": "تنسيق الإدخال",
+  "inputDecorationDescription": "تستخدم التسمية والنص المساعد والنص الإرشادي InputDecoration القياسي في Flutter",
+  "cashAccount": "حساب النقدية",
+  "standardInputHelper": "نص مساعد قياسي لـ InputDecoration",
+  "searchByAccount": "ابحث برمز الحساب أو اسمه",
+  "projectTagDescription": "وسم المشروع",
+  "catalogItem": "الصنف {number}",
+  "@catalogItem": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "warehouseDescription": "{sku} - المستودع A",
+  "@warehouseDescription": {
+    "placeholders": {
+      "sku": {
+        "type": "String"
+      }
+    }
+  },
+  "inStock": "{count} في المخزون",
+  "@inStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "localRiyadh": "محلي - الرياض",
+  "serverRemote": "الخادم - بعيد",
+  "noSelectionEventYet": "لا يوجد حدث تحديد بعد",
+  "appTitle": "مربع الاقتراحات التلقائية Super",
+  "galleryEyebrow": "SUPER AUTO SUGGESTION BOX • معرض الأمثلة",
+  "componentDemos": "أمثلة المكونات",
+  "suggestionItemScenarios": "سيناريوهات عناصر الاقتراح",
+  "suggestionItemScenariosGalleryDescription": "جميع حقول SuperAutoSuggestionsItem · enabledSnapshot",
+  "autovalidateGalleryDescription": "قيمة الحقل · إعداد Form الافتراضي · بديل عند التعطيل",
+  "validationPositionGalleryDescription": "أيقونة لاحقة · نص أسفل الحقل · أيقونة بعد التسمية",
+  "advancedSearch": "البحث المتقدم",
+  "advancedSearchGalleryDescription": "Ctrl / Cmd + F · مربع حوار مدمج · واجهة بحث متقدم مخصصة",
+  "autoSuggestionBoxGalleryDescription": "اقتراح أثناء الكتابة · حديثة · إنشاء · صفحات · تحديد متعدد · بحث تقريبي",
+  "sourceDemoCapabilities": "أساسي · متحكم به · تحديد متعدد · تحديدات حديثة",
+  "lightTheme": "المظهر الفاتح",
+  "darkTheme": "المظهر الداكن",
+  "switchToArabic": "العربية (RTL)",
+  "switchToEnglish": "English (LTR)"
+}

@@ -62,3 +62,4 @@ coverage/
 *.zip
 /patches/
 *.py
+*.bak

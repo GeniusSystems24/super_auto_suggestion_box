@@ -257,4 +257,4 @@ SuperAutoSuggestionsBox<String>(
 
 ## Localization
 
-Register `SuperAutoSuggestionsTranslation.localizationsDelegates` and `SuperAutoSuggestionsTranslation.supportedLocales` on the app's `MaterialApp`. Built-in strings are available in English and Arabic. Registration is optional: if `SuperAutoSuggestionsTranslation` is absent from the widget tree, package widgets use English by default.
+Register `SuperAutoSuggestionLocalization.localizationsDelegates` and `SuperAutoSuggestionLocalization.supportedLocales` on the app's `MaterialApp`. Built-in strings are available in English and Arabic. Registration is optional: if `SuperAutoSuggestionLocalization` is absent from the widget tree, package widgets use English by default.

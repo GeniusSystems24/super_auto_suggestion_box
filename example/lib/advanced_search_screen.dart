@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
   const AdvancedSearchScreen({super.key});
@@ -95,6 +96,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     SuperAutoSuggestionsMode? mode,
     String? helperText,
   }) {
+    final l10n = SuperExampleLocalization.of(context);
     return SuperAutoSuggestionsBox<_DirectoryRecord>(
       source: _source,
       suggestionBuilder: _suggestion,
@@ -104,7 +106,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
         helperText: helperText,
         prefixIcon: const Icon(Icons.manage_search_rounded),
       ),
-      hintText: 'Name, code, category, or city...',
+      hintText: l10n.searchDirectoryHint,
       onSelectionChanged: (items) {
         debugPrint(
           items.isEmpty ? '$label: cleared' : '$label: ${items.last.name}',
@@ -115,6 +117,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = context.superTheme;
     final typography = context.superTextTheme;
     final spacing = theme.spacing;
@@ -122,9 +125,9 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
 
     return Scaffold(
       appBar: SuperAppBar(
-        title: const Text('Search Modes'),
+        title: Text(l10n.searchModes),
         subtitle: Text(
-          'TEXTBOX · ADVANCE VIEW · BOTH',
+          l10n.searchModesSubtitle,
           style: typography.eyebrow.copyWith(color: colorScheme.primary),
         ),
       ),
@@ -135,70 +138,60 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.1 · SEARCH MODE',
+                l10n.searchModeVersion,
                 style: typography.eyebrow.copyWith(color: colorScheme.primary),
               ),
               SizedBox(height: spacing.space2),
               Text(
-                'One component, three search surfaces',
+                l10n.threeSearchSurfaces,
                 style: typography.h1.copyWith(color: theme.fg1),
               ),
               SizedBox(height: spacing.space3),
               Text(
-                'When mode is omitted, desktop platforms default to TextBox. '
-                'Android, iOS, and Fuchsia default to AdvanceView.',
+                l10n.searchModeResponsiveDescription,
                 style: typography.label.copyWith(color: theme.fg2),
               ),
               SizedBox(height: spacing.space8),
               _scenario(
-                title: 'Adaptive default',
-                description:
-                    'No mode is passed. Desktop resolves to TextBox; mobile '
-                    'resolves to AdvanceView.',
+                title: l10n.adaptiveDefault,
+                description: l10n.adaptiveDefaultDescription,
                 marker: SuperMarker.identity,
                 child: _box(
-                  label: 'Adaptive search',
-                  helperText: 'Uses the platform-dependent default mode.',
+                  label: l10n.adaptiveSearch,
+                  helperText: l10n.platformDefaultMode,
                 ),
               ),
               SizedBox(height: spacing.section),
               _scenario(
-                title: 'TextBox',
-                description:
-                    'Classic editable text box with the anchored inline '
-                    'suggestion dropdown.',
+                title: l10n.textBox,
+                description: l10n.textBoxDescription,
                 marker: SuperMarker.ledger,
                 child: _box(
-                  label: 'TextBox mode',
+                  label: l10n.textBoxMode,
                   mode: SuperAutoSuggestionsMode.textBox,
-                  helperText: 'Type directly and pick from the inline list.',
+                  helperText: l10n.typeAndPickInline,
                 ),
               ),
               SizedBox(height: spacing.section),
               _scenario(
-                title: 'AdvanceView',
-                description:
-                    'The field becomes a launcher for the larger Advanced '
-                    'Search surface instead of opening the inline dropdown.',
+                title: l10n.advanceView,
+                description: l10n.advanceViewDescription,
                 marker: SuperMarker.notes,
                 child: _box(
-                  label: 'AdvanceView mode',
+                  label: l10n.advanceViewMode,
                   mode: SuperAutoSuggestionsMode.advanceView,
-                  helperText: 'Tap or focus the field to open Advanced View.',
+                  helperText: l10n.openAdvancedView,
                 ),
               ),
               SizedBox(height: spacing.section),
               _scenario(
-                title: 'Both',
-                description:
-                    'Inline TextBox behavior plus Advanced View. Use the '
-                    'advanced-search action or Ctrl/Cmd + F while focused.',
+                title: l10n.both,
+                description: l10n.bothDescription,
                 marker: SuperMarker.ledger,
                 child: _box(
-                  label: 'Both modes',
+                  label: l10n.bothModes,
                   mode: SuperAutoSuggestionsMode.both,
-                  helperText:
-                      'Inline suggestions and Advanced View are both enabled.',
+                  helperText: l10n.bothEnabled,
                 ),
               ),
             ],

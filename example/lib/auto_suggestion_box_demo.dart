@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 class _DemoSuggestionMeta {
   const _DemoSuggestionMeta({
@@ -211,14 +212,14 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     'Airport Expansion',
   ];
 
-  static SuperAutoSuggestionsItem<String> _projectSuggestion(
+  SuperAutoSuggestionsItem<String> _projectSuggestion(
     List<String> items,
     int index,
     String project,
   ) => SuperAutoSuggestionsItem<String>(
     value: project,
     titleText: project,
-    descriptionText: 'Project tag',
+    descriptionText: SuperExampleLocalization.of(context).projectTagDescription,
     iconData: Icons.sell_outlined,
   );
 
@@ -226,19 +227,21 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     for (var i = 1; i <= 64; i++) 'SKU-${i.toString().padLeft(4, '0')}',
   ];
 
-  static String _catalogLabel(String sku) => 'Item ${sku.split('-').last}';
+  String _catalogLabel(String sku) =>
+      SuperExampleLocalization.of(context).catalogItem(sku.split('-').last);
 
-  static SuperAutoSuggestionsItem<String> _catalogSuggestion(
+  SuperAutoSuggestionsItem<String> _catalogSuggestion(
     List<String> items,
     int index,
     String sku,
   ) {
+    final l10n = SuperExampleLocalization.of(context);
     final number = int.tryParse(sku.split('-').last) ?? index + 1;
     return SuperAutoSuggestionsItem<String>(
       value: sku,
       titleText: _catalogLabel(sku),
-      descriptionText: '$sku - Warehouse A',
-      trailingText: '${(number * 7) % 90 + 3} in stock',
+      descriptionText: l10n.warehouseDescription(sku),
+      trailingText: l10n.inStock((number * 7) % 90 + 3),
       iconData: Icons.inventory_2_outlined,
       keywords: [sku],
     );
@@ -290,28 +293,29 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
 
   static final List<String> _directory = [..._remoteVendors, ..._localVendors];
 
-  static SuperAutoSuggestionsItem<String> _vendorSuggestion(
+  SuperAutoSuggestionsItem<String> _vendorSuggestion(
     List<String> items,
     int index,
     String vendor,
   ) {
+    final l10n = SuperExampleLocalization.of(context);
     final local = _localVendors.contains(vendor);
     return SuperAutoSuggestionsItem<String>(
       value: vendor,
       titleText: vendor,
-      descriptionText: local ? 'Local - Riyadh' : 'Server - remote',
+      descriptionText: local ? l10n.localRiyadh : l10n.serverRemote,
       iconData: local ? Icons.storefront_outlined : Icons.cloud_outlined,
     );
   }
 
-  static SuperAutoSuggestionsItem<String> _directorySuggestion(
+  SuperAutoSuggestionsItem<String> _directorySuggestion(
     List<String> items,
     int index,
     String vendor,
   ) => SuperAutoSuggestionsItem<String>(
     value: vendor,
     titleText: vendor,
-    descriptionText: 'Directory entry',
+    descriptionText: SuperExampleLocalization.of(context).directoryEntry,
     iconData: Icons.business_outlined,
   );
 
@@ -330,7 +334,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   late final SuperAutoSuggestionsController<String> _erpController =
       SuperAutoSuggestionsController<String>();
   String? _savedDocumentReference;
-  String _lastInputEvent = 'No selection event yet';
+  String _lastInputEvent = '';
 
   late final SuperAutoSuggestionsController<String> _lockedController =
       SuperAutoSuggestionsController<String>(initialValue: _accounts.first);
@@ -364,16 +368,20 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final theme = SuperMaterialThemeData.of(context);
     final t = theme.superTheme;
     final typography = context.superTextTheme;
     final spacing = t.spacing;
+    final lastInputEvent = _lastInputEvent.isEmpty
+        ? l10n.noSelectionEventYet
+        : _lastInputEvent;
 
     return Scaffold(
       appBar: SuperAppBar(
-        title: const Text('Auto Suggestion Box'),
+        title: Text(l10n.autoSuggestionBox),
         subtitle: Text(
-          'AUTO SUGGESTION BOX',
+          l10n.autoSuggestionBox,
           style: typography.eyebrow.copyWith(color: theme.colorScheme.primary),
         ),
       ),
@@ -391,54 +399,53 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               ),
               SizedBox(height: spacing.space2),
               Text(
-                'Account Lookup',
+                l10n.accountLookup,
                 style: typography.h1.copyWith(color: t.fg1),
               ),
               SizedBox(height: spacing.space8),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Post To Account',
-                subtitle: 'Search the chart of accounts by name or code',
+                title: l10n.postToAccount,
+                subtitle: l10n.searchChartAccounts,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
-                  hintText: 'e.g. Accounts Receivable',
+                  hintText: l10n.accountsReceivableExample,
                   onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Tag Cost Centers',
-                subtitle: 'Assign one or more cost centers to this entry',
+                title: l10n.tagCostCenters,
+                subtitle: l10n.assignCostCenters,
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
                   multiSelect: true,
-                  hintText: 'Select cost centers...',
+                  hintText: l10n.selectAccounts,
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Quick Filter',
-                subtitle: 'Fuzzy match - type loosely',
+                title: l10n.quickFilter,
+                subtitle: l10n.fuzzyMatchHint,
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.fuzzy<String>(_cities),
                   suggestionBuilder: _citySuggestion,
                   highlightMatch: AutoSuggestionMatch.fuzzy,
-                  hintText: 'e.g. rdh',
+                  hintText: l10n.rdhExample,
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Select Vendor',
-                subtitle:
-                    'Local vendors show instantly; server search runs when local matches are few',
+                title: l10n.selectVendor,
+                subtitle: l10n.vendorRemoteDescription,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.remoteFallback<String>(
@@ -448,64 +455,60 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     remoteMinChars: 1,
                   ),
                   suggestionBuilder: _vendorSuggestion,
-                  hintText: 'e.g. cement, freight, glass...',
+                  hintText: l10n.vendorExample,
                   onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Vendor Directory',
-                subtitle:
-                    'Focus the field and press Ctrl / Cmd + F to open Advanced Search',
+                title: l10n.vendorDirectory,
+                subtitle: l10n.advancedSearchShortcutDescription,
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_directory),
                   suggestionBuilder: _directorySuggestion,
                   advancedSearch: true,
-                  hintText: 'Search the directory... (Cmd/Ctrl+F)',
+                  hintText: l10n.searchDirectory,
                   onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Post To Account',
-                subtitle:
-                    'Required field with a custom validator - leave it empty and tab away',
+                title: l10n.postToAccount,
+                subtitle: l10n.requiredCustomValidator,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
-                  decoration: const InputDecoration(
-                    labelText: 'Debit Account',
-                    helperText:
-                        'Pick an asset, liability, equity, income or expense account',
+                  decoration: InputDecoration(
+                    labelText: l10n.debitAccount,
+                    helperText: l10n.pickAccountTypes,
                   ),
                   required: true,
                   validator: (value) {
                     if (value == null) return null;
                     return _accounts.contains(value)
                         ? null
-                        : 'Pick an account from the list';
+                        : l10n.pickAccountFromList;
                   },
-                  hintText: 'e.g. Accounts Receivable',
+                  hintText: l10n.accountsReceivableExample,
                   onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Locked Account',
-                subtitle:
-                    'A disabled field blocks typing and opening the overlay',
+                title: l10n.lockedAccount,
+                subtitle: l10n.disabledFieldDescription,
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
                   controller: _lockedController,
                   source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
-                  decoration: const InputDecoration(
-                    labelText: 'Reconciliation Account',
+                  decoration: InputDecoration(
+                    labelText: l10n.reconciliationAccount,
                   ),
                   disabled: true,
                 ),
@@ -513,17 +516,16 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Themed Field',
-                subtitle:
-                    'A theme assigned directly to one box - green focused fill, border and bold text',
+                title: l10n.themedField,
+                subtitle: l10n.themedFieldDescription,
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
-                  decoration: const InputDecoration(
-                    labelText: 'Ledger Account',
+                  decoration: InputDecoration(
+                    labelText: l10n.ledgerAccount,
                   ),
-                  hintText: 'Focus me to see the custom focused style',
+                  hintText: l10n.customFocusedStyleHint,
                   theme: SuperAutoSuggestionsBoxThemeData.of(context).copyWith(
                     focusedStyle: SuperAutoSuggestionsBoxFocusedStyle(
                       fillColor: const Color(0x141DB88A),
@@ -538,9 +540,8 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Recent Accounts',
-                subtitle:
-                    'Pick a few, clear the field and reopen - recent picks pin to the top',
+                title: l10n.recentAccounts,
+                subtitle: l10n.recentAccountsDescription,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: SuperAutoSuggestionsBox<String>(
                   controller: _recentsController,
@@ -548,22 +549,22 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                   suggestionBuilder: _accountSuggestion,
                   showRecents: true,
                   maxRecents: 4,
-                  decoration: const InputDecoration(labelText: 'Account'),
-                  hintText: 'Search accounts...',
+                  decoration: InputDecoration(labelText: l10n.account),
+                  hintText: l10n.searchAccounts,
                   onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Project Tag',
-                subtitle: 'Type a missing name and press Enter to create it',
+                title: l10n.projectTag,
+                subtitle: l10n.createProjectDescription,
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_projects),
                   suggestionBuilder: _projectSuggestion,
-                  decoration: const InputDecoration(labelText: 'Project'),
-                  hintText: 'e.g. Seafront Villas',
+                  decoration: InputDecoration(labelText: l10n.project),
+                  hintText: l10n.seafrontVillasExample,
                   onCreate: (query) async {
                     await Future<void>.delayed(
                       const Duration(milliseconds: 400),
@@ -576,9 +577,8 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Item Catalog',
-                subtitle:
-                    'Large master data - 12 rows per page; scroll the dropdown to load more',
+                title: l10n.itemCatalog,
+                subtitle: l10n.itemCatalogDescription,
                 marker: theme.tokens.markerColor(SuperMarker.ledger),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.paged<String>(
@@ -586,18 +586,17 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     resolveFrom: _catalog,
                   ),
                   suggestionBuilder: _catalogSuggestion,
-                  decoration: const InputDecoration(labelText: 'Item'),
+                  decoration: InputDecoration(labelText: l10n.item),
                   maxVisibleRows: 7,
-                  hintText: 'Search 64 items...',
+                  hintText: l10n.search64Items,
                   onSelectionChanged: (items) {},
                 ),
               ),
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Bound Account',
-                subtitle:
-                    'Bind by stored code, then lock to a read-only posted view',
+                title: l10n.boundAccount,
+                subtitle: l10n.boundAccountDescription,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -608,11 +607,11 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         _accounts,
                       ),
                       suggestionBuilder: _accountSuggestion,
-                      decoration: const InputDecoration(
-                        labelText: 'Ledger Account',
+                      decoration: InputDecoration(
+                        labelText: l10n.ledgerAccount,
                       ),
                       readOnly: _boundReadOnly,
-                      hintText: 'Pick or bind by code',
+                      hintText: l10n.pickOrBindCode,
                       onSelectionChanged: (items) {},
                     ),
                     SizedBox(height: spacing.space3),
@@ -621,19 +620,19 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       runSpacing: spacing.space2,
                       children: [
                         SuperButton(
-                          label: 'Bind 1020',
+                          label: l10n.bind1020,
                           variant: SuperButtonVariant.secondary,
                           onPressed: () =>
                               _boundController.selectByValue('1020'),
                         ),
                         SuperButton(
-                          label: 'Bind 4000',
+                          label: l10n.bind4000,
                           variant: SuperButtonVariant.secondary,
                           onPressed: () =>
                               _boundController.selectByValue('4000'),
                         ),
                         SuperButton(
-                          label: _boundReadOnly ? 'Edit' : 'Lock (read-only)',
+                          label: _boundReadOnly ? l10n.edit : l10n.lockReadOnly,
                           variant: SuperButtonVariant.secondary,
                           onPressed: () =>
                               setState(() => _boundReadOnly = !_boundReadOnly),
@@ -646,9 +645,8 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'ERP Document Reference',
-                subtitle:
-                    'Type a prefix, press Tab to accept completion, then Tab again to move focus',
+                title: l10n.erpDocumentReference,
+                subtitle: l10n.erpReferenceDescription,
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: Form(
                   key: _erpFormKey,
@@ -661,10 +659,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                           _documentReferences,
                         ),
                         suggestionBuilder: _documentReferenceSuggestion,
-                        decoration: const InputDecoration(
-                          labelText: 'Document Reference',
+                        decoration: InputDecoration(
+                          labelText: l10n.documentReference,
                         ),
-                        hintText: 'e.g. INV-1042',
+                        hintText: l10n.inv1042Example,
                         keyboardType: TextInputType.text,
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(
@@ -684,18 +682,18 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         enableIMEPersonalizedLearning: false,
                         maxLength: 16,
                         onTap: () =>
-                            setState(() => _lastInputEvent = 'Field tapped'),
+                            setState(() => _lastInputEvent = l10n.fieldTapped),
                         onTapOutside: (_) => setState(
-                          () => _lastInputEvent = 'Pointer down outside',
+                          () => _lastInputEvent = l10n.pointerDownOutside,
                         ),
                         onTapUpOutside: (_) => setState(
-                          () => _lastInputEvent = 'Pointer up outside',
+                          () => _lastInputEvent = l10n.pointerUpOutside,
                         ),
                         required: true,
                         onSelectionChanged: (items) => setState(
                           () => _lastInputEvent = items.isEmpty
-                              ? 'Selection cleared'
-                              : 'Selected: ${items.last}',
+                              ? l10n.selectionCleared
+                              : l10n.selectedValue(items.last),
                         ),
                       ),
                       SizedBox(height: spacing.space3),
@@ -705,7 +703,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           SuperButton(
-                            label: 'Validate & Save',
+                            label: l10n.validateAndSave,
                             variant: SuperButtonVariant.secondary,
                             onPressed: () {
                               final valid =
@@ -714,14 +712,14 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                               setState(() {
                                 _savedDocumentReference =
                                     _erpController.selected;
-                                _lastInputEvent = 'Form validated';
+                                _lastInputEvent = l10n.formValidated;
                               });
                             },
                           ),
                           Text(
                             _savedDocumentReference == null
-                                ? _lastInputEvent
-                                : 'Saved: $_savedDocumentReference - $_lastInputEvent',
+                                ? lastInputEvent
+                                : l10n.savedStatus(_savedDocumentReference!, lastInputEvent),
                             style: typography.label.copyWith(color: t.fg2),
                           ),
                         ],
@@ -733,9 +731,8 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Fixable Account',
-                subtitle:
-                    'Use the small label action to protect or unlock the current value',
+                title: l10n.fixableAccount,
+                subtitle: l10n.fixableDescription,
                 marker: theme.tokens.markerColor(SuperMarker.identity),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -746,12 +743,12 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                         _accounts,
                       ),
                       suggestionBuilder: _accountSuggestion,
-                      decoration: const InputDecoration(
-                        labelText: 'Settlement Account',
-                        helperText: 'Lock the field after selecting an account',
+                      decoration: InputDecoration(
+                        labelText: l10n.settlementAccount,
+                        helperText: l10n.lockAfterSelecting,
                       ),
                       allowFixed: true,
-                      hintText: 'Pick an account, then fix it',
+                      hintText: l10n.pickThenFix,
                     ),
                     SizedBox(height: spacing.space3),
                     Wrap(
@@ -759,12 +756,12 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                       runSpacing: spacing.space2,
                       children: [
                         SuperButton(
-                          label: 'Focus field',
+                          label: l10n.focusField,
                           variant: SuperButtonVariant.secondary,
                           onPressed: _fixableFocusNode.requestFocus,
                         ),
                         SuperButton(
-                          label: 'Validate field',
+                          label: l10n.validateField,
                           variant: SuperButtonVariant.secondary,
                           onPressed: () =>
                               _fixableFormFieldKey.currentState?.validate(),
@@ -777,17 +774,16 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
               SizedBox(height: spacing.section),
               SuperSectionCard2(
                 collapsible: false,
-                title: 'Input Decoration',
-                subtitle:
-                    'Label, helper, and placeholder copy use Flutter standard InputDecoration',
+                title: l10n.inputDecoration,
+                subtitle: l10n.inputDecorationDescription,
                 marker: theme.tokens.markerColor(SuperMarker.notes),
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_accounts),
                   suggestionBuilder: _accountSuggestion,
-                  decoration: const InputDecoration(
-                    labelText: 'Cash Account',
-                    helperText: 'Standard InputDecoration helper text',
-                    hintText: 'Search by account code or name',
+                  decoration: InputDecoration(
+                    labelText: l10n.cashAccount,
+                    helperText: l10n.standardInputHelper,
+                    hintText: l10n.searchByAccount,
                     prefixIcon: Icon(Icons.account_balance_outlined),
                   ),
                   onSelectionChanged: (items) {},

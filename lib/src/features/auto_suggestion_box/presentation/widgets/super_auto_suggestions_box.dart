@@ -18,10 +18,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
+import 'package:super_auto_suggestion_box/localizations/generated/l10n.dart';
 import 'package:super_form_field/super_form_field.dart' as sff;
 
 import '../../../../core/core.dart';
-import '../../../../../localization/super_auto_suggestions_localizations.dart';
 import '../../domain/entities/super_auto_suggestions_item.dart';
 import '../../domain/entities/match_strategy.dart';
 import '../../domain/repositories/super_auto_suggestions_source.dart';
@@ -807,7 +807,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           ? _c.selectedItems.isEmpty
           : value == null;
       if (empty) {
-        final l10n = SuperAutoSuggestionsLocalization.of(context);
+        final l10n = SuperAutoSuggestionLocalization.of(context);
         return widget.requiredMessage == 'This field is required'
             ? l10n.requiredMessage
             : widget.requiredMessage;
@@ -974,7 +974,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     final locale = Localizations.localeOf(context);
     if (_resolvedLocale == locale) return;
     _resolvedLocale = locale;
-    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final l10n = SuperAutoSuggestionLocalization.of(context);
     final next = widget.recentsGroupLabel == 'Recent'
         ? l10n.recent
         : widget.recentsGroupLabel;
@@ -1009,7 +1009,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         widget.initialRecents != oldWidget.initialRecents ||
         widget.recentsGroupLabel != oldWidget.recentsGroupLabel ||
         widget.onRecentsChanged != oldWidget.onRecentsChanged) {
-      final l10n = SuperAutoSuggestionsLocalization.of(context);
+      final l10n = SuperAutoSuggestionLocalization.of(context);
       _resolvedRecentsGroupLabel = widget.recentsGroupLabel == 'Recent'
           ? l10n.recent
           : widget.recentsGroupLabel;
@@ -1131,7 +1131,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     _c.open();
 
     final t = _resolveTheme(context);
-    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final l10n = SuperAutoSuggestionLocalization.of(context);
     final platform = Theme.of(context).platform;
     final isDesktop =
         platform == TargetPlatform.macOS ||
@@ -1791,7 +1791,7 @@ class SuperAutoSuggestionsPanel<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
-    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final l10n = SuperAutoSuggestionLocalization.of(context);
     final results = controller.results;
     final q = controller.effectiveQuery;
     final maxH =
@@ -2233,7 +2233,7 @@ class _CreateFooterState extends State<_CreateFooter> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
-    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final l10n = SuperAutoSuggestionLocalization.of(context);
     return MouseRegion(
       cursor: widget.creating
           ? SystemMouseCursors.wait
@@ -2325,7 +2325,7 @@ class _PageLoadingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
-    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final l10n = SuperAutoSuggestionLocalization.of(context);
     return Container(
       height: SuperAutoSuggestionsBoxThemeData.rowHeight,
       alignment: Alignment.center,
@@ -2448,7 +2448,7 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
-    final l10n = SuperAutoSuggestionsLocalization.of(context);
+    final l10n = SuperAutoSuggestionLocalization.of(context);
     final results = _c.results;
     final q = _c.effectiveQuery;
 

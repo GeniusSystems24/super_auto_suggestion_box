@@ -1,0 +1,278 @@
+{
+  "@@locale": "en",
+  "validation": "VALIDATION",
+  "fieldOverride": "Field override",
+  "suffix": "Suffix",
+  "under": "Under",
+  "label": "Label",
+  "account": "Account",
+  "accounts": "Accounts",
+  "searchAccounts": "Search accounts...",
+  "recentAccounts": "Recent Accounts",
+  "pickAccount": "Pick an account...",
+  "requiredAccountLookup": "Required account lookup.",
+  "selectionCleared": "Selection cleared",
+  "directoryEntry": "Directory entry",
+  "accountCode": "Account code {code}",
+  "@accountCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "searchModes": "Search Modes",
+  "searchModesSubtitle": "TEXTBOX · ADVANCE VIEW · BOTH",
+  "searchModeVersion": "v1.3.1 · SEARCH MODE",
+  "threeSearchSurfaces": "One component, three search surfaces",
+  "searchModeResponsiveDescription": "When mode is omitted, desktop platforms default to TextBox. Android, iOS, and Fuchsia default to AdvanceView.",
+  "adaptiveDefault": "Adaptive default",
+  "adaptiveDefaultDescription": "No mode is passed. Desktop resolves to TextBox; mobile resolves to AdvanceView.",
+  "adaptiveSearch": "Adaptive search",
+  "platformDefaultMode": "Uses the platform-dependent default mode.",
+  "textBox": "TextBox",
+  "textBoxDescription": "Classic editable text box with the anchored inline suggestion dropdown.",
+  "textBoxMode": "TextBox mode",
+  "typeAndPickInline": "Type directly and pick from the inline list.",
+  "advanceView": "AdvanceView",
+  "advanceViewDescription": "The field becomes a launcher for the larger Advanced Search surface instead of opening the inline dropdown.",
+  "advanceViewMode": "AdvanceView mode",
+  "openAdvancedView": "Tap or focus the field to open Advanced View.",
+  "both": "Both",
+  "bothDescription": "Inline TextBox behavior plus Advanced View. Use the advanced-search action or Ctrl/Cmd + F while focused.",
+  "bothModes": "Both modes",
+  "bothEnabled": "Inline suggestions and Advanced View are both enabled.",
+  "searchDirectoryHint": "Name, code, category, or city...",
+  "autovalidateMode": "Autovalidate Mode",
+  "formAutovalidation": "Form Autovalidation",
+  "formDefault": "Form default",
+  "formDefaultDescription": "Both boxes below read autovalidateMode from the Form.",
+  "disabled": "Disabled",
+  "always": "Always",
+  "onChange": "On change",
+  "postingAccount": "Posting account",
+  "expenseAccount": "Expense account",
+  "mustBeExpense": "Must be an expense account.",
+  "chooseExpense": "Choose an expense account.",
+  "validate": "Validate",
+  "reset": "Reset",
+  "fieldAlwaysValidates": "This box validates always, independent of the Form mode.",
+  "immediateAccount": "Immediate account",
+  "fieldAutovalidatePrecedence": "Field-level autovalidateMode takes precedence.",
+  "validationPosition": "Validation Position",
+  "feedbackPlacement": "Feedback Placement",
+  "globalDefault": "Global default",
+  "globalDefaultDescription": "Leave it responsive, or set one package-wide position.",
+  "responsive": "Responsive",
+  "usesPackageDefault": "Uses package default",
+  "fieldPositionDescription": "The selected field position overrides the package default.",
+  "usesFieldPosition": "Uses field position",
+  "exampleScreen": "Example Screen",
+  "documentReference": "Document Reference",
+  "directoryEntryNumber": "Directory entry {number}",
+  "@directoryEntryNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "stringSource": "String source",
+  "stringSourceDescription": "Label-equals-value convenience source",
+  "listSource": "List source",
+  "listSourceDescription": "In-memory contains matching",
+  "fuzzySource": "Fuzzy source",
+  "fuzzySourceDescription": "Typo-tolerant in-memory ranking",
+  "asyncSource": "Async source",
+  "asyncSourceDescription": "Server-style asynchronous lookup",
+  "hybridSource": "Hybrid source",
+  "hybridSourceDescription": "Immediate local results merged with remote data",
+  "remoteFallback": "Remote fallback",
+  "remoteFallbackDescription": "Local-first lookup with remote fallback",
+  "pagedSource": "Paged source",
+  "pagedSourceDescription": "Infinite scrolling through server pages",
+  "sourceExample": "SOURCE EXAMPLE",
+  "sourceVersion": "v1.3.1 · {title}",
+  "@sourceVersion": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "basicLookup": "Basic Lookup",
+  "widgetOwnsSource": "The widget owns the source and controller.",
+  "externalController": "External Controller",
+  "controlFromHost": "Read selection and control the field from host code.",
+  "controlledAccount": "Controlled Account",
+  "hostControlledLookup": "Host-controlled lookup...",
+  "multiSelect": "Multi-select",
+  "selectSeveralValues": "Select several raw values from the same source type.",
+  "selectAccounts": "Select accounts...",
+  "recentSelections": "Recent Selections",
+  "committedValuesPinned": "Committed values are pinned when the query is empty.",
+  "accountNumber": "Account {number}",
+  "@accountNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "allItemScenarios": "ALL ITEM SCENARIOS",
+  "itemApiVersion": "v1.3.1 · ITEM API",
+  "everyItemScenario": "Every SuperAutoSuggestionsItem scenario",
+  "itemScenarioOverview": "The list below covers text metadata, custom widgets, grouping, keywords, static enabled state, Stream<bool> enabledSnapshot, and a combined rich item.",
+  "enabledSnapshotDescription": "This switch updates the Stream<bool> used by the enabledSnapshot scenario.",
+  "dynamicSuggestionEnabled": "Dynamic suggestion is enabled",
+  "dynamicSuggestionDisabled": "Dynamic suggestion is disabled",
+  "allItemScenariosTitle": "All item scenarios",
+  "inspectItemCases": "Open the suggestions and inspect each rendering/API case.",
+  "itemScenariosLabel": "SuperAutoSuggestionsItem scenarios",
+  "openEmptyQuery": "Open the list with an empty query to see every case.",
+  "searchTitleKeywords": "Search title or keywords...",
+  "plainTitleText": "Plain title text",
+  "descriptionAsText": "Description as text",
+  "descriptionTextSupport": "descriptionText renders supporting plain text",
+  "descriptionAsWidget": "Description as widget",
+  "customDescriptionWidget": "Custom description widget",
+  "trailingText": "Trailing text",
+  "trailingWidget": "Trailing widget",
+  "active": "ACTIVE",
+  "customIconWidget": "Custom icon widget",
+  "groupedSuggestion": "Grouped suggestion",
+  "metadataScenarios": "Metadata scenarios",
+  "searchableAliases": "Searchable aliases",
+  "searchAliasesHint": "Search for: invoice, vendor, INV-1042",
+  "staticallyDisabled": "Statically disabled",
+  "streamControlledState": "Stream-controlled enabled state",
+  "streamControlledDescription": "enabledSnapshot: Stream<bool> · toggle it above the field",
+  "combinedRichSuggestion": "Combined rich suggestion",
+  "richDescription": "Widget description · searchable title remains titleText",
+  "richScenarios": "Rich scenarios",
+  "autoSuggestionBox": "Auto Suggestion Box",
+  "accountLookup": "Account Lookup",
+  "postToAccount": "Post To Account",
+  "searchChartAccounts": "Search the chart of accounts by name or code",
+  "accountsReceivableExample": "e.g. Accounts Receivable",
+  "tagCostCenters": "Tag Cost Centers",
+  "assignCostCenters": "Assign one or more cost centers to this entry",
+  "quickFilter": "Quick Filter",
+  "fuzzyMatchHint": "Fuzzy match - type loosely",
+  "rdhExample": "e.g. rdh",
+  "selectVendor": "Select Vendor",
+  "vendorRemoteDescription": "Local vendors show instantly; server search runs when local matches are few",
+  "vendorExample": "e.g. cement, freight, glass...",
+  "vendorDirectory": "Vendor Directory",
+  "advancedSearchShortcutDescription": "Focus the field and press Ctrl / Cmd + F to open Advanced Search",
+  "searchDirectory": "Search the directory... (Cmd/Ctrl+F)",
+  "requiredCustomValidator": "Required field with a custom validator - leave it empty and tab away",
+  "debitAccount": "Debit Account",
+  "pickAccountTypes": "Pick an asset, liability, equity, income or expense account",
+  "pickAccountFromList": "Pick an account from the list",
+  "lockedAccount": "Locked Account",
+  "disabledFieldDescription": "A disabled field blocks typing and opening the overlay",
+  "reconciliationAccount": "Reconciliation Account",
+  "themedField": "Themed Field",
+  "themedFieldDescription": "A theme assigned directly to one box - green focused fill, border and bold text",
+  "ledgerAccount": "Ledger Account",
+  "customFocusedStyleHint": "Focus me to see the custom focused style",
+  "recentAccountsDescription": "Pick a few, clear the field and reopen - recent picks pin to the top",
+  "projectTag": "Project Tag",
+  "createProjectDescription": "Type a missing name and press Enter to create it",
+  "project": "Project",
+  "seafrontVillasExample": "e.g. Seafront Villas",
+  "itemCatalog": "Item Catalog",
+  "itemCatalogDescription": "Large master data - 12 rows per page; scroll the dropdown to load more",
+  "item": "Item",
+  "search64Items": "Search 64 items...",
+  "boundAccount": "Bound Account",
+  "boundAccountDescription": "Bind by stored code, then lock to a read-only posted view",
+  "pickOrBindCode": "Pick or bind by code",
+  "bind1020": "Bind 1020",
+  "bind4000": "Bind 4000",
+  "edit": "Edit",
+  "lockReadOnly": "Lock (read-only)",
+  "erpDocumentReference": "ERP Document Reference",
+  "erpReferenceDescription": "Type a prefix, press Tab to accept completion, then Tab again to move focus",
+  "inv1042Example": "e.g. INV-1042",
+  "fieldTapped": "Field tapped",
+  "pointerDownOutside": "Pointer down outside",
+  "pointerUpOutside": "Pointer up outside",
+  "selectedValue": "Selected: {value}",
+  "@selectedValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "validateAndSave": "Validate & Save",
+  "formValidated": "Form validated",
+  "savedStatus": "Saved: {reference} - {event}",
+  "@savedStatus": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      },
+      "event": {
+        "type": "String"
+      }
+    }
+  },
+  "fixableAccount": "Fixable Account",
+  "fixableDescription": "Use the small label action to protect or unlock the current value",
+  "settlementAccount": "Settlement Account",
+  "lockAfterSelecting": "Lock the field after selecting an account",
+  "pickThenFix": "Pick an account, then fix it",
+  "focusField": "Focus field",
+  "validateField": "Validate field",
+  "inputDecoration": "Input Decoration",
+  "inputDecorationDescription": "Label, helper, and placeholder copy use Flutter standard InputDecoration",
+  "cashAccount": "Cash Account",
+  "standardInputHelper": "Standard InputDecoration helper text",
+  "searchByAccount": "Search by account code or name",
+  "projectTagDescription": "Project tag",
+  "catalogItem": "Item {number}",
+  "@catalogItem": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "warehouseDescription": "{sku} - Warehouse A",
+  "@warehouseDescription": {
+    "placeholders": {
+      "sku": {
+        "type": "String"
+      }
+    }
+  },
+  "inStock": "{count} in stock",
+  "@inStock": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "localRiyadh": "Local - Riyadh",
+  "serverRemote": "Server - remote",
+  "noSelectionEventYet": "No selection event yet",
+  "appTitle": "Super Auto Suggestion Box",
+  "galleryEyebrow": "SUPER AUTO SUGGESTION BOX • GALLERY",
+  "componentDemos": "Component Demos",
+  "suggestionItemScenarios": "Suggestion item scenarios",
+  "suggestionItemScenariosGalleryDescription": "All SuperAutoSuggestionsItem fields · enabledSnapshot",
+  "autovalidateGalleryDescription": "Field value · Form default · disabled fallback",
+  "validationPositionGalleryDescription": "Suffix icon · under-box text · label-trailing icon",
+  "advancedSearch": "Advanced Search",
+  "advancedSearchGalleryDescription": "Ctrl / Cmd + F · built-in dialog · custom advanced-search surface",
+  "autoSuggestionBoxGalleryDescription": "Typeahead · recents · create · paged · multi-select · fuzzy",
+  "sourceDemoCapabilities": "basic · controlled · multi-select · recents",
+  "lightTheme": "Light Theme",
+  "darkTheme": "Dark Theme",
+  "switchToArabic": "العربية (RTL)",
+  "switchToEnglish": "English (LTR)"
+}

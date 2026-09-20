@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
+import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.dart';
 
 class TryExampleScreen extends StatelessWidget {
   const TryExampleScreen({super.key});
@@ -23,10 +24,11 @@ class TryExampleScreen extends StatelessWidget {
     List<String> items,
     int index,
     String element,
+    SuperExampleLocalization l10n,
   ) => SuperAutoSuggestionsItem<String>(
     value: element,
     titleText: element,
-    description: Text('Directory entry ${index + 1}'),
+    description: Text(l10n.directoryEntryNumber(index + 1)),
     icon: const Icon(Icons.account_box_rounded),
   );
 
@@ -40,6 +42,7 @@ class TryExampleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = SuperExampleLocalization.of(context);
     final sources = <String, SuperAutoSuggestionsSource<String>>{
       'list': SuperAutoSuggestionSources.list<String>(
         documentReferences,
@@ -91,17 +94,18 @@ class TryExampleScreen extends StatelessWidget {
     final source = sources['remoteFallback']!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Example Screen')),
+      appBar: AppBar(title: Text(l10n.exampleScreen)),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: 8,
         children: [
           SuperAutoSuggestionsBox<String>(
             source: source,
-            suggestionBuilder: _documentSuggestion,
+            suggestionBuilder: (items, index, item) =>
+                _documentSuggestion(items, index, item, l10n),
             controller: SuperAutoSuggestionsController<String>(),
-            decoration: const InputDecoration(
-              labelText: 'Document Reference',
+            decoration: InputDecoration(
+              labelText: l10n.documentReference,
               prefixIcon: Icon(Icons.account_box_rounded),
             ),
             keyboardType: TextInputType.text,
@@ -115,7 +119,7 @@ class TryExampleScreen extends StatelessWidget {
             },
           ),
           TextFormField(
-            decoration: const InputDecoration(labelText: 'Document Reference'),
+            decoration: InputDecoration(labelText: l10n.documentReference),
             keyboardType: TextInputType.text,
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9-]')),
