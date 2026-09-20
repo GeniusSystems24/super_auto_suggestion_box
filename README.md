@@ -9,11 +9,12 @@ server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.5.0` keeps raw `T` values as the public data model, consolidates
-suggestion row construction into `SuperAutoSuggestionsItem<T>(...)`, and
-finishes the `Super` prefix migration for public presentation/widget classes.
-The validator still receives the selected raw `T?`, and `onSelectionChanged`
-remains the selection callback for both select and de-select operations.
+Version `1.5.1` removes the deprecated constructor fields, improves suggestion
+layout in keyboard-constrained mobile viewports, and makes the create action
+more visible and consistent in both inline and Advanced Search experiences.
+Suggestion rows continue to use raw `T` values as the public data model through
+`SuperAutoSuggestionsItem<T>`, while `onSelectionChanged` remains the selection
+callback for both select and de-select operations.
 
 Every `SuperAutoSuggestionsBox<T>` requires a
 `SuperAutoSuggestionsSource<T>`. Use `SuperAutoSuggestionSources.list<T>(values)` for a
@@ -37,7 +38,7 @@ recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.5.0
+  super_auto_suggestion_box: ^1.5.1
 ```
 
 ```dart
@@ -229,6 +230,71 @@ The canonical public presentation/widget types now all use the `Super` prefix:
 `SuperAutoSuggestionsHighlight`, and `SuperAutoSuggestionsPanel<T>`.
 Deprecated typedefs preserve the 1.2.x names during migration.
 
+## Suggestion Presentation And Modes
+
+Use `mode` to control how suggestions are presented:
+
+```dart
+SuperAutoSuggestionsBox<String>(
+  source: SuperAutoSuggestionSources.list<String>(accounts),
+  suggestionBuilder: accountSuggestion,
+  mode: SuperAutoSuggestionsMode.textBox,
+);
+```
+
+The available modes are:
+
+- `SuperAutoSuggestionsMode.textBox`: editable text box with an anchored
+  suggestions overlay.
+- `SuperAutoSuggestionsMode.advanceView`: field-like launcher that opens the
+  Advanced Search View.
+- `SuperAutoSuggestionsMode.both`: editable text box plus access to Advanced
+  Search.
+
+When `mode` is omitted, desktop platforms default to `textBox`, while Android,
+iOS, and Fuchsia default to `advanceView`.
+
+For example, to expose both the normal field interaction and Advanced Search:
+
+```dart
+SuperAutoSuggestionsBox<String>(
+  source: SuperAutoSuggestionSources.list<String>(accounts),
+  suggestionBuilder: accountSuggestion,
+  mode: SuperAutoSuggestionsMode.both,
+);
+```
+
+The deprecated `advancedSearch` constructor field was removed in `1.5.1`.
+Use `mode` instead.
+
+### Keyboard-safe layout
+
+On mobile, suggestion surfaces calculate their maximum height from the actually
+visible viewport. The area covered by the software keyboard is excluded, so
+suggestions do not extend behind the keyboard.
+
+When available vertical space becomes small, the results area flexes and
+scrolls inside the remaining space instead of overflowing the panel. Fixed
+actions, including the create action, remain visible.
+
+For pages that contain a scrollable parent around a `textBox` suggestions
+field, avoid dismissing keyboard focus on every drag when the suggestions must
+remain open while scrolling. For example:
+
+```dart
+SingleChildScrollView(
+  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+  child: SuperAutoSuggestionsBox<String>(
+    source: SuperAutoSuggestionSources.list<String>(accounts),
+    suggestionBuilder: accountSuggestion,
+    mode: SuperAutoSuggestionsMode.textBox,
+  ),
+);
+```
+
+`ScrollViewKeyboardDismissBehavior.onDrag` dismisses the keyboard and removes
+focus from the field. A text-box suggestions overlay closes on blur by design.
+
 ## Controller API
 
 Controller selections, result lists, recents, and callbacks use raw values:
@@ -292,7 +358,10 @@ SuperAutoSuggestionsBox<String>(
 );
 ```
 
-Inline create returns a raw value:
+## Create Action
+
+Provide `onCreate` when users may create a new value from the current query.
+The callback returns the newly created raw value:
 
 ```dart
 SuperAutoSuggestionsBox<String>(
@@ -300,9 +369,34 @@ SuperAutoSuggestionsBox<String>(
   suggestionBuilder: vendorSuggestion,
   onCreate: (query) async {
     final vendor = await api.createVendor(query);
-    return vendor.id; // raw String
+    return vendor.id;
   },
   onSelectionChanged: (vendorIds) {},
+);
+```
+
+In `1.5.1`, the create action:
+
+- appears before suggestion rows rather than after them;
+- uses `ColorScheme.primary` and `ColorScheme.onPrimary` for strong visibility
+  across light and dark themes;
+- uses a larger touch target on mobile;
+- remains visible while the results area flexes or scrolls;
+- is also shown in Advanced Search when `onCreate` is non-null, the query is
+  non-empty, and no suggestions match.
+
+An Advanced Search example with creation enabled:
+
+```dart
+SuperAutoSuggestionsBox<String>(
+  source: SuperAutoSuggestionSources.list<String>(projects),
+  suggestionBuilder: projectSuggestion,
+  mode: SuperAutoSuggestionsMode.both,
+  onCreate: (query) async {
+    final project = await createProject(query);
+    return project.id;
+  },
+  onSelectionChanged: (projectIds) {},
 );
 ```
 
@@ -390,18 +484,44 @@ current suggestions field.
 - `readOnly`: blocks interaction but keeps full contrast for posted/review
   states.
 - `allowFixed`: shows a lock/unlock action backed by `controller.isFixed`.
-- `advancedSearch`: opens a larger search surface with `Ctrl`/`Cmd` + `F`.
+- `mode`: controls text-box, Advanced Search, and combined suggestion
+  presentation through `SuperAutoSuggestionsMode`.
 - `bare`: removes outer chrome for table cells and compact host surfaces.
 - `restoreOnBlur`: restores the last committed raw value when the user leaves
   without picking.
 
 ## Migration
 
-See [`migration_1.1.0_to_1.2.0.md`](migration_1.1.0_to_1.2.0.md) for the generic
-validator, `FormField<T>` integration, removed callbacks, source-name
-migrations, localization, `TextInputAction.next`, and
-`onSelectionChanged` behavior. For earlier migrations, see
-[`migration_1.0.0_to_1.1.0.md`](migration_1.0.0_to_1.1.0.md) and
+Version `1.5.1` removes the deprecated `label`, `leading`, `hint`, and
+`advancedSearch` constructor fields.
+
+Use `decoration` for input label, leading icon, and hint configuration:
+
+```dart
+SuperAutoSuggestionsBox<String>(
+  source: SuperAutoSuggestionSources.list<String>(accounts),
+  suggestionBuilder: accountSuggestion,
+  decoration: const InputDecoration(
+    labelText: 'Account',
+    hintText: 'Search accounts',
+    prefixIcon: Icon(Icons.account_balance_outlined),
+  ),
+);
+```
+
+Replace the removed `advancedSearch` field with `mode`:
+
+```dart
+// Before:
+// advancedSearch: true,
+
+// 1.5.1:
+mode: SuperAutoSuggestionsMode.both,
+```
+
+For earlier API changes, see
+[`migration_1.1.0_to_1.2.0.md`](migration_1.1.0_to_1.2.0.md),
+[`migration_1.0.0_to_1.1.0.md`](migration_1.0.0_to_1.1.0.md), and
 [`migration_0.14.0_to_1.0.0.md`](migration_0.14.0_to_1.0.0.md).
 
 ## Localization

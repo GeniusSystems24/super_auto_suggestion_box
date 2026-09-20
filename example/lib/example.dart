@@ -106,7 +106,7 @@ class TryExampleScreen extends StatelessWidget {
             controller: SuperAutoSuggestionsController<String>(),
             decoration: InputDecoration(
               labelText: l10n.documentReference,
-              prefixIcon: Icon(Icons.account_box_rounded),
+              prefixIcon: const Icon(Icons.account_box_rounded),
             ),
             keyboardType: TextInputType.text,
             textInputAction: TextInputAction.next,

@@ -126,17 +126,17 @@ class _ValidationPositionDemoState extends State<ValidationPositionDemo> {
                         segments: [
                           ButtonSegment(
                             value: ValidationPosition.suffixIcon,
-                            icon: Icon(Icons.input_rounded),
+                            icon: const Icon(Icons.input_rounded),
                             label: Text(l10n.suffix),
                           ),
                           ButtonSegment(
                             value: ValidationPosition.underBox,
-                            icon: Icon(Icons.short_text_rounded),
+                            icon: const Icon(Icons.short_text_rounded),
                             label: Text(l10n.under),
                           ),
                           ButtonSegment(
                             value: ValidationPosition.labelTrailing,
-                            icon: Icon(Icons.label_important_outline_rounded),
+                            icon: const Icon(Icons.label_important_outline_rounded),
                             label: Text(l10n.label),
                           ),
                         ],

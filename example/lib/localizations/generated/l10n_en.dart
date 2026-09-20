@@ -700,4 +700,84 @@ class SuperExampleLocalizationEn extends SuperExampleLocalization {
 
   @override
   String get switchToEnglish => 'English (LTR)';
+
+  @override
+  String get version151Changes => 'Version 1.5.1 changes';
+
+  @override
+  String get version151GalleryDescription =>
+      'Keyboard-safe overlay · Advanced View create action';
+
+  @override
+  String get version151Eyebrow => 'VERSION 1.5.1 · BEHAVIOR';
+
+  @override
+  String get version151Title =>
+      'Keyboard-safe search and Advanced View creation';
+
+  @override
+  String get version151Description =>
+      'These scenarios exercise the viewport and create-action fixes introduced in version 1.5.1.';
+
+  @override
+  String get version151KeyboardSafeOverlay => 'Keyboard-safe suggestions';
+
+  @override
+  String get version151KeyboardSafeOverlayDescription =>
+      'The dropdown must use only the visible viewport and must not extend behind the software keyboard.';
+
+  @override
+  String get version151KeyboardSafeInstruction =>
+      'On a phone or emulator, focus the field, keep the keyboard open, and type ACC. The long suggestions list should remain inside the visible area.';
+
+  @override
+  String get version151AccountLookup => 'Keyboard-safe account lookup';
+
+  @override
+  String get version151KeyboardSafeHelper =>
+      'A long result set makes the available-height behavior easy to verify.';
+
+  @override
+  String get version151AccountHint => 'Type ACC or an account code...';
+
+  @override
+  String get version151SampleAccount => 'Sample account';
+
+  @override
+  String get version151AdvancedCreate => 'Create from Advanced View';
+
+  @override
+  String get version151AdvancedCreateDescription =>
+      'When onCreate is available and the query has no suggestions, Advanced View must show the create action.';
+
+  @override
+  String get version151ProjectLookup => 'Project lookup';
+
+  @override
+  String get version151ProjectLookupHelper =>
+      'Open Advanced View and type a value that is not already in the project list.';
+
+  @override
+  String get version151ProjectHint => 'Search or create a project...';
+
+  @override
+  String get version151SampleProject => 'Existing project';
+
+  @override
+  String get version151NoProjectSelected => 'No project selected yet.';
+
+  @override
+  String version151SelectedProject(String project) {
+    return 'Selected: $project';
+  }
+
+  @override
+  String version151CreatedProject(String project) {
+    return 'Created project: $project';
+  }
+
+  @override
+  String version151CreateProject(String query) {
+    return 'Create \"$query\"';
+  }
 }

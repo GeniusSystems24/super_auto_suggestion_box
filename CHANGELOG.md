@@ -4,6 +4,52 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.5.1 - 2026-09-20
+
+### Changed
+
+- Removed the deprecated `SuperAutoSuggestionsBox` fields `label`, `leading`,
+  `hint`, and `advancedSearch`; use `InputDecoration` and
+  `SuperAutoSuggestionsMode` instead.
+- Updated existing examples that used `advancedSearch` to use
+  `SuperAutoSuggestionsMode`.
+- Suggestions overlay placement and maximum height now use only the actually
+  visible viewport, excluding the area obscured by the software keyboard.
+- Mobile Advanced Search now stays within the visible area above the keyboard.
+- The create action now uses `ColorScheme.primary` and
+  `ColorScheme.onPrimary` so it remains visually prominent across themes.
+- The create action is now rendered as the first item before suggestion
+  results instead of the last item.
+- Increased the create action height and touch target on mobile devices.
+- Updated overlay height calculations to account for the larger mobile create
+  action.
+- Advanced Search now shows the create action when `onCreate` is provided, the
+  query is non-empty, and no suggestions are available.
+- Fixed a `RenderFlex` bottom overflow in `SuperAutoSuggestionsPanel` by
+  allowing the results body to flex within the remaining available height.
+- The results list now shrinks and scrolls correctly while keeping the create
+  action visible when vertical space is limited.
+- Updated the v1.5.1 text-box demo so scrolling the page does not dismiss focus
+  and unintentionally close the suggestions overlay on mobile.
+
+### Added
+
+- Added a dedicated v1.5.1 example screen demonstrating keyboard-safe
+  suggestion sizing and the Advanced Search create action.
+- Added English and Arabic localization strings required by the new v1.5.1
+  example screen.
+
+### Fixed
+
+- Fixed suggestion panels extending into the area behind the software keyboard.
+- Fixed the Advanced Search create action not appearing for an empty result set.
+- Fixed create-action visibility and ordering in both inline and Advanced Search
+  suggestion views.
+- Fixed mobile `RenderFlex` overflow when the keyboard substantially reduces
+  the available panel height.
+- Fixed the `textBox` example suggestions overlay disappearing when the user
+  scrolls the surrounding page on mobile.
+
 ## 1.5.0
 
 ### Added

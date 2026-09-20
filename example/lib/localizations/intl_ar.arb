@@ -274,5 +274,48 @@
   "lightTheme": "المظهر الفاتح",
   "darkTheme": "المظهر الداكن",
   "switchToArabic": "العربية (RTL)",
-  "switchToEnglish": "English (LTR)"
+  "switchToEnglish": "English (LTR)",
+  "version151Changes": "تغييرات الإصدار 1.5.1",
+  "version151GalleryDescription": "اقتراحات تراعي لوحة المفاتيح · زر إنشاء في العرض المتقدم",
+  "version151Eyebrow": "الإصدار 1.5.1 · السلوك",
+  "version151Title": "بحث يراعي لوحة المفاتيح وإنشاء من العرض المتقدم",
+  "version151Description": "تعرض هذه الأمثلة إصلاحات احتساب المساحة وزر الإنشاء المضافة في الإصدار 1.5.1.",
+  "version151KeyboardSafeOverlay": "اقتراحات تراعي لوحة المفاتيح",
+  "version151KeyboardSafeOverlayDescription": "يجب أن تستخدم قائمة الاقتراحات الجزء الظاهر فقط من الشاشة وألا تمتد خلف لوحة المفاتيح.",
+  "version151KeyboardSafeInstruction": "على الهاتف أو المحاكي، ركّز الحقل مع إبقاء لوحة المفاتيح ظاهرة ثم اكتب ACC. يجب أن تبقى قائمة الاقتراحات الطويلة داخل المنطقة المرئية.",
+  "version151AccountLookup": "بحث حساب يراعي لوحة المفاتيح",
+  "version151KeyboardSafeHelper": "تجعل النتائج الكثيرة التحقق من احتساب الارتفاع المتاح أكثر وضوحاً.",
+  "version151AccountHint": "اكتب ACC أو رمز حساب...",
+  "version151SampleAccount": "حساب تجريبي",
+  "version151AdvancedCreate": "الإنشاء من العرض المتقدم",
+  "version151AdvancedCreateDescription": "عندما تكون onCreate متاحة ولا توجد اقتراحات للاستعلام، يجب أن يعرض العرض المتقدم زر الإنشاء.",
+  "version151ProjectLookup": "البحث عن مشروع",
+  "version151ProjectLookupHelper": "افتح العرض المتقدم واكتب قيمة غير موجودة مسبقاً في قائمة المشاريع.",
+  "version151ProjectHint": "ابحث عن مشروع أو أنشئه...",
+  "version151SampleProject": "مشروع موجود",
+  "version151NoProjectSelected": "لم يتم اختيار مشروع بعد.",
+  "version151SelectedProject": "المحدد: {project}",
+  "@version151SelectedProject": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
+  },
+  "version151CreatedProject": "تم إنشاء المشروع: {project}",
+  "@version151CreatedProject": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
+  },
+  "version151CreateProject": "إنشاء \"{query}\"",
+  "@version151CreateProject": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  }
 }

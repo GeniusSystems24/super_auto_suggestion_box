@@ -22,6 +22,7 @@ import 'sources/paged_source_screen.dart';
 import 'sources/remote_fallback_source_screen.dart';
 import 'sources/strings_source_screen.dart';
 import 'super_auto_suggestions_item_scenarios_screen.dart';
+import 'version_1_5_1_changes_demo.dart';
 import 'validation_position_demo.dart';
 
 void main() => runApp(const ExampleApp());
@@ -121,6 +122,12 @@ class _Launcher extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final demos = <_Demo>[
+      _Demo(
+        l10n.version151Changes,
+        l10n.version151GalleryDescription,
+        Icons.keyboard_alt_outlined,
+        (_) => const Version151ChangesDemo(),
+      ),
       _Demo(
         l10n.suggestionItemScenarios,
         l10n.suggestionItemScenariosGalleryDescription,

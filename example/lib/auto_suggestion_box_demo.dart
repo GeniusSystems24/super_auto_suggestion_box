@@ -468,7 +468,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                 child: SuperAutoSuggestionsBox<String>(
                   source: SuperAutoSuggestionSources.list<String>(_directory),
                   suggestionBuilder: _directorySuggestion,
-                  advancedSearch: true,
+                  mode: SuperAutoSuggestionsMode.both,
                   hintText: l10n.searchDirectory,
                   onSelectionChanged: (items) {},
                 ),
@@ -784,7 +784,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     labelText: l10n.cashAccount,
                     helperText: l10n.standardInputHelper,
                     hintText: l10n.searchByAccount,
-                    prefixIcon: Icon(Icons.account_balance_outlined),
+                    prefixIcon: const Icon(Icons.account_balance_outlined),
                   ),
                   onSelectionChanged: (items) {},
                 ),

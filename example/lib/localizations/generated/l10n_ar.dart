@@ -694,4 +694,84 @@ class SuperExampleLocalizationAr extends SuperExampleLocalization {
 
   @override
   String get switchToEnglish => 'English (LTR)';
+
+  @override
+  String get version151Changes => 'تغييرات الإصدار 1.5.1';
+
+  @override
+  String get version151GalleryDescription =>
+      'اقتراحات تراعي لوحة المفاتيح · زر إنشاء في العرض المتقدم';
+
+  @override
+  String get version151Eyebrow => 'الإصدار 1.5.1 · السلوك';
+
+  @override
+  String get version151Title =>
+      'بحث يراعي لوحة المفاتيح وإنشاء من العرض المتقدم';
+
+  @override
+  String get version151Description =>
+      'تعرض هذه الأمثلة إصلاحات احتساب المساحة وزر الإنشاء المضافة في الإصدار 1.5.1.';
+
+  @override
+  String get version151KeyboardSafeOverlay => 'اقتراحات تراعي لوحة المفاتيح';
+
+  @override
+  String get version151KeyboardSafeOverlayDescription =>
+      'يجب أن تستخدم قائمة الاقتراحات الجزء الظاهر فقط من الشاشة وألا تمتد خلف لوحة المفاتيح.';
+
+  @override
+  String get version151KeyboardSafeInstruction =>
+      'على الهاتف أو المحاكي، ركّز الحقل مع إبقاء لوحة المفاتيح ظاهرة ثم اكتب ACC. يجب أن تبقى قائمة الاقتراحات الطويلة داخل المنطقة المرئية.';
+
+  @override
+  String get version151AccountLookup => 'بحث حساب يراعي لوحة المفاتيح';
+
+  @override
+  String get version151KeyboardSafeHelper =>
+      'تجعل النتائج الكثيرة التحقق من احتساب الارتفاع المتاح أكثر وضوحاً.';
+
+  @override
+  String get version151AccountHint => 'اكتب ACC أو رمز حساب...';
+
+  @override
+  String get version151SampleAccount => 'حساب تجريبي';
+
+  @override
+  String get version151AdvancedCreate => 'الإنشاء من العرض المتقدم';
+
+  @override
+  String get version151AdvancedCreateDescription =>
+      'عندما تكون onCreate متاحة ولا توجد اقتراحات للاستعلام، يجب أن يعرض العرض المتقدم زر الإنشاء.';
+
+  @override
+  String get version151ProjectLookup => 'البحث عن مشروع';
+
+  @override
+  String get version151ProjectLookupHelper =>
+      'افتح العرض المتقدم واكتب قيمة غير موجودة مسبقاً في قائمة المشاريع.';
+
+  @override
+  String get version151ProjectHint => 'ابحث عن مشروع أو أنشئه...';
+
+  @override
+  String get version151SampleProject => 'مشروع موجود';
+
+  @override
+  String get version151NoProjectSelected => 'لم يتم اختيار مشروع بعد.';
+
+  @override
+  String version151SelectedProject(String project) {
+    return 'المحدد: $project';
+  }
+
+  @override
+  String version151CreatedProject(String project) {
+    return 'تم إنشاء المشروع: $project';
+  }
+
+  @override
+  String version151CreateProject(String query) {
+    return 'إنشاء \"$query\"';
+  }
 }

@@ -70,17 +70,17 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                         segments: [
                           ButtonSegment(
                             value: AutovalidateMode.disabled,
-                            icon: Icon(Icons.pause_circle_outline_rounded),
+                            icon: const Icon(Icons.pause_circle_outline_rounded),
                             label: Text(l10n.disabled),
                           ),
                           ButtonSegment(
                             value: AutovalidateMode.always,
-                            icon: Icon(Icons.running_with_errors_rounded),
+                            icon: const Icon(Icons.running_with_errors_rounded),
                             label: Text(l10n.always),
                           ),
                           ButtonSegment(
                             value: AutovalidateMode.onUserInteraction,
-                            icon: Icon(Icons.touch_app_rounded),
+                            icon: const Icon(Icons.touch_app_rounded),
                             label: Text(l10n.onChange),
                           ),
                         ],
@@ -101,7 +101,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                               decoration: InputDecoration(
                                 labelText: l10n.postingAccount,
                                 helperText: l10n.requiredAccountLookup,
-                                prefixIcon: Icon(Icons.account_balance),
+                                prefixIcon: const Icon(Icons.account_balance),
                               ),
                               required: true,
                             ),
@@ -113,7 +113,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                               decoration: InputDecoration(
                                 labelText: l10n.expenseAccount,
                                 helperText: l10n.mustBeExpense,
-                                prefixIcon: Icon(Icons.receipt_long_outlined),
+                                prefixIcon: const Icon(Icons.receipt_long_outlined),
                               ),
                               validator: (value) =>
                                   value == null || value.startsWith('5')
@@ -158,7 +158,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                     decoration: InputDecoration(
                       labelText: l10n.immediateAccount,
                       helperText: l10n.fieldAutovalidatePrecedence,
-                      prefixIcon: Icon(Icons.flash_on_outlined),
+                      prefixIcon: const Icon(Icons.flash_on_outlined),
                     ),
                     required: true,
                     autovalidateMode: AutovalidateMode.always,

@@ -196,17 +196,9 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// fill, sizing, and suffix widgets remain theme-controlled.
   final InputDecoration? decoration;
 
-  /// Field label rendered above the box (optional).
-  @Deprecated('Use decoration: InputDecoration(labelText: ...) instead.')
-  final String? label;
-
   /// Shows a compact lock/unlock action at the trailing edge of the label row.
   /// The action toggles [SuperAutoSuggestionsController.isFixed].
   final bool allowFixed;
-
-  /// Leading widget inside the field (defaults to a search icon).
-  @Deprecated('Use decoration: InputDecoration(prefixIcon: ...) instead.')
-  final Widget? leading;
 
   /// Show the clear (×) button when there's text.
   final bool clearButton;
@@ -239,7 +231,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// keeps full contrast (not greyed). [disabled] takes precedence over it.
   final bool readOnly;
 
-  /// Marks the field mandatory: appends a red `*` to the [label] and adds an
+  /// Marks the field mandatory: appends a red `*` to the decoration label and
   /// implicit “this field is required” validator (fails while empty).
   final bool required;
 
@@ -269,10 +261,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// When null, the box inherits the nearest [Form.autovalidateMode] before
   /// falling back to [AutovalidateMode.disabled].
   final AutovalidateMode? autovalidateMode;
-
-  /// Helper text shown beneath the control. Hidden whenever an error shows.
-  @Deprecated('Use decoration: InputDecoration(helperText: ...) instead.')
-  final String? hint;
 
   /// Vertical density — comfortable (42px) or compact (36px), matching
   /// `super_form_field`.
@@ -428,13 +416,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// default to [SuperAutoSuggestionsMode.advanceView].
   final SuperAutoSuggestionsMode? mode;
 
-  /// Legacy opt-in for Advanced Search.
-  ///
-  /// `true` maps to [SuperAutoSuggestionsMode.both] and `false` maps to
-  /// [SuperAutoSuggestionsMode.textBox] when [mode] is null.
-  @Deprecated('Use mode: SuperAutoSuggestionsMode.both instead.')
-  final bool? advancedSearch;
-
   /// Custom builder for the advanced-search surface (defaults to a built-in
   /// dialog). Receives the live controller; commit via `controller.select(...)`.
   final Widget Function(BuildContext, SuperAutoSuggestionsController<T>)?
@@ -489,9 +470,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.completeShadowHintOnTab = true,
     this.shadowHintStyle,
     this.decoration,
-    this.label,
     this.allowFixed = false,
-    this.leading,
     this.clearButton = true,
     this.highlightMatch = AutoSuggestionMatch.contains,
     this.highlightMatches = true,
@@ -508,7 +487,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.validationPosition,
     this.helpIcon,
     this.autovalidateMode,
-    this.hint,
     this.density = FieldDensity.comfortable,
     this.theme,
     this.autofocus = false,
@@ -552,7 +530,6 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.scrollOnFocus = false,
     this.restoreOnBlur = true,
     this.mode,
-    this.advancedSearch,
     this.advancedSearchBuilder,
     this.itemBuilder,
     this.emptyBuilder,
@@ -599,14 +576,6 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   SuperAutoSuggestionsMode get _effectiveMode {
     final explicitMode = widget.mode;
     if (explicitMode != null) return explicitMode;
-
-    // Backward compatibility for callers that still pass advancedSearch.
-    final legacyAdvancedSearch = widget.advancedSearch;
-    if (legacyAdvancedSearch != null) {
-      return legacyAdvancedSearch
-          ? SuperAutoSuggestionsMode.both
-          : SuperAutoSuggestionsMode.textBox;
-    }
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.macOS:
@@ -1148,12 +1117,12 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
             isDesktop: isDesktop,
             title:
                 widget.decoration?.labelText ??
-                // ignore: deprecated_member_use_from_same_package
-                widget.label ??
                 widget.hintText ??
                 l10n.advancedSearch,
             multiSelect: widget.multiSelect,
             highlightMatch: widget.highlightMatch,
+            onCreate: widget.onCreate,
+            createLabelBuilder: widget.createLabelBuilder,
             onPick: (item) {
               if (widget.multiSelect) {
                 _c.toggleSelected(item);
@@ -1177,7 +1146,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       } else {
         await showModalBottomSheet<void>(
           context: context,
-          scrollControlDisabledMaxHeightRatio: 0.9,
+          isScrollControlled: true,
           useSafeArea: true,
           backgroundColor: t.overlayBg,
           enableDrag: false,
@@ -1293,15 +1262,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         AutovalidateMode.disabled;
     final validationPosition = _effectiveValidationPosition(context);
 
-    final baseDecoration = widget.decoration ?? const InputDecoration();
-    // ignore: deprecated_member_use_from_same_package
-    final legacyLabel = baseDecoration.label == null ? widget.label : null;
-    // ignore: deprecated_member_use_from_same_package
-    final legacyHelper = baseDecoration.helper == null ? widget.hint : null;
-    final shellDecoration = baseDecoration.copyWith(
-      labelText: baseDecoration.labelText ?? legacyLabel,
-      helperText: baseDecoration.helperText ?? legacyHelper,
-    );
+    final shellDecoration = widget.decoration ?? const InputDecoration();
 
     return FormField<T>(
       key: _formFieldKey,
@@ -1444,8 +1405,6 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     // ── Prefix icon ──
     final Widget leadingWidget =
         widget.decoration?.prefixIcon ??
-        // ignore: deprecated_member_use_from_same_package
-        widget.leading ??
         (bare
             ? const SizedBox.shrink()
             : Icon(
@@ -1672,19 +1631,32 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         const Size(280, SuperAutoSuggestionsBoxThemeData.fieldHeight);
     final fieldW = widget.width ?? fieldSize.width;
 
-    // Decide flip: place above when there isn't room below.
+    // Calculate only the viewport that is actually visible. The software
+    // keyboard occupies MediaQuery.viewInsets.bottom and must never count as
+    // usable overlay space. Safe-area padding is excluded as well.
     final media = MediaQuery.of(ctx);
     final fieldTopLeft = box?.localToGlobal(Offset.zero) ?? Offset.zero;
-    final spaceBelow =
-        media.size.height -
-        (fieldTopLeft.dy + fieldSize.height) -
-        media.viewInsets.bottom;
+    final fieldBottom = fieldTopLeft.dy + fieldSize.height;
+    const gap = SuperAutoSuggestionsBoxThemeData.overlayGap;
+    const edgeMargin = 8.0;
+    final bottomObstruction =
+        media.viewInsets.bottom > media.padding.bottom
+        ? media.viewInsets.bottom
+        : media.padding.bottom;
+    final visibleTop = media.padding.top;
+    final visibleBottom = media.size.height - bottomObstruction;
+    final spaceBelow = (visibleBottom - fieldBottom - gap - edgeMargin)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+    final spaceAbove = (fieldTopLeft.dy - visibleTop - gap - edgeMargin)
+        .clamp(0.0, double.infinity)
+        .toDouble();
     final desired = _overlayHeight(t);
-    final flipUp = spaceBelow < desired + 16 && fieldTopLeft.dy > spaceBelow;
+    final flipUp = spaceBelow < desired && spaceAbove > spaceBelow;
+    final availableHeight = flipUp ? spaceAbove : spaceBelow;
 
     final followerAnchor = flipUp ? Alignment.bottomLeft : Alignment.topLeft;
     final targetAnchor = flipUp ? Alignment.topLeft : Alignment.bottomLeft;
-    const gap = SuperAutoSuggestionsBoxThemeData.overlayGap;
 
     return Stack(
       children: [
@@ -1703,27 +1675,30 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
           targetAnchor: targetAnchor,
           child: Align(
             alignment: flipUp ? Alignment.bottomLeft : Alignment.topLeft,
-            child: SuperAutoSuggestionsPanel<T>(
-              width: fieldW.clamp(
-                180.0,
-                SuperAutoSuggestionsBoxThemeData.overlayMaxWidth,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: availableHeight),
+              child: SuperAutoSuggestionsPanel<T>(
+                width: fieldW.clamp(
+                  180.0,
+                  SuperAutoSuggestionsBoxThemeData.overlayMaxWidth,
+                ),
+                theme: t,
+                controller: _c,
+                scroll: _scroll,
+                maxVisibleRows: widget.maxVisibleRows,
+                highlightMatch: widget.highlightMatch,
+                highlightMatches: widget.highlightMatches,
+                itemBuilder: widget.itemBuilder,
+                emptyBuilder: widget.emptyBuilder,
+                loadingBuilder: widget.loadingBuilder,
+                hlKey: _hlRowKey,
+                multiSelect: widget.multiSelect,
+                onPick: _pick,
+                onHover: _c.highlightAt,
+                createLabel: _canCreate ? _createLabel : null,
+                creating: _creating,
+                onCreate: _startCreate,
               ),
-              theme: t,
-              controller: _c,
-              scroll: _scroll,
-              maxVisibleRows: widget.maxVisibleRows,
-              highlightMatch: widget.highlightMatch,
-              highlightMatches: widget.highlightMatches,
-              itemBuilder: widget.itemBuilder,
-              emptyBuilder: widget.emptyBuilder,
-              loadingBuilder: widget.loadingBuilder,
-              hlKey: _hlRowKey,
-              multiSelect: widget.multiSelect,
-              onPick: _pick,
-              onHover: _c.highlightAt,
-              createLabel: _canCreate ? _createLabel : null,
-              creating: _creating,
-              onCreate: _startCreate,
             ),
           ),
         ),
@@ -1733,10 +1708,13 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
 
   double _overlayHeight(SuperAutoSuggestionsBoxThemeData t) {
     final rows = _c.results.length.clamp(0, widget.maxVisibleRows);
-    return (rows == 0
+    final resultsHeight = (rows == 0
             ? 56
             : rows * SuperAutoSuggestionsBoxThemeData.rowHeight + 10)
         .toDouble();
+    final isPhone = MediaQuery.sizeOf(context).shortestSide < 600;
+    final createActionHeight = isPhone ? 60.0 : 48.0;
+    return resultsHeight + (_canCreate ? createActionHeight : 0.0);
   }
 }
 
@@ -1997,7 +1975,6 @@ class SuperAutoSuggestionsPanel<T> extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            body,
             if (createLabel != null)
               _CreateFooter(
                 theme: t,
@@ -2006,6 +1983,14 @@ class SuperAutoSuggestionsPanel<T> extends StatelessWidget {
                 showEnterHint: controller.results.isEmpty,
                 onTap: onCreate,
               ),
+            // The overlay itself is constrained to the visible viewport in
+            // _buildOverlay(). Let the result area consume only the remaining
+            // height after the create action instead of forcing its full
+            // intrinsic height and overflowing when the keyboard is visible.
+            Flexible(
+              fit: FlexFit.loose,
+              child: body,
+            ),
           ],
         ),
       ),
@@ -2234,6 +2219,15 @@ class _CreateFooterState extends State<_CreateFooter> {
   Widget build(BuildContext context) {
     final t = widget.theme;
     final l10n = SuperAutoSuggestionLocalization.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isPhone = MediaQuery.sizeOf(context).shortestSide < 600;
+    final backgroundColor = _h
+        ? Color.alphaBlend(
+            colorScheme.onPrimary.withValues(alpha: 0.10),
+            colorScheme.primary,
+          )
+        : colorScheme.primary;
+
     return MouseRegion(
       cursor: widget.creating
           ? SystemMouseCursors.wait
@@ -2245,28 +2239,32 @@ class _CreateFooterState extends State<_CreateFooter> {
         onTap: widget.creating ? null : widget.onTap,
         child: AnimatedContainer(
           duration: SuperAutoSuggestionsBoxThemeData.durFast,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          constraints: BoxConstraints(minHeight: isPhone ? 60 : 48),
+          padding: EdgeInsets.symmetric(
+            horizontal: isPhone ? 16 : 12,
+            vertical: isPhone ? 14 : 10,
+          ),
           decoration: BoxDecoration(
-            color: _h ? t.accentWash(0.12) : t.accentWash(0.05),
-            border: Border(top: BorderSide(color: t.border)),
+            color: backgroundColor,
+            border: Border(bottom: BorderSide(color: t.border)),
           ),
           child: Row(
             children: [
               SizedBox(
-                width: 18,
-                height: 18,
+                width: isPhone ? 20 : 18,
+                height: isPhone ? 20 : 18,
                 child: widget.creating
                     ? CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: colorScheme.onPrimary,
                       )
                     : Icon(
                         Icons.add_rounded,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary,
+                        size: isPhone ? 20 : 18,
+                        color: colorScheme.onPrimary,
                       ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: isPhone ? 12 : 10),
               Expanded(
                 child: Text.rich(
                   TextSpan(
@@ -2275,8 +2273,9 @@ class _CreateFooterState extends State<_CreateFooter> {
                       fontFamily: (SuperMaterialThemeData.of(
                         context,
                       ).textTheme).bodyMedium?.fontFamily,
-                      fontSize: 13,
-                      color: t.fg2,
+                      fontSize: isPhone ? 14 : 13,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onPrimary,
                     ),
                     children: [
                       TextSpan(
@@ -2285,9 +2284,9 @@ class _CreateFooterState extends State<_CreateFooter> {
                           fontFamily: (SuperMaterialThemeData.of(
                             context,
                           ).textTheme).bodyMedium?.fontFamily,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: t.fg1,
+                          fontSize: isPhone ? 14 : 13,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ],
@@ -2307,7 +2306,7 @@ class _CreateFooterState extends State<_CreateFooter> {
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.6,
-                    color: t.fg3,
+                    color: colorScheme.onPrimary.withValues(alpha: 0.82),
                   ),
                 ),
             ],
@@ -2373,6 +2372,8 @@ class _AdvancedSearchDialog<T> extends StatefulWidget {
   final String title;
   final bool multiSelect;
   final AutoSuggestionMatch highlightMatch;
+  final FutureOr<T?> Function(String query)? onCreate;
+  final String Function(String query)? createLabelBuilder;
   final ValueChanged<T> onPick;
   const _AdvancedSearchDialog({
     required this.controller,
@@ -2381,6 +2382,8 @@ class _AdvancedSearchDialog<T> extends StatefulWidget {
     required this.title,
     required this.multiSelect,
     required this.highlightMatch,
+    required this.onCreate,
+    required this.createLabelBuilder,
     required this.onPick,
   });
 
@@ -2393,8 +2396,37 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
   late final TextEditingController _text = widget.controller.text;
   final FocusNode _focus = FocusNode(debugLabel: 'AdvancedSearch');
   final ScrollController _scroll = ScrollController();
+  bool _creating = false;
 
   SuperAutoSuggestionsController<T> get _c => widget.controller;
+
+  bool get _canCreate {
+    if (widget.onCreate == null || _c.isLoading) return false;
+    return _c.query.trim().isNotEmpty && _c.results.isEmpty;
+  }
+
+  String get _createLabel {
+    final query = _c.query.trim();
+    return widget.createLabelBuilder?.call(query) ?? query;
+  }
+
+  Future<void> _startCreate() async {
+    final create = widget.onCreate;
+    final query = _c.query.trim();
+    if (create == null || query.isEmpty || _creating || _c.results.isNotEmpty) {
+      return;
+    }
+
+    setState(() => _creating = true);
+    T? created;
+    try {
+      created = await create(query);
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
+    if (!mounted || created == null) return;
+    widget.onPick(created);
+  }
 
   @override
   void initState() {
@@ -2436,7 +2468,11 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
       case LogicalKeyboardKey.numpadEnter:
         final h = _c.highlighted;
         final s = _c.highlightedSuggestion;
-        if (h != null && s != null && s.enabled) widget.onPick(h);
+        if (h != null && s != null && s.enabled) {
+          widget.onPick(h);
+        } else if (_canCreate) {
+          _startCreate();
+        }
         return KeyEventResult.handled;
       case LogicalKeyboardKey.escape:
         Navigator.of(context).maybePop();
@@ -2600,6 +2636,15 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
 
           Divider(height: 1, color: t.border),
 
+          if (_canCreate)
+            _CreateFooter(
+              theme: t,
+              label: _createLabel,
+              creating: _creating,
+              showEnterHint: true,
+              onTap: _startCreate,
+            ),
+
           // Results. Group headings intentionally use the same adjacency rule
           // and typography as the inline overlay menu.
           Flexible(
@@ -2708,12 +2753,21 @@ class _AdvancedSearchDialogState<T> extends State<_AdvancedSearchDialog<T>> {
     );
 
     if (!widget.isDesktop) {
-      // Edge-to-edge inside the modal bottom sheet: deliberately no outer
-      // Padding, Margin, Center, or transparent gutter on mobile.
-      return SizedBox(
-        width: double.infinity,
-        height: MediaQuery.sizeOf(context).height,
-        child: Material(color: Colors.transparent, child: surface),
+      // Keep the Advanced Search surface entirely inside the visible viewport.
+      // The keyboard is represented by viewInsets.bottom and is not usable
+      // layout space. Padding by the inset also positions the sheet above it.
+      final media = MediaQuery.of(context);
+      final availableHeight =
+          (media.size.height - media.viewInsets.bottom - media.padding.top)
+              .clamp(0.0, double.infinity)
+              .toDouble();
+      return Padding(
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: SizedBox(
+          width: double.infinity,
+          height: availableHeight,
+          child: Material(color: Colors.transparent, child: surface),
+        ),
       );
     }
 

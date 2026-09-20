@@ -84,8 +84,8 @@ class _SuperAutoSuggestionsItemScenariosScreenState
           description: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.info_outline_rounded, size: 12),
-              SizedBox(width: 4),
+              const Icon(Icons.info_outline_rounded, size: 12),
+              const SizedBox(width: 4),
               Text(l10n.customDescriptionWidget),
             ],
           ),
@@ -253,7 +253,7 @@ class _SuperAutoSuggestionsItemScenariosScreenState
                   decoration: InputDecoration(
                     labelText: l10n.itemScenariosLabel,
                     helperText: l10n.openEmptyQuery,
-                    prefixIcon: Icon(Icons.view_list_rounded),
+                    prefixIcon: const Icon(Icons.view_list_rounded),
                   ),
                   hintText: l10n.searchTitleKeywords,
                 ),

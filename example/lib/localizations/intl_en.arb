@@ -274,5 +274,48 @@
   "lightTheme": "Light Theme",
   "darkTheme": "Dark Theme",
   "switchToArabic": "العربية (RTL)",
-  "switchToEnglish": "English (LTR)"
+  "switchToEnglish": "English (LTR)",
+  "version151Changes": "Version 1.5.1 changes",
+  "version151GalleryDescription": "Keyboard-safe overlay · Advanced View create action",
+  "version151Eyebrow": "VERSION 1.5.1 · BEHAVIOR",
+  "version151Title": "Keyboard-safe search and Advanced View creation",
+  "version151Description": "These scenarios exercise the viewport and create-action fixes introduced in version 1.5.1.",
+  "version151KeyboardSafeOverlay": "Keyboard-safe suggestions",
+  "version151KeyboardSafeOverlayDescription": "The dropdown must use only the visible viewport and must not extend behind the software keyboard.",
+  "version151KeyboardSafeInstruction": "On a phone or emulator, focus the field, keep the keyboard open, and type ACC. The long suggestions list should remain inside the visible area.",
+  "version151AccountLookup": "Keyboard-safe account lookup",
+  "version151KeyboardSafeHelper": "A long result set makes the available-height behavior easy to verify.",
+  "version151AccountHint": "Type ACC or an account code...",
+  "version151SampleAccount": "Sample account",
+  "version151AdvancedCreate": "Create from Advanced View",
+  "version151AdvancedCreateDescription": "When onCreate is available and the query has no suggestions, Advanced View must show the create action.",
+  "version151ProjectLookup": "Project lookup",
+  "version151ProjectLookupHelper": "Open Advanced View and type a value that is not already in the project list.",
+  "version151ProjectHint": "Search or create a project...",
+  "version151SampleProject": "Existing project",
+  "version151NoProjectSelected": "No project selected yet.",
+  "version151SelectedProject": "Selected: {project}",
+  "@version151SelectedProject": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
+  },
+  "version151CreatedProject": "Created project: {project}",
+  "@version151CreatedProject": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      }
+    }
+  },
+  "version151CreateProject": "Create \"{query}\"",
+  "@version151CreateProject": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  }
 }

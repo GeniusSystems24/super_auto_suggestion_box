@@ -1354,6 +1354,138 @@ abstract class SuperExampleLocalization {
   /// In en, this message translates to:
   /// **'English (LTR)'**
   String get switchToEnglish;
+
+  /// No description provided for @version151Changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Version 1.5.1 changes'**
+  String get version151Changes;
+
+  /// No description provided for @version151GalleryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard-safe overlay · Advanced View create action'**
+  String get version151GalleryDescription;
+
+  /// No description provided for @version151Eyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'VERSION 1.5.1 · BEHAVIOR'**
+  String get version151Eyebrow;
+
+  /// No description provided for @version151Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard-safe search and Advanced View creation'**
+  String get version151Title;
+
+  /// No description provided for @version151Description.
+  ///
+  /// In en, this message translates to:
+  /// **'These scenarios exercise the viewport and create-action fixes introduced in version 1.5.1.'**
+  String get version151Description;
+
+  /// No description provided for @version151KeyboardSafeOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard-safe suggestions'**
+  String get version151KeyboardSafeOverlay;
+
+  /// No description provided for @version151KeyboardSafeOverlayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The dropdown must use only the visible viewport and must not extend behind the software keyboard.'**
+  String get version151KeyboardSafeOverlayDescription;
+
+  /// No description provided for @version151KeyboardSafeInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'On a phone or emulator, focus the field, keep the keyboard open, and type ACC. The long suggestions list should remain inside the visible area.'**
+  String get version151KeyboardSafeInstruction;
+
+  /// No description provided for @version151AccountLookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard-safe account lookup'**
+  String get version151AccountLookup;
+
+  /// No description provided for @version151KeyboardSafeHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'A long result set makes the available-height behavior easy to verify.'**
+  String get version151KeyboardSafeHelper;
+
+  /// No description provided for @version151AccountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type ACC or an account code...'**
+  String get version151AccountHint;
+
+  /// No description provided for @version151SampleAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample account'**
+  String get version151SampleAccount;
+
+  /// No description provided for @version151AdvancedCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create from Advanced View'**
+  String get version151AdvancedCreate;
+
+  /// No description provided for @version151AdvancedCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When onCreate is available and the query has no suggestions, Advanced View must show the create action.'**
+  String get version151AdvancedCreateDescription;
+
+  /// No description provided for @version151ProjectLookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Project lookup'**
+  String get version151ProjectLookup;
+
+  /// No description provided for @version151ProjectLookupHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Advanced View and type a value that is not already in the project list.'**
+  String get version151ProjectLookupHelper;
+
+  /// No description provided for @version151ProjectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search or create a project...'**
+  String get version151ProjectHint;
+
+  /// No description provided for @version151SampleProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing project'**
+  String get version151SampleProject;
+
+  /// No description provided for @version151NoProjectSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No project selected yet.'**
+  String get version151NoProjectSelected;
+
+  /// No description provided for @version151SelectedProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected: {project}'**
+  String version151SelectedProject(String project);
+
+  /// No description provided for @version151CreatedProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Created project: {project}'**
+  String version151CreatedProject(String project);
+
+  /// No description provided for @version151CreateProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Create \"{query}\"'**
+  String version151CreateProject(String query);
 }
 
 class _SuperExampleLocalizationDelegate
