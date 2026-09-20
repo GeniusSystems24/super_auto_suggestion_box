@@ -200,7 +200,7 @@ abstract class SuperExampleLocalization {
   /// No description provided for @searchModeVersion.
   ///
   /// In en, this message translates to:
-  /// **'v1.3.1 · SEARCH MODE'**
+  /// **'v1.6.0 · SEARCH MODE'**
   String get searchModeVersion;
 
   /// No description provided for @threeSearchSurfaces.
@@ -572,7 +572,7 @@ abstract class SuperExampleLocalization {
   /// No description provided for @sourceVersion.
   ///
   /// In en, this message translates to:
-  /// **'v1.3.1 · {title}'**
+  /// **'v1.6.0 · {title}'**
   String sourceVersion(String title);
 
   /// No description provided for @basicLookup.
@@ -656,7 +656,7 @@ abstract class SuperExampleLocalization {
   /// No description provided for @itemApiVersion.
   ///
   /// In en, this message translates to:
-  /// **'v1.3.1 · ITEM API'**
+  /// **'v1.6.0 · ITEM API'**
   String get itemApiVersion;
 
   /// No description provided for @everyItemScenario.

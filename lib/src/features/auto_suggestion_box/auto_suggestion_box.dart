@@ -12,7 +12,7 @@ export 'domain/entities/match_strategy.dart';
 export 'domain/entities/suggestions_query_result.dart';
 export 'domain/entities/super_suggestions_page.dart';
 export 'domain/repositories/super_auto_suggestions_source.dart'
-    hide bindSuperAutoSuggestionsSourceView;
+    hide bindSuperAutoSuggestionsSourceView, SuperAutoSuggestionViewAdapter;
 export 'domain/usecases/query_suggestions.dart';
 
 // Data

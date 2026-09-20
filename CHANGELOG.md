@@ -4,6 +4,29 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.6.0 - 2026-09-21
+
+### Changed
+
+- **Breaking:** Renamed `AutoSuggestionBuilder<T>` to
+  `SuperAutoSuggestionBuilder<T>`.
+- **Breaking:** `SuperAutoSuggestionBuilder<T>` now receives the active
+  `BuildContext` as its first argument:
+  `(context, items, index, element)`.
+- `SuperAutoSuggestionsBox.suggestionBuilder` now uses
+  `SuperAutoSuggestionBuilder<T>`.
+- Builder binding now occurs from `didChangeDependencies`, allowing builders
+  to safely use inherited values such as `Theme.of(context)`, localization,
+  MediaQuery, and design-system extensions.
+- Source and controller internals continue to use a context-free adapter so
+  domain/data query logic remains independent from Flutter view context.
+- Updated runnable examples and widget tests to the new builder signature.
+
+### Documentation
+
+- Updated README and agent skill guidance for the 1.6.0 builder API.
+- Added `migration_1.5.0_to_1.6.0.md` with before/after migration examples.
+
 ## 1.5.1 - 2026-09-20
 
 ### Changed

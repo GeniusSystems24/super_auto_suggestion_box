@@ -56,6 +56,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   static SuperAutoSuggestionsItem<_DirectoryRecord> _suggestion(
+    BuildContext context,
     List<_DirectoryRecord> items,
     int index,
     _DirectoryRecord record,

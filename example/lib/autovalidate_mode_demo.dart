@@ -96,7 +96,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                           children: [
                             SuperAutoSuggestionsBox<String>(
                               source: SuggestionSources.list<String>(_accounts),
-                              suggestionBuilder: (items, index, item) =>
+                              suggestionBuilder: (context, items, index, item) =>
                                   _accountSuggestion(items, index, item, l10n),
                               decoration: InputDecoration(
                                 labelText: l10n.postingAccount,
@@ -108,7 +108,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                             SizedBox(height: spacing.space6),
                             SuperAutoSuggestionsBox<String>(
                               source: SuggestionSources.list<String>(_accounts),
-                              suggestionBuilder: (items, index, item) =>
+                              suggestionBuilder: (context, items, index, item) =>
                                   _accountSuggestion(items, index, item, l10n),
                               decoration: InputDecoration(
                                 labelText: l10n.expenseAccount,
@@ -153,7 +153,7 @@ class _AutovalidateModeDemoState extends State<AutovalidateModeDemo> {
                   marker: theme.tokens.markerColor(SuperMarker.ledger),
                   child: SuperAutoSuggestionsBox<String>(
                     source: SuggestionSources.list<String>(_accounts),
-                    suggestionBuilder: (items, index, item) =>
+                    suggestionBuilder: (context, items, index, item) =>
                                   _accountSuggestion(items, index, item, l10n),
                     decoration: InputDecoration(
                       labelText: l10n.immediateAccount,

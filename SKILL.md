@@ -2,7 +2,7 @@
 name: super-auto-suggestion-box
 description: >
   Use the super_auto_suggestion_box Flutter package to build GeniusLink
-  design-system typeahead / combobox inputs. Version 1.3.1 uses raw T values,
+  design-system typeahead / combobox inputs. Version 1.6.0 uses raw T values,
   FormField<T>-based validation over the selected T?, and onSelectionChanged
   for select/de-select notifications while suggestionBuilder derives row metadata.
 ---
@@ -20,7 +20,7 @@ read-only/fixable states, validation, advanced search, and bare embedding.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.3.1
+  super_auto_suggestion_box: ^1.6.0
 ```
 
 ```dart
@@ -42,7 +42,7 @@ darkTheme: SuperMaterialThemeData.dark(
 ),
 ```
 
-## Required 1.3.1 Pattern
+## Raw-value Pattern
 
 Public APIs use raw `T` values. Do not build
 `List<SuperAutoSuggestionsItem<T>>` as source data. Create
@@ -53,6 +53,7 @@ render-description helpers.
 final accounts = ['1010', '1020', '4000'];
 
 SuperAutoSuggestionsItem<String> accountSuggestion(
+  BuildContext context,
   List<String> items,
   int index,
   String code,
@@ -97,6 +98,31 @@ The pre-1.3.0 names remain only as deprecated typedefs.
   the same adjacency rule as the inline overlay.
 - Reuse `super_form_field`'s `FieldShell`, `ErrorBadge`, and `FieldIconButton`;
   do not recreate those components locally.
+
+## Required 1.6.0 Builder Pattern
+
+Use `SuperAutoSuggestionBuilder<T>`. Its first argument is the active
+`BuildContext`:
+
+```dart
+SuperAutoSuggestionsItem<String> accountSuggestion(
+  BuildContext context,
+  List<String> items,
+  int index,
+  String code,
+) {
+  final colors = Theme.of(context).colorScheme;
+
+  return SuperAutoSuggestionsItem<String>(
+    value: code,
+    titleText: code,
+    icon: Icon(Icons.account_balance_outlined, color: colors.primary),
+  );
+}
+```
+
+Use `context` only for presentation and inherited-tree values. Keep source
+queries and domain data context-free.
 
 ## Sources
 

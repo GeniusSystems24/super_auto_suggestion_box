@@ -23,7 +23,7 @@
   },
   "searchModes": "أوضاع البحث",
   "searchModesSubtitle": "حقل نص · عرض متقدم · كلاهما",
-  "searchModeVersion": "v1.3.1 · وضع البحث",
+  "searchModeVersion": "v1.6.0 · وضع البحث",
   "threeSearchSurfaces": "مكوّن واحد وثلاث واجهات للبحث",
   "searchModeResponsiveDescription": "عند عدم تحديد الوضع، تستخدم منصات سطح المكتب TextBox افتراضيًا، بينما تستخدم Android وiOS وFuchsia وضع AdvanceView.",
   "adaptiveDefault": "الوضع التكيفي الافتراضي",
@@ -92,7 +92,7 @@
   "pagedSource": "مصدر مقسم إلى صفحات",
   "pagedSourceDescription": "تمرير لا نهائي عبر صفحات الخادم",
   "sourceExample": "مثال المصدر",
-  "sourceVersion": "v1.3.1 · {title}",
+  "sourceVersion": "v1.6.0 · {title}",
   "@sourceVersion": {
     "placeholders": {
       "title": {
@@ -120,7 +120,7 @@
     }
   },
   "allItemScenarios": "كل سيناريوهات العناصر",
-  "itemApiVersion": "v1.3.1 · واجهة العنصر",
+  "itemApiVersion": "v1.6.0 · واجهة العنصر",
   "everyItemScenario": "كل سيناريوهات SuperAutoSuggestionsItem",
   "itemScenarioOverview": "تغطي القائمة أدناه البيانات النصية، والمكونات المخصصة، والتجميع، والكلمات المفتاحية، وحالة التفعيل الثابتة، وStream<bool> enabledSnapshot، وعنصرًا غنيًا مركبًا.",
   "enabledSnapshotDescription": "يحدّث هذا المفتاح Stream<bool> المستخدم في سيناريو enabledSnapshot.",

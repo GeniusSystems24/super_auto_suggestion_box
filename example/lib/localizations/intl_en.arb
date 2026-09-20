@@ -23,7 +23,7 @@
   },
   "searchModes": "Search Modes",
   "searchModesSubtitle": "TEXTBOX · ADVANCE VIEW · BOTH",
-  "searchModeVersion": "v1.3.1 · SEARCH MODE",
+  "searchModeVersion": "v1.6.0 · SEARCH MODE",
   "threeSearchSurfaces": "One component, three search surfaces",
   "searchModeResponsiveDescription": "When mode is omitted, desktop platforms default to TextBox. Android, iOS, and Fuchsia default to AdvanceView.",
   "adaptiveDefault": "Adaptive default",
@@ -92,7 +92,7 @@
   "pagedSource": "Paged source",
   "pagedSourceDescription": "Infinite scrolling through server pages",
   "sourceExample": "SOURCE EXAMPLE",
-  "sourceVersion": "v1.3.1 · {title}",
+  "sourceVersion": "v1.6.0 · {title}",
   "@sourceVersion": {
     "placeholders": {
       "title": {
@@ -120,7 +120,7 @@
     }
   },
   "allItemScenarios": "ALL ITEM SCENARIOS",
-  "itemApiVersion": "v1.3.1 · ITEM API",
+  "itemApiVersion": "v1.6.0 · ITEM API",
   "everyItemScenario": "Every SuperAutoSuggestionsItem scenario",
   "itemScenarioOverview": "The list below covers text metadata, custom widgets, grouping, keywords, static enabled state, Stream<bool> enabledSnapshot, and a combined rich item.",
   "enabledSnapshotDescription": "This switch updates the Stream<bool> used by the enabledSnapshot scenario.",

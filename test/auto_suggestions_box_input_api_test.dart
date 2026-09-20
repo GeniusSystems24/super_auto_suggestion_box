@@ -16,6 +16,7 @@ Widget _themedApp(Widget home) {
 }
 
 SuperAutoSuggestionsItem<String> _suggestion(
+  BuildContext context,
   List<String> items,
   int index,
   String element,
@@ -559,7 +560,7 @@ void main() {
         Scaffold(
           body: SuperAutoSuggestionsBox<String>(
             source: SuggestionSources.list<String>(const ['A']),
-            suggestionBuilder: (items, index, value) =>
+            suggestionBuilder: (context, items, index, value) =>
                 SuperAutoSuggestionsItem<String>(
                   value: value,
                   titleText: 'Widget title',

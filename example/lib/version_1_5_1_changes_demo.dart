@@ -141,7 +141,7 @@ class _Version151ChangesDemoState extends State<Version151ChangesDemo> {
                       SizedBox(height: spacing.space5),
                       SuperAutoSuggestionsBox<String>(
                         source: _accountSource,
-                        suggestionBuilder: (items, index, item) =>
+                        suggestionBuilder: (context, items, index, item) =>
                             _accountSuggestion(items, index, item, l10n),
                         mode: SuperAutoSuggestionsMode.textBox,
                         maxVisibleRows: 14,
@@ -167,7 +167,7 @@ class _Version151ChangesDemoState extends State<Version151ChangesDemo> {
                     children: [
                       SuperAutoSuggestionsBox<String>(
                         source: _projectSource,
-                        suggestionBuilder: (items, index, item) =>
+                        suggestionBuilder: (context, items, index, item) =>
                             _projectSuggestion(items, index, item, l10n),
                         mode: SuperAutoSuggestionsMode.advanceView,
                         decoration: InputDecoration(

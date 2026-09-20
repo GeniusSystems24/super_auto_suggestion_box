@@ -123,7 +123,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   final SuperAutoSuggestionsSource<T> source;
 
   /// Builds suggestion metadata for raw values.
-  final AutoSuggestionBuilder<T> suggestionBuilder;
+  final SuperAutoSuggestionBuilder<T> suggestionBuilder;
 
   /// An externally-owned controller. When null, one is created and disposed
   /// with the widget. Suggestion data remains configured through [source].
@@ -601,6 +601,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   bool _creating = false; // an onCreate call is in flight
   String _resolvedRecentsGroupLabel = 'Recent';
   Locale? _resolvedLocale;
+  bool _controllerViewBound = false;
 
   /// The outer form field owns validation for the selected raw value.
   final GlobalKey<FormFieldState<T>> _internalFormFieldKey =
@@ -615,7 +616,6 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     super.initState();
     _c = widget.controller ?? _buildController();
     _ownsController = widget.controller == null;
-    _bindController();
     _lastSelection = _selectionSnapshot;
     _c.addListener(_onModel);
     _attachFieldTextController();
@@ -632,7 +632,8 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     bindSuperAutoSuggestionsControllerView(
       _c,
       widget.source,
-      widget.suggestionBuilder,
+      (items, index, element) =>
+          widget.suggestionBuilder(context, items, index, element),
       debounce: widget.debounce,
       minChars: widget.minChars,
       maxResults: widget.maxResults,
@@ -643,6 +644,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       recentsGroupLabel: _resolvedRecentsGroupLabel,
       onRecentsChanged: widget.onRecentsChanged,
     );
+    _controllerViewBound = true;
   }
 
   void _attachFieldTextController() {
@@ -940,15 +942,22 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     final locale = Localizations.localeOf(context);
-    if (_resolvedLocale == locale) return;
-    _resolvedLocale = locale;
+    final localeChanged = _resolvedLocale != locale;
+    if (localeChanged) _resolvedLocale = locale;
+
     final l10n = SuperAutoSuggestionLocalization.of(context);
     final next = widget.recentsGroupLabel == 'Recent'
         ? l10n.recent
         : widget.recentsGroupLabel;
-    if (_resolvedRecentsGroupLabel != next) {
-      _resolvedRecentsGroupLabel = next;
+    final recentsLabelChanged = _resolvedRecentsGroupLabel != next;
+    if (recentsLabelChanged) _resolvedRecentsGroupLabel = next;
+
+    // The public builder receives BuildContext, so the first binding must happen
+    // here rather than initState. This makes inherited lookups safe inside the
+    // builder while lower source/controller layers keep a context-free adapter.
+    if (!_controllerViewBound || localeChanged || recentsLabelChanged) {
       _bindController();
     }
   }

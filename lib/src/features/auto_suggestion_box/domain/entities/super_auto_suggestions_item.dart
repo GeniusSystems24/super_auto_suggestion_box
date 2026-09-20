@@ -6,15 +6,24 @@
 
 import 'dart:async' show Stream;
 
-import 'package:flutter/widgets.dart' show IconData, Widget, immutable;
+import 'package:flutter/widgets.dart' show BuildContext, IconData, Widget, immutable;
 
 /// Builds the render/search metadata for [element] at [index] inside [items].
+///
+/// [context] is the active `SuperAutoSuggestionsBox` context and can be used
+/// for inherited presentation values such as Theme, localization, MediaQuery,
+/// and design-system extensions.
 ///
 /// Public APIs accept raw `T` values; the package calls this builder whenever
 /// it needs the [SuperAutoSuggestionsItem] representation for filtering,
 /// display, selection, grouping, or value resolution.
-typedef AutoSuggestionBuilder<T> =
-    SuperAutoSuggestionsItem<T> Function(List<T> items, int index, T element);
+typedef SuperAutoSuggestionBuilder<T> =
+    SuperAutoSuggestionsItem<T> Function(
+      BuildContext context,
+      List<T> items,
+      int index,
+      T element,
+    );
 
 /// One suggestion row.
 ///

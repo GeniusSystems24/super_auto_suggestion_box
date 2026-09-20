@@ -9,13 +9,10 @@ server-side paging, recents, inline create, shadow-hint completion, record
 binding, read-only/fixable states, advanced search, validation, and bare
 embedding.
 
-Version `1.5.1` removes the deprecated constructor fields, improves suggestion
-layout in keyboard-constrained mobile viewports, and makes the create action
-more visible and consistent in both inline and Advanced Search experiences.
-Suggestion rows continue to use raw `T` values as the public data model through
-`SuperAutoSuggestionsItem<T>`, while `onSelectionChanged` remains the selection
-callback for both select and de-select operations.
-
+Version `1.6.0` introduces `SuperAutoSuggestionBuilder<T>` with the active
+`BuildContext` as its first argument. Builders can now derive suggestion-row
+presentation from Theme, localization, MediaQuery, and other inherited values
+while sources and controllers continue to work with raw `T` values.
 Every `SuperAutoSuggestionsBox<T>` requires a
 `SuperAutoSuggestionsSource<T>`. Use `SuperAutoSuggestionSources.list<T>(values)` for a
 local collection. Initial multi-select values belong to
@@ -24,6 +21,7 @@ multi-select configuration belong to the widget.
 
 ```dart
 SuperAutoSuggestionsItem<T> suggestionBuilder(
+  BuildContext context,
   List<T> items,
   int index,
   T element,
@@ -34,11 +32,50 @@ SuperAutoSuggestionsItem<T> suggestionBuilder(
 callers no longer wrap every collection item, fetch result, selected item,
 recent item, or created item in `SuperAutoSuggestionsItem<T>`.
 
+## Suggestion Builder Context
+
+Version `1.6.0` renames `AutoSuggestionBuilder<T>` to
+`SuperAutoSuggestionBuilder<T>` and adds the active `BuildContext` as the first
+argument.
+
+```dart
+SuperAutoSuggestionsItem<T> suggestionBuilder(
+  BuildContext context,
+  List<T> items,
+  int index,
+  T element,
+)
+```
+
+The context belongs to the active `SuperAutoSuggestionsBox`, so builders may
+safely use inherited presentation values such as `Theme.of(context)`,
+localization, `MediaQuery`, and GeniusLink theme extensions.
+
+```dart
+SuperAutoSuggestionsItem<String> accountSuggestion(
+  BuildContext context,
+  List<String> items,
+  int index,
+  String code,
+) {
+  final colors = Theme.of(context).colorScheme;
+
+  return SuperAutoSuggestionsItem<String>(
+    value: code,
+    titleText: code,
+    icon: Icon(Icons.account_balance_outlined, color: colors.primary),
+  );
+}
+```
+
+For migration details, see
+[`migration_1.5.0_to_1.6.0.md`](migration_1.5.0_to_1.6.0.md).
+
 ## Setup
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.5.1
+  super_auto_suggestion_box: ^1.6.0
 ```
 
 ```dart
@@ -70,6 +107,7 @@ MaterialApp(
 final units = ['each', 'box', 'carton'];
 
 SuperAutoSuggestionsItem<String> unitSuggestion(
+  BuildContext context,
   List<String> items,
   int index,
   String unit,
@@ -112,6 +150,7 @@ Keep domain data raw and derive row metadata in the builder:
 final accounts = ['1010', '1020', '4000'];
 
 SuperAutoSuggestionsItem<String> accountSuggestion(
+  BuildContext context,
   List<String> items,
   int index,
   String code,

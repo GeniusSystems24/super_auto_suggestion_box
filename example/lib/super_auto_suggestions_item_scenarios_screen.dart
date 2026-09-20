@@ -58,6 +58,7 @@ class _SuperAutoSuggestionsItemScenariosScreenState
   }
 
   SuperAutoSuggestionsItem<_ScenarioItem> _suggestion(
+    BuildContext context,
     List<_ScenarioItem> items,
     int index,
     _ScenarioItem item,

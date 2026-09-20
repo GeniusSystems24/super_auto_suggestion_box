@@ -62,7 +62,7 @@ abstract final class SuperAutoSuggestionSources {
   ///
   /// SuperAutoSuggestionsBox<Product>(
   ///   source: source,
-  ///   suggestionBuilder: (items, index, product) {
+  ///   suggestionBuilder: (context, items, index, product) {
   ///     return SuperAutoSuggestionsItem<Product>(
   ///       value: product,
   ///       displayText: product.name,
@@ -133,7 +133,7 @@ abstract final class SuperAutoSuggestionSources {
   ///
   /// SuperAutoSuggestionsBox<Customer>(
   ///   source: source,
-  ///   suggestionBuilder: (items, index, customer) {
+  ///   suggestionBuilder: (context, items, index, customer) {
   ///     return SuperAutoSuggestionsItem<Customer>(
   ///       value: customer,
   ///       displayText: customer.name,
@@ -179,7 +179,7 @@ abstract final class SuperAutoSuggestionSources {
   /// SuperAutoSuggestionsBox<Customer>(
   ///   source: source,
   ///   debounce: const Duration(milliseconds: 300),
-  ///   suggestionBuilder: (items, index, customer) {
+  ///   suggestionBuilder: (context, items, index, customer) {
   ///     return SuperAutoSuggestionsItem<Customer>(
   ///       value: customer,
   ///       displayText: customer.name,
@@ -225,7 +225,7 @@ abstract final class SuperAutoSuggestionSources {
   ///
   /// SuperAutoSuggestionsBox<Product>(
   ///   source: source,
-  ///   suggestionBuilder: (items, index, product) {
+  ///   suggestionBuilder: (context, items, index, product) {
   ///     return SuperAutoSuggestionsItem<Product>(
   ///       value: product,
   ///       displayText: product.name,
@@ -282,7 +282,7 @@ abstract final class SuperAutoSuggestionSources {
   ///
   /// SuperAutoSuggestionsBox<Customer>(
   ///   source: source,
-  ///   suggestionBuilder: (items, index, customer) {
+  ///   suggestionBuilder: (context, items, index, customer) {
   ///     return SuperAutoSuggestionsItem<Customer>(
   ///       value: customer,
   ///       displayText: customer.name,
@@ -344,7 +344,7 @@ abstract final class SuperAutoSuggestionSources {
   ///
   /// SuperAutoSuggestionsBox<Product>(
   ///   source: source,
-  ///   suggestionBuilder: (items, index, product) {
+  ///   suggestionBuilder: (context, items, index, product) {
   ///     return SuperAutoSuggestionsItem<Product>(
   ///       value: product,
   ///       displayText: product.name,
@@ -374,7 +374,7 @@ class _SuggestionRow<T> {
 
 List<_SuggestionRow<T>> _buildRows<T>(
   List<T> items,
-  AutoSuggestionBuilder<T> suggestionBuilder,
+  SuperAutoSuggestionViewAdapter<T> suggestionBuilder,
 ) => [
   for (var i = 0; i < items.length; i++)
     _SuggestionRow<T>(items[i], suggestionBuilder(items, i, items[i])),
@@ -382,7 +382,7 @@ List<_SuggestionRow<T>> _buildRows<T>(
 
 List<T> _localMatches<T>({
   required List<T> items,
-  required AutoSuggestionBuilder<T> suggestionBuilder,
+  required SuperAutoSuggestionViewAdapter<T> suggestionBuilder,
   required String query,
   required AutoSuggestionMatch match,
   required bool caseSensitive,
@@ -450,7 +450,7 @@ List<T> _localMatches<T>({
 void _appendUniqueByValue<T>(
   List<T> target,
   Iterable<T> items,
-  AutoSuggestionBuilder<T> suggestionBuilder,
+  SuperAutoSuggestionViewAdapter<T> suggestionBuilder,
 ) {
   final seen = {
     for (final row in _buildRows(target, suggestionBuilder))
@@ -468,7 +468,7 @@ void _appendUniqueByValue<T>(
 List<T> _mergeUniqueByValue<T>(
   List<T> local,
   List<T> remote,
-  AutoSuggestionBuilder<T> suggestionBuilder,
+  SuperAutoSuggestionViewAdapter<T> suggestionBuilder,
 ) {
   final merged = List<T>.of(local);
   _appendUniqueByValue(merged, remote, suggestionBuilder);
@@ -478,7 +478,7 @@ List<T> _mergeUniqueByValue<T>(
 T? _resolveByValue<T>(
   List<T> items,
   T value,
-  AutoSuggestionBuilder<T> suggestionBuilder,
+  SuperAutoSuggestionViewAdapter<T> suggestionBuilder,
 ) {
   final valueSuggestion = suggestionBuilder([value], 0, value);
   for (final row in _buildRows(items, suggestionBuilder)) {
@@ -529,7 +529,7 @@ T? _resolveByValue<T>(
 ///
 /// SuperAutoSuggestionsBox<Product>(
 ///   source: source,
-///   suggestionBuilder: (items, index, product) {
+///   suggestionBuilder: (context, items, index, product) {
 ///     return SuperAutoSuggestionsItem<Product>(
 ///       value: product,
 ///       displayText: product.name,
@@ -623,7 +623,7 @@ class SuperAutoListSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
 /// SuperAutoSuggestionsBox<Customer>(
 ///   source: source,
 ///   debounce: const Duration(milliseconds: 300),
-///   suggestionBuilder: (items, index, customer) {
+///   suggestionBuilder: (context, items, index, customer) {
 ///     return SuperAutoSuggestionsItem<Customer>(
 ///       value: customer,
 ///       displayText: customer.name,
@@ -733,7 +733,7 @@ class SuperAutoAsyncSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
 ///
 /// SuperAutoSuggestionsBox<Product>(
 ///   source: source,
-///   suggestionBuilder: (items, index, product) {
+///   suggestionBuilder: (context, items, index, product) {
 ///     return SuperAutoSuggestionsItem<Product>(
 ///       value: product,
 ///       displayText: product.name,
@@ -897,7 +897,7 @@ class SuperAutoHybridSuggestionsSource<T>
 ///
 /// SuperAutoSuggestionsBox<Customer>(
 ///   source: source,
-///   suggestionBuilder: (items, index, customer) {
+///   suggestionBuilder: (context, items, index, customer) {
 ///     return SuperAutoSuggestionsItem<Customer>(
 ///       value: customer,
 ///       displayText: customer.name,
@@ -1056,7 +1056,7 @@ class SuperAutoRemoteFallbackSuggestionsSource<T>
 ///
 /// SuperAutoSuggestionsBox<Product>(
 ///   source: source,
-///   suggestionBuilder: (items, index, product) {
+///   suggestionBuilder: (context, items, index, product) {
 ///     return SuperAutoSuggestionsItem<Product>(
 ///       value: product,
 ///       displayText: product.name,

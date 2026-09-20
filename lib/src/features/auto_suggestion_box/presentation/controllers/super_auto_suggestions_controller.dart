@@ -40,7 +40,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
 
   void _bindViewAdapter(
     SuperAutoSuggestionsSource<T> source,
-    AutoSuggestionBuilder<T> builder, {
+    SuperAutoSuggestionViewAdapter<T> builder, {
     required Duration debounce,
     required int minChars,
     required int maxResults,
@@ -748,7 +748,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
 void bindSuperAutoSuggestionsControllerView<T>(
   SuperAutoSuggestionsController<T> controller,
   SuperAutoSuggestionsSource<T> source,
-  AutoSuggestionBuilder<T> builder, {
+  SuperAutoSuggestionViewAdapter<T> builder, {
   required Duration debounce,
   required int minChars,
   required int maxResults,

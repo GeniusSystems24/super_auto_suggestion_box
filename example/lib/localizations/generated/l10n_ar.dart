@@ -59,7 +59,7 @@ class SuperExampleLocalizationAr extends SuperExampleLocalization {
   String get searchModesSubtitle => 'حقل نص · عرض متقدم · كلاهما';
 
   @override
-  String get searchModeVersion => 'v1.3.1 · وضع البحث';
+  String get searchModeVersion => 'v1.6.0 · وضع البحث';
 
   @override
   String get threeSearchSurfaces => 'مكوّن واحد وثلاث واجهات للبحث';
@@ -262,7 +262,7 @@ class SuperExampleLocalizationAr extends SuperExampleLocalization {
 
   @override
   String sourceVersion(String title) {
-    return 'v1.3.1 · $title';
+    return 'v1.6.0 · $title';
   }
 
   @override
@@ -309,7 +309,7 @@ class SuperExampleLocalizationAr extends SuperExampleLocalization {
   String get allItemScenarios => 'كل سيناريوهات العناصر';
 
   @override
-  String get itemApiVersion => 'v1.3.1 · واجهة العنصر';
+  String get itemApiVersion => 'v1.6.0 · واجهة العنصر';
 
   @override
   String get everyItemScenario => 'كل سيناريوهات SuperAutoSuggestionsItem';

@@ -101,7 +101,7 @@ class TryExampleScreen extends StatelessWidget {
         children: [
           SuperAutoSuggestionsBox<String>(
             source: source,
-            suggestionBuilder: (items, index, item) =>
+            suggestionBuilder: (context, items, index, item) =>
                 _documentSuggestion(items, index, item, l10n),
             controller: SuperAutoSuggestionsController<String>(),
             decoration: InputDecoration(

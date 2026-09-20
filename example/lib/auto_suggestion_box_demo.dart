@@ -113,6 +113,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   ];
 
   static SuperAutoSuggestionsItem<String> _accountSuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String code,
@@ -160,6 +161,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   ];
 
   static SuperAutoSuggestionsItem<String> _documentReferenceSuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String reference,
@@ -196,6 +198,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   ];
 
   static SuperAutoSuggestionsItem<String> _citySuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String code,
@@ -213,6 +216,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   ];
 
   SuperAutoSuggestionsItem<String> _projectSuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String project,
@@ -231,6 +235,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
       SuperExampleLocalization.of(context).catalogItem(sku.split('-').last);
 
   SuperAutoSuggestionsItem<String> _catalogSuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String sku,
@@ -294,6 +299,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   static final List<String> _directory = [..._remoteVendors, ..._localVendors];
 
   SuperAutoSuggestionsItem<String> _vendorSuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String vendor,
@@ -309,6 +315,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   }
 
   SuperAutoSuggestionsItem<String> _directorySuggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String vendor,
@@ -392,7 +399,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'v1.3.1',
+                'v1.6.0',
                 style: typography.eyebrow.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),

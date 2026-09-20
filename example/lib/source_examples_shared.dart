@@ -98,6 +98,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
   }
 
   SuperAutoSuggestionsItem<String> _suggestion(
+    BuildContext context,
     List<String> items,
     int index,
     String item,

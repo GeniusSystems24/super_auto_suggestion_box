@@ -181,7 +181,7 @@ class _RequiredBox extends StatelessWidget {
         source: SuggestionSources.list<String>(
           _ValidationPositionDemoState._accounts,
         ),
-        suggestionBuilder: (items, index, item) =>
+        suggestionBuilder: (context, items, index, item) =>
             _accountSuggestion(items, index, item, l10n),
         decoration: InputDecoration(
           labelText: label,

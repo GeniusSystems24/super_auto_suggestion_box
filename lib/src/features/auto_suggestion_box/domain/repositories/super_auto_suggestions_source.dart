@@ -12,6 +12,18 @@ import '../entities/super_auto_suggestions_item.dart';
 import '../entities/super_suggestions_page.dart';
 import '../entities/suggestions_query_result.dart';
 
+/// Internal, context-free adapter used by source/controller layers.
+///
+/// `SuperAutoSuggestionsBox` wraps the public
+/// `SuperAutoSuggestionBuilder<T>` with its active BuildContext before
+/// binding it to these lower layers.
+typedef SuperAutoSuggestionViewAdapter<T> =
+    SuperAutoSuggestionsItem<T> Function(
+      List<T> items,
+      int index,
+      T element,
+    );
+
 SuperAutoSuggestionsItem<T> _defaultSuggestionBuilder<T>(
   List<T> items,
   int index,
@@ -24,9 +36,9 @@ abstract class SuperAutoSuggestionsSource<T> {
   SuperAutoSuggestionsSource()
     : _suggestionBuilder = _defaultSuggestionBuilder<T>;
 
-  AutoSuggestionBuilder<T> _suggestionBuilder;
+  SuperAutoSuggestionViewAdapter<T> _suggestionBuilder;
 
-  void _bindViewAdapter(AutoSuggestionBuilder<T> builder) {
+  void _bindViewAdapter(SuperAutoSuggestionViewAdapter<T> builder) {
     _suggestionBuilder = builder;
   }
 
@@ -82,7 +94,7 @@ abstract class SuperAutoSuggestionsSource<T> {
 /// `SuperAutoSuggestionsBox` so source APIs do not expose `suggestionBuilder`.
 void bindSuperAutoSuggestionsSourceView<T>(
   SuperAutoSuggestionsSource<T> source,
-  AutoSuggestionBuilder<T> builder,
+  SuperAutoSuggestionViewAdapter<T> builder,
 ) {
   source._bindViewAdapter(builder);
 }
