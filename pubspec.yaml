@@ -9,7 +9,7 @@ description: >
   Supports light/dark themes, LTR, and RTL.
 
 # package version
-version: 1.6.0
+version: 1.6.1
 # cd example; flutter build web --release --base-href "/super_auto_suggestion_box/"
 
 # package homepage, repository, and issue tracker URLs
