@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+
 import '../../domain/entities/super_auto_suggestions_item.dart';
 import '../../domain/entities/match_strategy.dart';
 import '../../domain/entities/super_suggestions_page.dart';
@@ -153,7 +155,8 @@ abstract final class SuperAutoSuggestionSources {
 
   /// Creates an asynchronous source backed by [fetch].
   ///
-  /// [fetch] is called with the current query and must complete with the raw
+  /// [fetch] is called with the active [BuildContext] and current query and must
+  /// complete with the raw
   /// values to display. Errors from [fetch] are allowed to propagate to the
   /// consumer; handle transport- or domain-specific failures in the callback
   /// when a fallback result is required.
@@ -161,19 +164,20 @@ abstract final class SuperAutoSuggestionSources {
   /// Every successful result is added to an internal cache, de-duplicated by the
   /// suggestion value. The cache is used by `resolve` so a previously fetched
   /// value can later be mapped back to its canonical item. [initialItems] seeds
-  /// that cache before the first request; it is not returned automatically from
-  /// `query`.
+  /// that cache before the first request. Cached values are matched immediately
+  /// by the widget before any debounced remote fetch is started.
   ///
-  /// Debouncing belongs to `SuperAutoSuggestionsBox` or to the application
-  /// layer. The source itself invokes [fetch] whenever its `query` method is
-  /// called.
+  /// `SuperAutoSuggestionsBox` keeps local cache matching outside debounce and
+  /// applies debounce only to the remote [fetch] step. Configure local cache
+  /// matching with [match] and [caseSensitive].
   ///
   /// ---
   /// Example:
   ///
   /// ```dart
   /// final source = SuperAutoSuggestionSources.async<Customer>(
-  ///   (query) => customerRepository.search(query),
+  ///   (context, query) => customerRepository.search(query),
+  ///   initialItems: cachedCustomers,
   /// );
   ///
   /// SuperAutoSuggestionsBox<Customer>(
@@ -188,9 +192,16 @@ abstract final class SuperAutoSuggestionSources {
   /// );
   /// ```
   static SuperAutoSuggestionsSource<T> async<T>(
-    Future<List<T>> Function(String query) fetch, {
+    Future<List<T>> Function(BuildContext context, String query) fetch, {
     List<T> initialItems = const [],
-  }) => SuperAutoAsyncSuggestionsSource<T>(fetch, initialItems: initialItems);
+    AutoSuggestionMatch match = AutoSuggestionMatch.contains,
+    bool caseSensitive = false,
+  }) => SuperAutoAsyncSuggestionsSource<T>(
+    fetch,
+    initialItems: initialItems,
+    match: match,
+    caseSensitive: caseSensitive,
+  );
 
   /// Creates a source that combines local matching with optional remote results.
   ///
@@ -218,7 +229,7 @@ abstract final class SuperAutoSuggestionSources {
   /// ```dart
   /// final source = SuperAutoSuggestionSources.hybrid<Product>(
   ///   initialItems: popularProducts,
-  ///   fetch: (query) => productRepository.search(query),
+  ///   fetch: (context, query) => productRepository.search(query),
   ///   remoteThreshold: 3,
   ///   remoteMinChars: 2,
   /// );
@@ -238,7 +249,7 @@ abstract final class SuperAutoSuggestionSources {
   /// {@macro super_auto_suggestion_sources_builder}
   static SuperAutoSuggestionsSource<T> hybrid<T>({
     required List<T> initialItems,
-    required Future<List<T>> Function(String query) fetch,
+    required Future<List<T>> Function(BuildContext context, String query) fetch,
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
     int remoteThreshold = 1,
     int remoteMinChars = 1,
@@ -275,7 +286,7 @@ abstract final class SuperAutoSuggestionSources {
   /// ```dart
   /// final source = SuperAutoSuggestionSources.remoteFallback<Customer>(
   ///   initialItems: recentCustomers,
-  ///   fetch: (query) => customerRepository.search(query),
+  ///   fetch: (context, query) => customerRepository.search(query),
   ///   remoteThreshold: 5,
   ///   remoteMinChars: 2,
   /// );
@@ -294,7 +305,7 @@ abstract final class SuperAutoSuggestionSources {
   /// {@macro super_auto_suggestion_sources_builder}
   static SuperAutoSuggestionsSource<T> remoteFallback<T>({
     required List<T> initialItems,
-    required Future<List<T>> Function(String query) fetch,
+    required Future<List<T>> Function(BuildContext context, String query) fetch,
     AutoSuggestionMatch match = AutoSuggestionMatch.contains,
     int remoteThreshold = 5,
     int remoteMinChars = 1,
@@ -310,7 +321,7 @@ abstract final class SuperAutoSuggestionSources {
 
   /// Creates an asynchronous source backed by a zero-based page loader.
   ///
-  /// [fetch] receives the current query and a page index. Page `0` is the first
+  /// [fetch] receives the active [BuildContext], current query, and a page index. Page `0` is the first
   /// page. The callback returns a [SuperSuggestionsPage] that describes the page
   /// items and whether more data is available.
   ///
@@ -328,7 +339,7 @@ abstract final class SuperAutoSuggestionSources {
   ///
   /// ```dart
   /// final source = SuperAutoSuggestionSources.paged<Product>(
-  ///   (query, page) async {
+  ///   (context, query, page) async {
   ///     final response = await productRepository.search(
   ///       query: query,
   ///       page: page,
@@ -353,7 +364,11 @@ abstract final class SuperAutoSuggestionSources {
   /// );
   /// ```
   static SuperAutoSuggestionsSource<T> paged<T>(
-    Future<SuperSuggestionsPage<T>> Function(String query, int page) fetch, {
+    Future<SuperSuggestionsPage<T>> Function(
+      BuildContext context,
+      String query,
+      int page,
+    ) fetch, {
     List<T> resolveFrom = const [],
   }) => SuperAutoPagedSuggestionsSource<T>(fetch, resolveFrom: resolveFrom);
 }
@@ -567,7 +582,7 @@ class SuperAutoListSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   /// This operation is synchronous. A blank query returns every [items]
   /// element. Result ordering follows the configured [match] strategy.
   @override
-  List<T> query(String query) => _localMatches(
+  List<T> query(BuildContext context, String query) => _localMatches(
     items: items,
     suggestionBuilder: (items, index, element) => suggestionAt(items, index),
     query: query,
@@ -633,45 +648,101 @@ class SuperAutoListSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
 /// );
 /// ```
 class SuperAutoAsyncSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
-  /// Creates an asynchronous source that delegates queries to [fetch].
+  /// Creates an asynchronous source with an immediate in-memory matching phase.
   ///
-  /// [initialItems] seed [cachedItems] for resolution. They do not cause a
-  /// query result to be emitted and are not passed to [fetch].
-  SuperAutoAsyncSuggestionsSource(this.fetch, {List<T> initialItems = const []})
-    : cachedItems = List<T>.of(initialItems);
+  /// [initialItems] seed [cachedItems]. They are searchable immediately and do
+  /// not wait for the widget debounce window. Successful remote results are
+  /// added to the same cache and can participate in later local matching.
+  SuperAutoAsyncSuggestionsSource(
+    this.fetch, {
+    List<T> initialItems = const [],
+    this.match = AutoSuggestionMatch.contains,
+    this.caseSensitive = false,
+  }) : cachedItems = List<T>.of(initialItems);
 
-  /// Loads suggestion values for a query.
-  ///
-  /// Errors are propagated by `query` unless handled inside this callback.
-  final Future<List<T>> Function(String query) fetch;
+  /// Loads additional remote values for a query.
+  final Future<List<T>> Function(BuildContext context, String query) fetch;
 
-  /// Values retained for later resolution.
-  ///
-  /// The cache starts with `initialItems` and grows after successful queries.
-  /// Fetched values are de-duplicated by suggestion `value` before insertion.
+  /// Values available for immediate local matching and later resolution.
   final List<T> cachedItems;
 
-  /// Whether this source performs asynchronous queries.
+  /// Matching strategy used against [cachedItems].
+  final AutoSuggestionMatch match;
+
+  /// Whether local matching distinguishes upper- and lower-case text.
+  final bool caseSensitive;
+
+  /// Whether this source can perform asynchronous work.
   @override
   bool get isAsync => true;
 
-  /// Invokes [fetch] for [query], caches successful items, and returns them.
-  ///
-  /// The returned future completes with the same error if [fetch] fails.
-  @override
-  Future<List<T>> query(String query) => fetch(query).then((items) {
-    _appendUniqueByValue(
-      cachedItems,
-      items,
-      (_, _, element) => suggestionFor(element),
-    );
-    return items;
-  });
+  List<T> _local(String query) => _localMatches(
+    items: cachedItems,
+    suggestionBuilder: (items, index, element) => suggestionAt(items, index),
+    query: query,
+    match: match,
+    caseSensitive: caseSensitive,
+  );
 
-  /// Resolves [value] from [cachedItems].
+  Future<List<T>> _fetchAndMerge(
+    BuildContext context,
+    List<T> local,
+    String query,
+  ) =>
+      fetch(context, query).then((remote) {
+        _appendUniqueByValue(
+          cachedItems,
+          remote,
+          (_, _, element) => suggestionFor(element),
+        );
+        return _mergeUniqueByValue(
+          local,
+          remote,
+          (_, _, element) => suggestionFor(element),
+        );
+      });
+
+  /// Matches the local cache first, then fetches and merges remote values.
   ///
-  /// Returns `null` if the value has not been seeded or observed in a successful
-  /// query.
+  /// Direct callers of [query] receive the final merged result. The widget uses
+  /// [progressiveWithMinResult] so the local phase can render immediately and
+  /// only the remote phase is debounced.
+  @override
+  Future<List<T>> query(BuildContext context, String query) {
+    final local = _local(query);
+    return _fetchAndMerge(context, local, query);
+  }
+
+  /// Exposes local matches immediately and always offers a remote augmentation
+  /// step for direct progressive callers.
+  @override
+  SuggestionsQueryResult<T> progressive(BuildContext context, String query) {
+    final local = _local(query);
+    return SuggestionsQueryResult<T>(
+      items: local,
+      loadMore: () => _fetchAndMerge(context, local, query),
+    );
+  }
+
+  /// Exposes local matches immediately and schedules remote work only when the
+  /// widget-level inclusive [minResult] threshold allows it.
+  @override
+  SuggestionsQueryResult<T> progressiveWithMinResult(
+    BuildContext context,
+    String query, {
+    required int minResult,
+  }) {
+    final local = _local(query);
+    if (local.length > minResult) {
+      return SuggestionsQueryResult<T>.complete(local);
+    }
+    return SuggestionsQueryResult<T>(
+      items: local,
+      loadMore: () => _fetchAndMerge(context, local, query),
+    );
+  }
+
+  /// Resolves [value] from initial and previously fetched cached values.
   @override
   T? resolve(T value) => _resolveByValue(
     cachedItems,
@@ -725,7 +796,7 @@ class SuperAutoAsyncSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
 /// ```dart
 /// final source = SuperAutoHybridSuggestionsSource<Product>(
 ///   initialItems: popularProducts,
-///   fetch: (query) => productRepository.search(query),
+///   fetch: (context, query) => productRepository.search(query),
 ///   match: AutoSuggestionMatch.contains,
 ///   remoteThreshold: 3,
 ///   remoteMinChars: 2,
@@ -764,7 +835,7 @@ class SuperAutoHybridSuggestionsSource<T>
   final List<T> cachedItems;
 
   /// Loads additional remote values when the threshold rules allow it.
-  final Future<List<T>> Function(String query) fetch;
+  final Future<List<T>> Function(BuildContext context, String query) fetch;
 
   /// The strategy used for local matching.
   final AutoSuggestionMatch match;
@@ -799,31 +870,56 @@ class SuperAutoHybridSuggestionsSource<T>
   ///
   /// Remote failures are converted to the already-computed local result.
   @override
-  FutureOr<List<T>> query(String query) {
+  FutureOr<List<T>> query(BuildContext context, String query) {
     final local = _local(query);
     if (!_shouldFetch(query, local)) {
       return local;
     }
-    return _fetchAndMerge(local, query).catchError((Object _) => local);
+    return _fetchAndMerge(context, local, query).catchError((Object _) => local);
   }
 
   /// Returns local matches immediately and an optional remote `loadMore` step.
   ///
   /// When no remote request is eligible, the result is already complete.
   @override
-  SuggestionsQueryResult<T> progressive(String query) {
+  SuggestionsQueryResult<T> progressive(BuildContext context, String query) {
     final local = _local(query);
     if (!_shouldFetch(query, local)) {
       return SuggestionsQueryResult<T>.complete(local);
     }
     return SuggestionsQueryResult<T>(
       items: local,
-      loadMore: () => _fetchAndMerge(local, query),
+      loadMore: () => _fetchAndMerge(context, local, query),
     );
   }
 
-  Future<List<T>> _fetchAndMerge(List<T> local, String query) =>
-      fetch(query).then((remote) {
+
+  /// Uses the widget-owned inclusive [minResult] threshold for progressive
+  /// remote loading. This is the path used by `SuperAutoSuggestionsBox`.
+  @override
+  SuggestionsQueryResult<T> progressiveWithMinResult(
+    BuildContext context,
+    String query, {
+    required int minResult,
+  }) {
+    final local = _local(query);
+    final shouldFetch =
+        query.trim().length >= remoteMinChars && local.length <= minResult;
+    if (!shouldFetch) {
+      return SuggestionsQueryResult<T>.complete(local);
+    }
+    return SuggestionsQueryResult<T>(
+      items: local,
+      loadMore: () => _fetchAndMerge(context, local, query),
+    );
+  }
+
+  Future<List<T>> _fetchAndMerge(
+    BuildContext context,
+    List<T> local,
+    String query,
+  ) =>
+      fetch(context, query).then((remote) {
         _appendUniqueByValue(
           cachedItems,
           remote,
@@ -890,7 +986,7 @@ class SuperAutoHybridSuggestionsSource<T>
 /// ```dart
 /// final source = SuperAutoRemoteFallbackSuggestionsSource<Customer>(
 ///   initialItems: recentCustomers,
-///   fetch: (query) => customerRepository.search(query),
+///   fetch: (context, query) => customerRepository.search(query),
 ///   remoteThreshold: 5,
 ///   remoteMinChars: 2,
 /// );
@@ -927,7 +1023,7 @@ class SuperAutoRemoteFallbackSuggestionsSource<T>
   final List<T> cachedItems;
 
   /// Loads remote fallback values when local results are sparse enough.
-  final Future<List<T>> Function(String query) fetch;
+  final Future<List<T>> Function(BuildContext context, String query) fetch;
 
   /// The strategy used for local matching.
   final AutoSuggestionMatch match;
@@ -962,31 +1058,56 @@ class SuperAutoRemoteFallbackSuggestionsSource<T>
   ///
   /// Remote failures are converted to the already-computed local result.
   @override
-  FutureOr<List<T>> query(String query) {
+  FutureOr<List<T>> query(BuildContext context, String query) {
     final local = _local(query);
     if (!_shouldFetch(query, local)) {
       return local;
     }
-    return _fetchAndMerge(local, query).catchError((Object _) => local);
+    return _fetchAndMerge(context, local, query).catchError((Object _) => local);
   }
 
   /// Returns local matches immediately and an optional remote `loadMore` step.
   ///
   /// When no fallback request is eligible, the result is already complete.
   @override
-  SuggestionsQueryResult<T> progressive(String query) {
+  SuggestionsQueryResult<T> progressive(BuildContext context, String query) {
     final local = _local(query);
     if (!_shouldFetch(query, local)) {
       return SuggestionsQueryResult<T>.complete(local);
     }
     return SuggestionsQueryResult<T>(
       items: local,
-      loadMore: () => _fetchAndMerge(local, query),
+      loadMore: () => _fetchAndMerge(context, local, query),
     );
   }
 
-  Future<List<T>> _fetchAndMerge(List<T> local, String query) =>
-      fetch(query).then((remote) {
+
+  /// Uses the widget-owned inclusive [minResult] threshold for progressive
+  /// remote loading. This is the path used by `SuperAutoSuggestionsBox`.
+  @override
+  SuggestionsQueryResult<T> progressiveWithMinResult(
+    BuildContext context,
+    String query, {
+    required int minResult,
+  }) {
+    final local = _local(query);
+    final shouldFetch =
+        query.trim().length >= remoteMinChars && local.length <= minResult;
+    if (!shouldFetch) {
+      return SuggestionsQueryResult<T>.complete(local);
+    }
+    return SuggestionsQueryResult<T>(
+      items: local,
+      loadMore: () => _fetchAndMerge(context, local, query),
+    );
+  }
+
+  Future<List<T>> _fetchAndMerge(
+    BuildContext context,
+    List<T> local,
+    String query,
+  ) =>
+      fetch(context, query).then((remote) {
         _appendUniqueByValue(
           cachedItems,
           remote,
@@ -1017,7 +1138,7 @@ class SuperAutoRemoteFallbackSuggestionsSource<T>
 /// ---
 /// ### Paging behavior
 ///
-/// [fetch] receives the current query and a zero-based page index. Page `0` is
+/// [fetch] receives the active [BuildContext], current query, and a zero-based page index. Page `0` is
 /// the first page. The callback returns a [SuperSuggestionsPage] containing the
 /// page items and its `hasMore` state.
 ///
@@ -1040,7 +1161,7 @@ class SuperAutoRemoteFallbackSuggestionsSource<T>
 ///
 /// ```dart
 /// final source = SuperAutoPagedSuggestionsSource<Product>(
-///   (query, page) async {
+///   (context, query, page) async {
 ///     final response = await productRepository.search(
 ///       query: query,
 ///       page: page,
@@ -1075,7 +1196,11 @@ class SuperAutoPagedSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
   /// Loads one zero-based page for a query.
   ///
   /// Page `0` is the first page. Errors propagate to `query` or `fetchPage`.
-  final Future<SuperSuggestionsPage<T>> Function(String query, int page) fetch;
+  final Future<SuperSuggestionsPage<T>> Function(
+      BuildContext context,
+      String query,
+      int page,
+    ) fetch;
 
   /// Values retained from `resolveFrom` and all fetched pages.
   ///
@@ -1093,16 +1218,20 @@ class SuperAutoPagedSuggestionsSource<T> extends SuperAutoSuggestionsSource<T> {
 
   /// Loads page `0` for [query] and returns that page's items.
   @override
-  Future<List<T>> query(String query) =>
-      fetchPage(query, 0).then((page) => page.items);
+  Future<List<T>> query(BuildContext context, String query) =>
+      fetchPage(context, query, 0).then((page) => page.items);
 
   /// Loads [page] for [query], caches its items, and returns the page result.
   ///
   /// [page] is zero-based. This method does not prevent duplicate values across
   /// pages.
   @override
-  Future<SuperSuggestionsPage<T>> fetchPage(String query, int page) =>
-      fetch(query, page).then((result) {
+  Future<SuperSuggestionsPage<T>> fetchPage(
+    BuildContext context,
+    String query,
+    int page,
+  ) =>
+      fetch(context, query, page).then((result) {
         cachedItems.addAll(result.items);
         return result;
       });

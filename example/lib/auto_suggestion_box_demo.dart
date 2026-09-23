@@ -253,6 +253,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
   }
 
   Future<SuperSuggestionsPage<String>> _fetchCatalogPage(
+    BuildContext context,
     String query,
     int page,
   ) async {
@@ -326,7 +327,10 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
     iconData: Icons.business_outlined,
   );
 
-  Future<List<String>> _fetchRemote(String query) async {
+  Future<List<String>> _fetchRemote(
+    BuildContext context,
+    String query,
+  ) async {
     await Future<void>.delayed(const Duration(milliseconds: 650));
     final q = query.trim().toLowerCase();
     return [
@@ -462,6 +466,7 @@ class _AutoSuggestionBoxDemoState extends State<AutoSuggestionBoxDemo> {
                     remoteMinChars: 1,
                   ),
                   suggestionBuilder: _vendorSuggestion,
+                  minResult: 3,
                   hintText: l10n.vendorExample,
                   onSelectionChanged: (items) {},
                 ),

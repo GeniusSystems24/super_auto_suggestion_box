@@ -14,6 +14,7 @@ import 'package:super_auto_suggestion_box_example/localizations/generated/l10n.d
 import 'auto_suggestion_box_demo.dart';
 import 'advanced_search_screen.dart';
 import 'autovalidate_mode_demo.dart';
+import 'debounce_examples_screen.dart';
 import 'sources/async_source_screen.dart';
 import 'sources/fuzzy_source_screen.dart';
 import 'sources/hybrid_source_screen.dart';
@@ -121,7 +122,17 @@ class _Launcher extends StatelessWidget {
     final spacing = theme.spacing;
     final colorScheme = Theme.of(context).colorScheme;
 
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
     final demos = <_Demo>[
+      _Demo(
+        isArabic ? 'أمثلة Debounce' : 'Debounce examples',
+        isArabic
+            ? 'قارن تأثير 0ms و300ms و800ms على عدد طلبات البحث.'
+            : 'Compare 0ms, 300ms, and 800ms request debouncing.',
+        Icons.timer_outlined,
+        (_) => const DebounceExamplesScreen(),
+      ),
       _Demo(
         l10n.version151Changes,
         l10n.version151GalleryDescription,

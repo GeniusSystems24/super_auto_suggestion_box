@@ -132,14 +132,14 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
       case ExampleSourceType.fuzzy:
         return SuperAutoSuggestionSources.fuzzy<String>(_items);
       case ExampleSourceType.asyncSource:
-        return SuperAutoSuggestionSources.async<String>((query) async {
+        return SuperAutoSuggestionSources.async<String>((context, query) async {
           await Future<void>.delayed(const Duration(milliseconds: 350));
           return _matches(query);
         }, initialItems: _items.take(5).toList());
       case ExampleSourceType.hybrid:
         return SuperAutoSuggestionSources.hybrid<String>(
           initialItems: _items.take(5).toList(),
-          fetch: (query) async {
+          fetch: (context, query) async {
             await Future<void>.delayed(const Duration(milliseconds: 350));
             return _matches(query);
           },
@@ -149,7 +149,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
       case ExampleSourceType.remoteFallback:
         return SuperAutoSuggestionSources.remoteFallback<String>(
           initialItems: _items.take(5).toList(),
-          fetch: (query) async {
+          fetch: (context, query) async {
             await Future<void>.delayed(const Duration(milliseconds: 350));
             return _matches(query);
           },
@@ -157,7 +157,7 @@ class _SourceExamplesViewState extends State<SourceExamplesView> {
           remoteMinChars: 1,
         );
       case ExampleSourceType.paged:
-        return SuperAutoSuggestionSources.paged<String>((query, page) async {
+        return SuperAutoSuggestionSources.paged<String>((context, query, page) async {
           await Future<void>.delayed(const Duration(milliseconds: 350));
           final matches = _matches(query);
           const pageSize = 5;

@@ -4,6 +4,11 @@ import 'package:super_auto_suggestion_box/super_auto_suggestion_box.dart';
 
 List<String> _values(Iterable<String> items) => items.toList();
 
+Future<BuildContext> _pumpContext(WidgetTester tester) async {
+  await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+  return tester.element(find.byType(SizedBox));
+}
+
 void main() {
   test('paged results use the renamed page type', () {
     const page = SuperSuggestionsPage<String>(
@@ -19,11 +24,12 @@ void main() {
     expect(emptyPage.items, isEmpty);
   });
 
-  test('source factories expose the renamed source contract', () {
+  testWidgets('source factories expose the renamed source contract', (tester) async {
+    final context = await _pumpContext(tester);
     final SuperAutoSuggestionsSource<String> source =
         SuggestionSources.strings(const ['A']);
 
-    expect(source.query('A'), ['A']);
+    expect(source.query(context, 'A'), ['A']);
   });
 
   test('suggestion items expose renamed display properties', () {
@@ -55,15 +61,16 @@ void main() {
   });
 
   group('SuperAutoAsyncSuggestionsSource cachedItems', () {
-    test('copies initial items and accumulates unique fetched items', () async {
+    testWidgets('copies initial items and accumulates unique fetched items', (tester) async {
+      final context = await _pumpContext(tester);
       final source = SuperAutoAsyncSuggestionsSource<String>(
-        (_) async => ['b', 'c', 'c'],
+        (_, _) async => ['b', 'c', 'c'],
         initialItems: ['a', 'b'],
       );
 
       expect(_values(source.cachedItems), ['a', 'b']);
 
-      final returned = await source.query('c');
+      final returned = await source.query(context, 'c');
 
       expect(_values(returned), ['b', 'c', 'c']);
       expect(_values(source.cachedItems), ['a', 'b', 'c']);
@@ -73,26 +80,27 @@ void main() {
   });
 
   group('SuperAutoHybridSuggestionsSource cachedItems', () {
-    test('reuses fetched items locally without a second fetch', () async {
+    testWidgets('reuses fetched items locally without a second fetch', (tester) async {
+      final context = await _pumpContext(tester);
       var fetchCount = 0;
       final source = SuperAutoHybridSuggestionsSource<String>(
         initialItems: ['a'],
         remoteThreshold: 1,
         remoteMinChars: 1,
-        fetch: (_) async {
+        fetch: (_, _) async {
           fetchCount++;
           return ['b', 'b'];
         },
       );
 
-      final first = await source.query('b');
+      final first = await source.query(context, 'b');
 
       expect(fetchCount, 1);
       expect(_values(first), ['b']);
       expect(_values(source.cachedItems), ['a', 'b']);
       expect(source.resolve('b'), 'b');
 
-      final second = source.query('b');
+      final second = source.query(context, 'b');
 
       expect(second, isA<List<String>>());
       expect(_values(second as List<String>), ['b']);
@@ -101,19 +109,20 @@ void main() {
   });
 
   group('SuperAutoRemoteFallbackSuggestionsSource cachedItems', () {
-    test('reuses fetched items through progressive local results', () async {
+    testWidgets('reuses fetched items through progressive local results', (tester) async {
+      final context = await _pumpContext(tester);
       var fetchCount = 0;
       final source = SuperAutoRemoteFallbackSuggestionsSource<String>(
         initialItems: ['a'],
         remoteThreshold: 0,
         remoteMinChars: 1,
-        fetch: (_) async {
+        fetch: (_, _) async {
           fetchCount++;
           return ['b', 'b'];
         },
       );
 
-      final first = source.progressive('b');
+      final first = source.progressive(context, 'b');
       expect(first.items, isEmpty);
       expect(first.loadMore, isNotNull);
 
@@ -124,7 +133,7 @@ void main() {
       expect(_values(source.cachedItems), ['a', 'b']);
       expect(source.resolve('b'), 'b');
 
-      final second = source.progressive('b');
+      final second = source.progressive(context, 'b');
 
       expect(second.loadMore, isNull);
       expect(_values(second.items), ['b']);

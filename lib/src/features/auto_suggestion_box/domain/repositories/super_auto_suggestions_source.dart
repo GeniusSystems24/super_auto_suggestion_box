@@ -8,6 +8,8 @@
 
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+
 import '../entities/super_auto_suggestions_item.dart';
 import '../entities/super_suggestions_page.dart';
 import '../entities/suggestions_query_result.dart';
@@ -42,9 +44,11 @@ abstract class SuperAutoSuggestionsSource<T> {
     _suggestionBuilder = builder;
   }
 
-  /// Return the matches for [query] (may be sync or a Future). An empty query
+  /// Return the matches for [query] (may be sync or a Future). [context] is
+  /// the active box context and may be forwarded to context-aware remote fetchers.
+  /// An empty query
   /// is expected to return the "initial"/all set (capped by the view).
-  FutureOr<List<T>> query(String query);
+  FutureOr<List<T>> query(BuildContext context, String query);
 
   /// Build the [SuperAutoSuggestionsItem] for an item already present in [items].
   SuperAutoSuggestionsItem<T> suggestionAt(List<T> items, int index) =>
@@ -66,7 +70,29 @@ abstract class SuperAutoSuggestionsSource<T> {
   /// optional remote `loadMore` thunk (see [SuggestionsQueryResult]). Return
   /// null (the default) to use the single-phase [query] instead. Sources that
   /// want "show local instantly, fetch remote when local is thin" override this.
-  SuggestionsQueryResult<T>? progressive(String query) => null;
+  SuggestionsQueryResult<T>? progressive(BuildContext context, String query) => null;
+
+
+  /// Applies a widget-level minimum-result gate to progressive remote loading.
+  ///
+  /// [minResult] is inclusive: when a progressive source exposes remote work,
+  /// that work is retained only while the immediate/local result count is less
+  /// than or equal to [minResult]. The default implementation can suppress an
+  /// existing progressive `loadMore`; local-first built-in sources override
+  /// this method so [minResult] can also become their fetch threshold.
+  ///
+  /// Non-progressive sources return `null` through [progressive] and are
+  /// unaffected by this hook.
+  SuggestionsQueryResult<T>? progressiveWithMinResult(
+    BuildContext context,
+    String query, {
+    required int minResult,
+  }) {
+    final result = progressive(context, query);
+    if (result == null || result.loadMore == null) return result;
+    if (result.items.length <= minResult) return result;
+    return SuggestionsQueryResult<T>.complete(result.items);
+  }
 
   /// Whether this source serves results one page at a time (infinite scroll).
   /// When true the controller loads page 0 via [fetchPage] on each query and
@@ -75,7 +101,11 @@ abstract class SuperAutoSuggestionsSource<T> {
 
   /// Fetch one [page] (0-based) of matches for [query]. Only called when
   /// [isPaged] is true; the default throws to catch a mis-wired source.
-  Future<SuperSuggestionsPage<T>> fetchPage(String query, int page) =>
+  Future<SuperSuggestionsPage<T>> fetchPage(
+    BuildContext context,
+    String query,
+    int page,
+  ) =>
       throw UnsupportedError(
         'This source is not paged; override fetchPage or set isPaged.',
       );

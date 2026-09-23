@@ -49,7 +49,7 @@ class TryExampleScreen extends StatelessWidget {
         match: AutoSuggestionMatch.fuzzy,
         caseSensitive: false,
       ),
-      'async': SuperAutoSuggestionSources.async<String>((query) async {
+      'async': SuperAutoSuggestionSources.async<String>((context, query) async {
         debugPrint('Async source called with query: $query');
         await Future<void>.delayed(const Duration(seconds: 1));
         return _matches(query);
@@ -58,7 +58,7 @@ class TryExampleScreen extends StatelessWidget {
         documentReferences,
         caseSensitive: false,
       ),
-      'paged': SuperAutoSuggestionSources.paged<String>((query, page) async {
+      'paged': SuperAutoSuggestionSources.paged<String>((context, query, page) async {
         debugPrint('Paged source called with query: $query, page: $page');
         await Future<void>.delayed(const Duration(seconds: 1));
         final all = _matches(query);
@@ -69,7 +69,7 @@ class TryExampleScreen extends StatelessWidget {
         );
       }, resolveFrom: documentReferences),
       'hybrid': SuperAutoSuggestionSources.hybrid<String>(
-        fetch: (query) async {
+        fetch: (context, query) async {
           debugPrint('Hybrid source called with query: $query');
           await Future<void>.delayed(const Duration(seconds: 1));
           return _matches(query);
@@ -80,7 +80,7 @@ class TryExampleScreen extends StatelessWidget {
         remoteThreshold: 5,
       ),
       'remoteFallback': SuperAutoSuggestionSources.remoteFallback<String>(
-        fetch: (query) async {
+        fetch: (context, query) async {
           debugPrint('Remote fallback source called with query: $query');
           await Future<void>.delayed(const Duration(seconds: 1));
           return _matches(query);
@@ -104,6 +104,7 @@ class TryExampleScreen extends StatelessWidget {
             suggestionBuilder: (context, items, index, item) =>
                 _documentSuggestion(items, index, item, l10n),
             controller: SuperAutoSuggestionsController<String>(),
+            minResult: 2,
             decoration: InputDecoration(
               labelText: l10n.documentReference,
               prefixIcon: const Icon(Icons.account_box_rounded),

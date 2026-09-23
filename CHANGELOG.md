@@ -4,6 +4,34 @@ All notable changes to **super_auto_suggestion_box** are documented here. Format
 follows [Keep a Changelog](https://keepachangelog.com/); versioning is
 [SemVer](https://semver.org/).
 
+## 1.7.0 - 2026-09-24
+
+### Added
+
+- Added `SuperAutoSuggestionsBox.minResult` with a default of `0` to control when local-first sources start their remote fetch.
+- Added `BuildContext` to asynchronous, hybrid, remote-fallback, and paged
+  source fetch callbacks. Async callbacks now use `(context, query)` and paged
+  callbacks use `(context, query, page)`.
+- Added `easy_debounce ^2.0.3` for request scheduling.
+- Added a debounce example screen comparing `0ms`, `300ms`, and `800ms` with
+  visible fetch counters.
+- Expanded the debounce example screen with `minResult` examples for `0`, `2`, and `5` and visible fetch counters.
+
+### Changed
+
+- Local matching now runs immediately outside the debounce window; `easy_debounce` is applied only to remote fetch/load-more/page work.
+- `SuperAutoSuggestionSources.async` now matches `initialItems` and cached remote rows locally before fetching more, with optional `match` and `caseSensitive` configuration.
+- Loading state now begins when debounced remote work actually starts instead of while it is waiting to be scheduled.
+- `hybrid` and `remoteFallback` now use the widget-level inclusive `minResult` threshold during progressive box queries; `remoteMinChars` still applies.
+- **Breaking:** `SuperAutoSuggestionsSource.query`, `progressive`, and
+  `fetchPage` now receive the active `BuildContext`.
+- Debouncing now delays the start of asynchronous fetch work instead of starting
+  the request immediately and only delaying result delivery.
+- Each controller uses an independent debounce tag and cancels pending work when
+  a query is superseded, the field closes, or the controller is disposed.
+- Updated README, skill guidance, example screens, and affected source tests for
+  the 1.7.0 callback signatures.
+
 ## 1.6.0 - 2026-09-21
 
 ### Changed

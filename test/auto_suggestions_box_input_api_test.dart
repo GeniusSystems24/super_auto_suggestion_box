@@ -652,4 +652,58 @@ void main() {
     expect(createQuery, 'North Tower');
     expect(selected, 'created:North Tower');
   });
+
+  testWidgets(
+    'desktop Tab traverses past the whole suggestions field in one press',
+    (tester) async {
+      final beforeFocus = FocusNode(debugLabel: 'before');
+      final suggestionsFocus = FocusNode(debugLabel: 'suggestions');
+      final afterFocus = FocusNode(debugLabel: 'after');
+      addTearDown(beforeFocus.dispose);
+      addTearDown(suggestionsFocus.dispose);
+      addTearDown(afterFocus.dispose);
+
+      await tester.pumpWidget(
+        _themedApp(
+          Scaffold(
+            body: Column(
+              children: [
+                TextField(focusNode: beforeFocus),
+                SuperAutoSuggestionsBox<String>(
+                  focusNode: suggestionsFocus,
+                  source: SuggestionSources.list<String>(const ['A', 'B']),
+                  suggestionBuilder: _suggestion,
+                  mode: SuperAutoSuggestionsMode.textBox,
+                  showShadowHint: false,
+                  completeShadowHintOnTab: false,
+                ),
+                TextField(focusNode: afterFocus),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      suggestionsFocus.requestFocus();
+      await tester.pump();
+      expect(suggestionsFocus.hasFocus, isTrue);
+
+      // The chevron/clear/search adornments and the key-event Focus wrapper
+      // are implementation details of one composite field. They must not
+      // consume another traversal step.
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(afterFocus.hasFocus, isTrue);
+
+      suggestionsFocus.requestFocus();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
+      expect(beforeFocus.hasFocus, isTrue);
+    },
+  );
+
 }

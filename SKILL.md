@@ -2,7 +2,7 @@
 name: super-auto-suggestion-box
 description: >
   Use the super_auto_suggestion_box Flutter package to build GeniusLink
-  design-system typeahead / combobox inputs. Version 1.6.0 uses raw T values,
+  design-system typeahead / combobox inputs. Version 1.7.0 uses raw T values,
   FormField<T>-based validation over the selected T?, and onSelectionChanged
   for select/de-select notifications while suggestionBuilder derives row metadata.
 ---
@@ -20,7 +20,7 @@ read-only/fixable states, validation, advanced search, and bare embedding.
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.6.0
+  super_auto_suggestion_box: ^1.7.0
 ```
 
 ```dart
@@ -124,6 +124,71 @@ SuperAutoSuggestionsItem<String> accountSuggestion(
 Use `context` only for presentation and inherited-tree values. Keep source
 queries and domain data context-free.
 
+## 1.7.0 Context-aware Fetch, Local Matching, Debounce, and `minResult`
+
+Remote source callbacks use the context-aware signatures:
+
+```dart
+SuperAutoSuggestionSources.async<String>(
+  (context, query) => api.searchAccounts(query),
+  initialItems: cachedAccounts,
+);
+
+SuperAutoSuggestionSources.hybrid<String>(
+  initialItems: accounts,
+  fetch: (context, query) => api.searchAccounts(query),
+);
+
+SuperAutoSuggestionSources.paged<String>(
+  (context, query, page) => api.searchAccountsPage(query, page),
+);
+```
+
+Use the callback `context` only while the fetch is active to read inherited
+values. Do not retain it in a repository or long-lived service.
+
+Local matching must stay outside debounce. Match any in-memory rows immediately
+for every query change, update the visible suggestions, and debounce only the
+external operation that may bring additional rows.
+
+`SuperAutoSuggestionsBox.debounce` therefore applies to remote `fetch`,
+progressive `loadMore`, and page requests. It must not delay local filtering.
+The controller sets loading state when that remote work actually starts, not
+while the request is merely waiting in the debounce window.
+
+`SuperAutoSuggestionSources.async` uses `initialItems` and previously cached
+remote rows as its immediate local search cache. Configure that matching with
+`match` and `caseSensitive` when needed:
+
+```dart
+final source = SuperAutoSuggestionSources.async<String>(
+  (context, query) => api.searchAccounts(query),
+  initialItems: cachedAccounts,
+  match: AutoSuggestionMatch.contains,
+  caseSensitive: false,
+);
+```
+
+For sources with immediate local results, `SuperAutoSuggestionsBox.minResult`
+controls whether an external fetch should be scheduled. The default is `0`; the
+remote step is eligible when `localResults.length <= minResult` and any
+source-level query-length rule is also satisfied.
+
+```dart
+SuperAutoSuggestionsBox<String>(
+  source: SuperAutoSuggestionSources.hybrid<String>(
+    initialItems: cachedAccounts,
+    fetch: (context, query) => api.searchAccounts(query),
+    remoteMinChars: 2,
+  ),
+  debounce: const Duration(milliseconds: 300),
+  minResult: 2,
+  suggestionBuilder: accountSuggestion,
+);
+```
+
+With this flow, local rows appear immediately. If two or fewer local rows match,
+the remote fetch is scheduled and starts only after the debounce window.
 ## Sources
 
 Built-in sources accept raw data/fetch configuration only. Provide
@@ -134,22 +199,22 @@ both widget-created and external controllers:
 SuperAutoSuggestionSources.list<String>(accounts);
 
 SuperAutoSuggestionSources.async<String>(
-  (query) => api.searchAccounts(query), // Future<List<String>>
+  (context, query) => api.searchAccounts(query), // Future<List<String>>
   initialItems: accounts.take(5).toList(),
 );
 
 SuperAutoSuggestionSources.hybrid<String>(
   initialItems: accounts,
-  fetch: (query) => api.searchAccounts(query),
+  fetch: (context, query) => api.searchAccounts(query),
 );
 
 SuperAutoSuggestionSources.remoteFallback<String>(
   initialItems: accounts,
-  fetch: (query) => api.searchAccounts(query),
+  fetch: (context, query) => api.searchAccounts(query),
 );
 
 SuperAutoSuggestionSources.paged<String>(
-  (query, page) async {
+  (context, query, page) async {
     final result = await api.searchAccountsPage(query, page);
     return SuperSuggestionsPage<String>(
       items: result.codes,

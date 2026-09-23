@@ -140,6 +140,16 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
   /// Minimum query length required before suggestions are requested.
   final int minChars;
 
+
+  /// Inclusive local-result threshold that controls progressive remote fetches.
+  ///
+  /// Built-in local-first sources (`hybrid` and `remoteFallback`) start their
+  /// remote fetch when the immediate local result count is less than or equal
+  /// to this value. The default `0` fetches only when there are no local matches.
+  /// Pure async and paged sources are unaffected because they have no local
+  /// result phase before their request.
+  final int minResult;
+
   /// Maximum number of non-paged suggestions displayed.
   final int maxResults;
 
@@ -456,8 +466,9 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     required this.suggestionBuilder,
     this.controller,
     this.multiSelect = false,
-    this.debounce = const Duration(milliseconds: 180),
+    this.debounce = const Duration(milliseconds: 500),
     this.minChars = 0,
+    this.minResult = 0,
     this.maxResults = 50,
     this.showRecents = false,
     this.maxRecents = 5,
@@ -537,6 +548,7 @@ class SuperAutoSuggestionsBox<T> extends StatefulWidget {
     this.onCreate,
     this.createLabelBuilder,
   }) : assert(minChars >= 0),
+       assert(minResult >= 0),
        assert(maxResults >= 0),
        assert(maxRecents >= 0);
 
@@ -630,12 +642,14 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
 
   void _bindController() {
     bindSuperAutoSuggestionsControllerView(
+      context,
       _c,
       widget.source,
       (items, index, element) =>
           widget.suggestionBuilder(context, items, index, element),
       debounce: widget.debounce,
       minChars: widget.minChars,
+      minResult: widget.minResult,
       maxResults: widget.maxResults,
       multiSelect: widget.multiSelect,
       showRecents: widget.showRecents,
@@ -980,6 +994,7 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
         widget.suggestionBuilder != oldWidget.suggestionBuilder ||
         widget.debounce != oldWidget.debounce ||
         widget.minChars != oldWidget.minChars ||
+        widget.minResult != oldWidget.minResult ||
         widget.maxResults != oldWidget.maxResults ||
         widget.multiSelect != oldWidget.multiSelect ||
         widget.showRecents != oldWidget.showRecents ||
@@ -1296,7 +1311,9 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
             required: widget.required,
             hasError: error != null,
             errorText: underBoxError,
-            labelRight: labelRight,
+            labelRight: labelRight == null
+                ? null
+                : ExcludeFocusTraversal(child: labelRight),
             allowFixed: widget.allowFixed,
             isFixed: widget.allowFixed ? _c.isFixed : null,
             child: CompositedTransformTarget(
@@ -1445,9 +1462,14 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
       counterText: widget.maxLength == null ? null : '',
       // Leading icon
       prefixIcon: hasLeading
-          ? Padding(
-              padding: const EdgeInsetsDirectional.only(start: 10, end: 6),
-              child: leadingWidget,
+          ? ExcludeFocusTraversal(
+              // A composite suggestions field is one Tab stop. Prefix actions
+              // may still be clicked/request focus explicitly, but traversal
+              // must stay on the editor itself.
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 10, end: 6),
+                child: leadingWidget,
+              ),
             )
           : null,
       prefixIconConstraints: hasLeading
@@ -1455,9 +1477,13 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
                 const BoxConstraints(minWidth: 0, minHeight: 0)
           : null,
       // Suffix row
-      suffixIcon: Padding(
-        padding: const EdgeInsetsDirectional.only(end: 2),
-        child: Row(mainAxisSize: MainAxisSize.min, children: suffixWidgets),
+      suffixIcon: ExcludeFocusTraversal(
+        // Keep in-field actions clickable while preventing them from consuming
+        // an extra desktop/web Tab press before the next form field.
+        child: Padding(
+          padding: const EdgeInsetsDirectional.only(end: 2),
+          child: Row(mainAxisSize: MainAxisSize.min, children: suffixWidgets),
+        ),
       ),
       suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
       // Fill
@@ -1480,6 +1506,10 @@ class _AutoSuggestionsBoxState<T> extends State<SuperAutoSuggestionsBox<T>> {
     final field = KeyedSubtree(
       key: _fieldKey,
       child: Focus(
+        // This wrapper only receives key events bubbled from the editor.
+        // It must not become a second Tab stop next to the TextField.
+        canRequestFocus: false,
+        skipTraversal: true,
         onKeyEvent: _onKey,
         child: TextField(
           controller: _fieldText,

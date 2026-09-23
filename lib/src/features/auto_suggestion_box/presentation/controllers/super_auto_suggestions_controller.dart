@@ -6,8 +6,7 @@
 // rendering, filtering, selection labels, and value resolution.
 // ============================================================
 
-import 'dart:async';
-
+import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../domain/entities/super_auto_suggestions_item.dart';
@@ -34,15 +33,18 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   }
 
   late SuperAutoSuggestionsSource<T> _source;
+  late BuildContext _context;
   final T? _initialValue;
   bool _viewBound = false;
   final bool _ownsText;
 
   void _bindViewAdapter(
+    BuildContext context,
     SuperAutoSuggestionsSource<T> source,
     SuperAutoSuggestionViewAdapter<T> builder, {
     required Duration debounce,
     required int minChars,
+    required int minResult,
     required int maxResults,
     required bool multiSelect,
     required bool showRecents,
@@ -51,9 +53,11 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
     required String recentsGroupLabel,
     required ValueChanged<List<T>>? onRecentsChanged,
   }) {
+    _context = context;
     _source = source;
     _debounce = debounce;
     _minChars = minChars;
+    _minResult = minResult;
     _maxResults = maxResults;
     _multiSelect = multiSelect;
     _showRecents = showRecents;
@@ -103,11 +107,16 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   /// The misspelling is retained for compatibility with the existing API.
   bool isHiden;
 
-  /// Debounce window before an async query fires (sync sources ignore it).
-  Duration _debounce = const Duration(milliseconds: 180);
+  /// Debounce window for external/remote work. Local matching never waits for it.
+  Duration _debounce = const Duration(milliseconds: 500);
 
   /// Do not query until at least this many characters are typed (0 = always).
   int _minChars = 0;
+
+
+  /// Fetch remote results when a local-first source has at most this many
+  /// immediate/local matches. Zero means fetch only when local matching is empty.
+  int _minResult = 0;
 
   /// Hard cap on how many rows the overlay shows.
   int _maxResults = 50;
@@ -144,8 +153,11 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   String? _committedText;
   String _activeQuery = '';
 
+  static int _nextDebounceId = 0;
+  late final String _debounceTag =
+      'super_auto_suggestions_${_nextDebounceId++}';
+
   int _seq = 0;
-  Timer? _debounceTimer;
   String _lastText = '';
   bool _muteText = false;
   bool _disposed = false;
@@ -413,6 +425,17 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
     }
   }
 
+  void _cancelDebounce() => EasyDebounce.cancel(_debounceTag);
+
+  void _scheduleDebounced(VoidCallback callback, {required bool immediate}) {
+    _cancelDebounce();
+    if (immediate || _debounce == Duration.zero) {
+      callback();
+      return;
+    }
+    EasyDebounce.debounce(_debounceTag, _debounce, callback);
+  }
+
   // -- opening / closing --------------------------------------------------
   void open() {
     if (_open) return;
@@ -425,7 +448,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
     if (!_open) return;
     _open = false;
     _highlighted = -1;
-    _debounceTimer?.cancel();
+    _cancelDebounce();
     _notify();
   }
 
@@ -468,7 +491,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   }
 
   void _run(String raw, {bool immediate = false}) {
-    _debounceTimer?.cancel();
+    _cancelDebounce();
     _activeQuery = raw;
     final q = raw.trim();
     if (q.length < _minChars) {
@@ -495,14 +518,23 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
       return;
     }
 
-    final prog = _source.progressive(raw);
+    final prog = _source.progressiveWithMinResult(
+      _context,
+      raw,
+      minResult: _minResult,
+    );
     if (prog != null) {
       deliver(prog.items);
       if (prog.loadMore != null) {
-        _loadingMore = true;
-        _notify();
+        // Local matches were already delivered above. Debounce applies only to
+        // the remote augmentation step, so loading starts when that step fires.
+        _loadingMore = false;
         final loadMore = prog.loadMore!;
         void fire() {
+          if (_disposed || mySeq != _seq) return;
+          _loadingMore = true;
+          _error = null;
+          _notify();
           loadMore()
               .then((list) {
                 if (_disposed || mySeq != _seq) return;
@@ -521,23 +553,17 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
               });
         }
 
-        if (immediate || _debounce == Duration.zero) {
-          fire();
-        } else {
-          _debounceTimer = Timer(_debounce, fire);
-        }
+        _scheduleDebounced(fire, immediate: immediate);
       } else {
         _loadingMore = false;
       }
       return;
     }
 
-    final result = _source.query(raw);
-    if (result is Future<List<T>>) {
-      _loading = true;
-      _loadingMore = false;
-      _notify();
-      void fire() {
+    void runQuery() {
+      if (_disposed || mySeq != _seq) return;
+      final result = _source.query(_context, raw);
+      if (result is Future<List<T>>) {
         result.then(deliver).catchError((Object e) {
           if (_disposed || mySeq != _seq) return;
           _error = e;
@@ -546,16 +572,28 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
           _highlighted = -1;
           _notify();
         });
+      } else {
+        _loadingMore = false;
+        deliver(result);
+      }
+    }
+
+    if (_source.isAsync) {
+      // For non-progressive custom async sources, debounce still wraps only the
+      // asynchronous query. Do not report loading until that query actually starts.
+      _loading = false;
+      _loadingMore = false;
+      void fireAsyncQuery() {
+        if (_disposed || mySeq != _seq) return;
+        _loading = true;
+        _error = null;
+        _notify();
+        runQuery();
       }
 
-      if (immediate || _debounce == Duration.zero) {
-        fire();
-      } else {
-        _debounceTimer = Timer(_debounce, fire);
-      }
+      _scheduleDebounced(fireAsyncQuery, immediate: immediate);
     } else {
-      _loadingMore = false;
-      deliver(result);
+      runQuery();
     }
   }
 
@@ -565,12 +603,16 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
     _hasMore = false;
     _pagedItems = const [];
     _isLoadingPage = false;
-    _loading = true;
+    _loading = false;
     _loadingMore = false;
     _notify();
     void fire() {
+      if (_disposed || mySeq != _seq) return;
+      _loading = true;
+      _error = null;
+      _notify();
       _source
-          .fetchPage(raw, 0)
+          .fetchPage(_context, raw, 0)
           .then((page) {
             if (_disposed || mySeq != _seq) return;
             _pagedItems = List<T>.of(page.items);
@@ -593,11 +635,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
           });
     }
 
-    if (immediate || _debounce == Duration.zero) {
-      fire();
-    } else {
-      _debounceTimer = Timer(_debounce, fire);
-    }
+    _scheduleDebounced(fire, immediate: immediate);
   }
 
   /// Fetch and append the next page from a paged source.
@@ -608,7 +646,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
     _isLoadingPage = true;
     _notify();
     _source
-        .fetchPage(_pagedQuery, next)
+        .fetchPage(_context, _pagedQuery, next)
         .then((page) {
           if (_disposed || mySeq != _seq) return;
           _page = next;
@@ -722,7 +760,7 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _seq++;
-    _debounceTimer?.cancel();
+    _cancelDebounce();
     text.removeListener(_onTextChanged);
     isFixed.removeListener(_onFixedChanged);
     isFixed.dispose();
@@ -746,11 +784,13 @@ class SuperAutoSuggestionsController<T> extends ChangeNotifier {
 /// so `SuperAutoSuggestionsController` does not expose `suggestionBuilder` in its
 /// public constructor or class API.
 void bindSuperAutoSuggestionsControllerView<T>(
+  BuildContext context,
   SuperAutoSuggestionsController<T> controller,
   SuperAutoSuggestionsSource<T> source,
   SuperAutoSuggestionViewAdapter<T> builder, {
   required Duration debounce,
   required int minChars,
+  required int minResult,
   required int maxResults,
   required bool multiSelect,
   required bool showRecents,
@@ -760,10 +800,12 @@ void bindSuperAutoSuggestionsControllerView<T>(
   required ValueChanged<List<T>>? onRecentsChanged,
 }) {
   controller._bindViewAdapter(
+    context,
     source,
     builder,
     debounce: debounce,
     minChars: minChars,
+    minResult: minResult,
     maxResults: maxResults,
     multiSelect: multiSelect,
     showRecents: showRecents,

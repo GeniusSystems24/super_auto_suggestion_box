@@ -80,7 +80,7 @@ Add the package to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  super_auto_suggestion_box: ^1.6.0
+  super_auto_suggestion_box: ^1.7.0
 ```
 
 Then resolve dependencies using your normal Flutter workflow.
@@ -186,6 +186,27 @@ SuperAutoSuggestionsItem<Account> accountSuggestion(
 
 ## Suggestion sources
 
+
+### Context-aware fetch callbacks
+
+Starting with `1.7.0`, remote fetch callbacks receive the active
+`BuildContext` before the query arguments. This lets the request read inherited
+values such as locale or application-scoped configuration at the moment the
+request starts.
+
+```dart
+final source = SuperAutoSuggestionSources.async<Account>(
+  (context, query) async {
+    final locale = Localizations.localeOf(context);
+    return repository.searchAccounts(query, locale: locale);
+  },
+);
+```
+
+Hybrid and remote-fallback sources use `fetch: (context, query)`. Paged sources
+use `(context, query, page)`. Local `list`, `strings`, and `fuzzy` sources remain
+synchronous.
+
 Use `SuperAutoSuggestionSources` for normal source construction.
 
 | Factory | Use case | Concrete source |
@@ -233,7 +254,7 @@ order.
 
 ```dart
 final source = SuperAutoSuggestionSources.async<Account>(
-  (query) => repository.searchAccounts(query),
+  (context, query) => repository.searchAccounts(query),
   initialItems: initiallyKnownAccounts,
 );
 
@@ -263,6 +284,8 @@ final source = SuperAutoSuggestionSources.hybrid<Account>(
 
 The remote condition is `localMatches.length < remoteThreshold`.
 
+When the source is used by `SuperAutoSuggestionsBox`, prefer the widget's `minResult` to control the progressive remote-fetch threshold. `remoteThreshold` remains relevant to direct source `query`/`progressive` calls.
+
 ### Remote fallback
 
 Use `remoteFallback` when remote data should primarily extend sparse local
@@ -280,13 +303,15 @@ final source = SuperAutoSuggestionSources.remoteFallback<Account>(
 The remote condition is inclusive:
 `localMatches.length <= remoteThreshold`.
 
+Inside `SuperAutoSuggestionsBox`, `minResult` is the widget-level inclusive threshold for progressive remote fetching. The source-level `remoteThreshold` is retained for direct source calls.
+
 ### Paged
 
 The page callback uses zero-based page indexes. Page `0` is the first page.
 
 ```dart
 final source = SuperAutoSuggestionSources.paged<Account>(
-  (query, page) async {
+  (context, query, page) async {
     final response = await repository.searchAccountsPage(
       query: query,
       page: page,
@@ -462,6 +487,88 @@ validation and controller state for the selected value.
 If `autovalidateMode` is omitted, the field inherits the nearest Form setting
 and otherwise defaults to `AutovalidateMode.disabled`.
 
+## Debounce and `minResult`
+
+Local matching is **never debounced**. On every query change, data that is
+already available in memory is matched immediately and can be rendered without
+waiting for the debounce window.
+
+`SuperAutoSuggestionsBox.debounce` applies only to work that reaches an
+external source: remote `fetch` callbacks, progressive `loadMore` work, and the
+first request of a paged source. Version `1.7.0` uses `easy_debounce`, so rapid
+keystrokes reset only the pending remote request.
+
+```dart
+SuperAutoSuggestionsBox<Account>(
+  source: SuperAutoSuggestionSources.async<Account>(
+    (context, query) => repository.searchAccounts(query),
+    initialItems: cachedAccounts,
+  ),
+  debounce: const Duration(milliseconds: 300),
+  minResult: 0,
+  suggestionBuilder: accountSuggestion,
+);
+```
+
+In this example, `cachedAccounts` are matched immediately. If the local match
+count allows remote loading, the repository request starts after `300ms`.
+Changing the debounce duration never delays local filtering.
+
+The built-in sources behave as follows:
+
+- `list` / `strings` / `fuzzy`: local-only matching; `debounce` is ignored.
+- `async`: `initialItems` and previously cached results are matched immediately;
+  remote `fetch` is debounced when more data is needed.
+- `hybrid` / `remoteFallback`: local matching is immediate; only the remote
+  augmentation step is debounced.
+- `paged`: page requests are external work and remain debounced; `resolveFrom`
+  continues to be a resolution cache rather than a local search collection.
+
+`SuperAutoSuggestionSources.async` accepts `match` and `caseSensitive` for its
+local cache matching:
+
+```dart
+final source = SuperAutoSuggestionSources.async<Account>(
+  (context, query) => repository.searchAccounts(query),
+  initialItems: cachedAccounts,
+  match: AutoSuggestionMatch.contains,
+  caseSensitive: false,
+);
+```
+
+Use `Duration.zero` when remote requests should start immediately. Values such
+as `300ms` or `800ms` reduce external request churn without making local search
+feel slower.
+
+### `minResult`
+
+`minResult` is evaluated against the **immediate local result count**. Remote
+work is eligible when the local count is less than or equal to `minResult`.
+The default is `0`, so a remote request is needed only when local matching
+returns no rows.
+
+```dart
+SuperAutoSuggestionsBox<Account>(
+  source: SuperAutoSuggestionSources.hybrid<Account>(
+    initialItems: recentAccounts,
+    fetch: (context, query) => repository.searchAccounts(query),
+    remoteMinChars: 2,
+  ),
+  minResult: 3,
+  debounce: const Duration(milliseconds: 300),
+  suggestionBuilder: accountSuggestion,
+);
+```
+
+With `minResult: 3`, 0, 1, 2, or 3 local rows are shown immediately and the
+remote fetch is then scheduled through debounce. With 4 or more local matches,
+no remote request is started. Source-specific minimum query-length rules still
+apply.
+
+A pure `async` source with an empty local cache naturally has `0` local results,
+so its remote fetch proceeds after debounce. As remote results are cached, later
+queries can match those cached values immediately before deciding whether
+another external request is necessary.
 ## Controller
 
 Create a `SuperAutoSuggestionsController<T>` when the host needs direct state

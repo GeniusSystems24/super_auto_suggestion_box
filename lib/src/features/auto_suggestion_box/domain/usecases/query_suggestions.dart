@@ -9,6 +9,8 @@
 
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+
 import '../repositories/super_auto_suggestions_source.dart';
 
 /// Resolves the suggestions for a query against a [source].
@@ -21,5 +23,6 @@ class QuerySuggestions<T> {
   bool get isAsync => source.isAsync;
 
   /// Run the query. The result may be a synchronous list or a [Future].
-  FutureOr<List<T>> call(String query) => source.query(query);
+  FutureOr<List<T>> call(BuildContext context, String query) =>
+      source.query(context, query);
 }
